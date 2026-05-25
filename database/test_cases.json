@@ -1,0 +1,44 @@
+[
+  {
+    "id": 1,
+    "group": "aj_docs",
+    "query": "AJ Technologies là công ty gì và trụ sở ở đâu?",
+    "intent": "company_info",
+    "expected_keywords": ["名古屋", "アーク白川公園", "栄", "愛知県", "名古屋市", "株式会社AJテクノロジーズ"]
+  },
+  {
+    "id": 2,
+    "group": "aj_docs",
+    "query": "Nền tảng DX ホムすん (Homesun) của AJ Technologies có những tính năng gì?",
+    "intent": "company_info",
+    "expected_keywords": ["ホムすん", "銀行書類", "チャットボット", "音声認識", "議事録", "施工進捗"]
+  },
+  {
+    "id": 3,
+    "group": "aj_docs",
+    "query": "Dịch vụ OCR của AJ Technologies tên là gì?",
+    "intent": "company_info",
+    "expected_keywords": ["ラクかりex", "OCR"]
+  },
+  {
+    "id": 4,
+    "group": "summary_transcripts",
+    "query": "Ngân sách tối đa của khách hàng trong cuộc họp là bao nhiêu?",
+    "intent": "meeting_summary",
+    "expected_keywords": ["４,５００万円", "予算", "予算内"]
+  },
+  {
+    "id": 5,
+    "group": "summary_transcripts",
+    "query": "Khách hàng có những điểm lo lắng (懸念点) nào?",
+    "intent": "meeting_summary",
+    "expected_keywords": ["足音", "吹き抜け", "予算", "価格差"]
+  },
+  {
+    "id": 6,
+    "group": "summary_transcripts",
+    "query": "Các hành động tiếp theo của nhân viên và khách hàng là gì?",
+    "intent": "meeting_summary",
+    "expected_keywords": ["土地", "選定", "キッチン画像", "パンフレット", "資金計画", "明細"]
+  }
+]
