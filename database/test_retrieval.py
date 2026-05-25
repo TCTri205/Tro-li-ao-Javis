@@ -10,7 +10,7 @@ if sys.platform.startswith('win'):
 # Add parent directory to sys.path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from database.chroma_client import get_chroma_client, get_embedding_function
+from database.retriever import JavisRetriever
 
 def run_tests():
     workspace_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -24,20 +24,15 @@ def run_tests():
     with open(test_cases_path, "r", encoding="utf-8") as f:
         test_cases = json.load(f)
         
-    print(f"Connecting to ChromaDB at {db_dir}...")
-    client = get_chroma_client(db_dir)
-    embedding_func = get_embedding_function()
-    
-    # Load collections
+    print(f"Connecting to JavisRetriever at {db_dir}...")
     try:
-        aj_collection = client.get_collection("aj_docs", embedding_function=embedding_func)
-        summary_collection = client.get_collection("summary_transcripts", embedding_function=embedding_func)
+        retriever = JavisRetriever(db_dir)
     except Exception as e:
-        print(f"Error loading collections: {e}. Did you run build_db.py first?")
+        print(f"Error loading JavisRetriever: {e}. Did you run build_db.py first?")
         return
         
     print("\n" + "="*50)
-    print("RUNNING RETRIEVAL TEST SUITE")
+    print("RUNNING RETRIEVAL TEST SUITE (VIA JAVIS RETRIEVER)")
     print("="*50 + "\n")
     
     for case in test_cases:
@@ -50,31 +45,25 @@ def run_tests():
         print(f"Test Case {case_id} [{group} / {intent}]")
         print(f"Query: \"{query}\"")
         
-        # Determine target collection
-        if group == "aj_docs":
-            collection = aj_collection
-        else:
-            collection = summary_collection
+        # Run query via JavisRetriever
+        try:
+            document_objs = retriever.retrieve(query, intent)
+        except Exception as e:
+            print(f"Retrieval error: {e}")
+            print("Status: FAIL (Retrieval raised error)")
+            print("\n" + "="*50 + "\n")
+            continue
             
-        # Run query (retrieve top 3 results)
-        results = collection.query(
-            query_texts=[query],
-            n_results=3
-        )
-        
-        documents = results.get("documents", [[]])[0]
-        metadatas = results.get("metadatas", [[]])[0]
-        distances = results.get("distances", [[]])[0] if "distances" in results else [0.0] * len(documents)
-        
-        print(f"Retrieved {len(documents)} document(s):")
+        print(f"Retrieved {len(document_objs)} document(s):")
         
         # Check keyword matches
-        combined_text = "\n".join(documents)
+        combined_text = "\n".join([doc.page_content for doc in document_objs])
         matched_keywords = [kw for kw in expected_keywords if kw in combined_text]
         match_rate = len(matched_keywords) / len(expected_keywords) if expected_keywords else 1.0
         
-        for idx, (doc, meta, dist) in enumerate(zip(documents, metadatas, distances)):
-            print(f"  Result #{idx+1} (Distance: {dist:.4f}):")
+        for idx, doc in enumerate(document_objs):
+            meta = doc.metadata
+            print(f"  Result #{idx+1}:")
             print(f"    Source File: {meta.get('source_file')}")
             # Print specific metadata depending on collection type
             if group == "aj_docs":
@@ -85,7 +74,7 @@ def run_tests():
                 print(f"    Section {meta.get('section_id')}: {meta.get('section_name')}")
             
             # Print content preview
-            preview = doc.replace('\n', ' ')
+            preview = doc.page_content.replace('\n', ' ')
             if len(preview) > 150:
                 preview = preview[:150] + "..."
             print(f"    Content: {preview}")
