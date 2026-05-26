@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "javis-text2sql"
+version = "0.1.0"
+description = "Javis Text-to-SQL ingestion, routing, query, and evaluation module"
+requires-python = ">=3.11"
+dependencies = [
+  "asyncpg>=0.29",
+  "pydantic>=2.7",
+  "python-dotenv>=1.0",
+  "sqlglot>=25",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8",
+  "pytest-asyncio>=0.23",
+]
+
+[project.scripts]
+javis-text2sql = "javis_text2sql.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+pythonpath = ["src"]
+markers = [
+  "integration: tests requiring PostgreSQL via TEXT2SQL_TEST_DATABASE_URL",
+]

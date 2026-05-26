@@ -1,0 +1,95 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import date, datetime
+from typing import Literal
+from uuid import uuid4
+
+from pydantic import BaseModel, Field, model_validator
+
+
+TurnType = Literal["decision", "question", "proposal", "complaint", "update", "small_talk"]
+Sentiment = Literal["positive", "negative", "neutral"]
+CommitmentStatus = Literal["pending", "done", "cancelled"]
+
+
+@dataclass(frozen=True)
+class Turn:
+    turn_index: int
+    speaker: str
+    content: str
+    timestamp: datetime | None = None
+
+
+@dataclass(frozen=True)
+class MeetingMeta:
+    title: str
+    meeting_date: date
+    speaker_count: int
+    duration_seconds: int
+    summary: str | None
+    source_language: Literal["vi", "ja", "mixed", "en"] = "vi"
+
+
+class AmountInfo(BaseModel):
+    value: float = Field(description="Numeric value of the monetary amount")
+    unit: str = Field(description="Raw monetary unit such as million, man, yen")
+    currency: str = Field(description="Normalized currency code such as VND, JPY, USD")
+    context: str = Field(description="Business context of the amount")
+
+
+class DateMention(BaseModel):
+    raw_text: str = Field(description="Raw date text")
+    resolved_date: date | None = Field(default=None, description="Resolved ISO date when known")
+    confidence: float = Field(ge=0.0, le=1.0, description="Resolution confidence")
+
+
+class CommitmentInfo(BaseModel):
+    commitment_id: str = Field(default_factory=lambda: str(uuid4()))
+    person: str
+    action: str
+    deadline: str | None = None
+    deadline_date: date | None = None
+    status: CommitmentStatus = "pending"
+
+
+class PassageEnrichmentSchema(BaseModel):
+    topics: list[str] = Field(default_factory=list)
+    entities: list[str] = Field(default_factory=list)
+    keywords: list[str] = Field(default_factory=list)
+    turn_types: list[TurnType] = Field(default_factory=list)
+    has_action_item: bool = False
+    action_item_text: str | None = None
+    has_question: bool = False
+    question_text: str | None = None
+    amounts: list[AmountInfo] = Field(default_factory=list)
+    dates_mentioned: list[DateMention] = Field(default_factory=list)
+    commitments: list[CommitmentInfo] = Field(default_factory=list)
+    sentiment: Sentiment = "neutral"
+    importance_score: int = Field(default=1, ge=1, le=5)
+
+    @model_validator(mode="after")
+    def check_metadata_consistency(self) -> "PassageEnrichmentSchema":
+        if self.has_action_item and not self.action_item_text:
+            raise ValueError("action_item_text must be present when has_action_item=True")
+        if self.has_question and not self.question_text:
+            raise ValueError("question_text must be present when has_question=True")
+        return self
+
+
+def empty_enrichment() -> PassageEnrichmentSchema:
+    return PassageEnrichmentSchema(
+        topics=[],
+        entities=[],
+        keywords=[],
+        turn_types=[],
+        has_action_item=False,
+        action_item_text=None,
+        has_question=False,
+        question_text=None,
+        amounts=[],
+        dates_mentioned=[],
+        commitments=[],
+        sentiment="neutral",
+        importance_score=1,
+    )
