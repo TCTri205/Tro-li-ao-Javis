@@ -86,6 +86,36 @@ class PassageEnrichmentSchema(BaseModel):
     sentiment: Sentiment = "neutral"
     importance_score: int = Field(default=1, ge=1, le=5)
 
+    @model_validator(mode="before")
+    @classmethod
+    def sanitize_turn_types(cls, data: any) -> any:
+        if isinstance(data, dict):
+            types = data.get("turn_types")
+            if isinstance(types, list):
+                sanitized = []
+                for t in types:
+                    if not isinstance(t, str):
+                        continue
+                    t_clean = t.strip().lower()
+                    if t_clean in ["decision", "question", "proposal", "complaint", "update", "small_talk"]:
+                        sanitized.append(t_clean)
+                    elif "提案" in t_clean or "希望" in t_clean or "要請" in t_clean:
+                        sanitized.append("proposal")
+                    elif "質問" in t_clean or "疑問" in t_clean:
+                        sanitized.append("question")
+                    elif "決定" in t_clean or "合意" in t_clean or "決定事項" in t_clean:
+                        sanitized.append("decision")
+                    elif "不満" in t_clean or "懸念" in t_clean or "クレーム" in t_clean:
+                        sanitized.append("complaint")
+                    elif "雑談" in t_clean or "挨拶" in t_clean:
+                        sanitized.append("small_talk")
+                    elif "報告" in t_clean or "進捗" in t_clean or "更新" in t_clean:
+                        sanitized.append("update")
+                    else:
+                        sanitized.append("update")
+                data["turn_types"] = sanitized
+        return data
+
     @model_validator(mode="after")
     def check_metadata_consistency(self) -> "PassageEnrichmentSchema":
         if self.has_action_item and not self.action_item_text:

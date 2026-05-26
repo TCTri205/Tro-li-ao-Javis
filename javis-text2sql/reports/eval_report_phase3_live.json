@@ -92,15 +92,15 @@
       "turn_count": 21,
       "passage_count": 2,
       "llm_calls": 2,
-      "latency_ms": 2851.585,
+      "latency_ms": 2144.093,
       "coverage": {
         "topics": {
           "expected": 5,
-          "observed": 17,
+          "observed": 16,
           "matched": 1,
-          "precision": 0.0588,
+          "precision": 0.0625,
           "recall": 0.2,
-          "f1": 0.0909,
+          "f1": 0.0952,
           "missing": [
             "dx-asap",
             "energy japan",
@@ -122,62 +122,50 @@
             "モバイル",
             "人工知能",
             "企業向けdxソリューション",
-            "機械学習",
-            "深層学習"
+            "機械学習"
           ]
         },
         "entities": {
           "expected": 9,
-          "observed": 10,
-          "matched": 7,
-          "precision": 0.7,
-          "recall": 0.7778,
-          "f1": 0.7368,
+          "observed": 8,
+          "matched": 8,
+          "precision": 1.0,
+          "recall": 0.8889,
+          "f1": 0.9412,
           "missing": [
-            "asset japan",
             "đà nẵng"
           ],
-          "extra": [
-            "asset japan グループ",
-            "đà nẵng市",
-            "ベトナム"
-          ]
+          "extra": []
         },
         "amounts": {
           "expected": 0,
-          "observed": 1,
+          "observed": 0,
           "matched": 0,
-          "precision": 0.0,
+          "precision": 1.0,
           "recall": 1.0,
-          "f1": 0.0,
+          "f1": 1.0,
           "missing": [],
-          "extra": [
-            "0||jpy|"
-          ]
+          "extra": []
         },
         "dates": {
           "expected": 0,
-          "observed": 1,
+          "observed": 0,
           "matched": 0,
-          "precision": 0.0,
+          "precision": 1.0,
           "recall": 1.0,
-          "f1": 0.0,
+          "f1": 1.0,
           "missing": [],
-          "extra": [
-            ""
-          ]
+          "extra": []
         },
         "commitments": {
           "expected": 0,
-          "observed": 1,
+          "observed": 0,
           "matched": 0,
-          "precision": 0.0,
+          "precision": 1.0,
           "recall": 1.0,
-          "f1": 0.0,
+          "f1": 1.0,
           "missing": [],
-          "extra": [
-            ""
-          ]
+          "extra": []
         },
         "action_items": {
           "expected": 0,
@@ -190,18 +178,18 @@
           "extra": []
         }
       },
-      "missing_total": 6
+      "missing_total": 5
     },
     {
       "file_name": "AJ_technologies_ja.md",
       "turn_count": 22,
       "passage_count": 2,
       "llm_calls": 2,
-      "latency_ms": 2851.076,
+      "latency_ms": 3873.327,
       "coverage": {
         "topics": {
           "expected": 4,
-          "observed": 14,
+          "observed": 13,
           "matched": 0,
           "precision": 0.0,
           "recall": 0.0,
@@ -215,7 +203,6 @@
           "extra": [
             "ai-ocr",
             "aj technologies",
-            "dxプラットフォーム",
             "ocrサービス",
             "テクノロジー企業",
             "デジタルプラットフォーム",
@@ -231,16 +218,16 @@
         },
         "entities": {
           "expected": 11,
-          "observed": 6,
+          "observed": 7,
           "matched": 3,
-          "precision": 0.5,
+          "precision": 0.4286,
           "recall": 0.2727,
-          "f1": 0.3529,
+          "f1": 0.3333,
           "missing": [
             "ai ocr",
             "aiチャットボット",
+            "aj technologies",
             "yoshio yamashita",
-            "ホムすん",
             "ラクかりex",
             "住宅ローン分析・提案",
             "施工進捗管理",
@@ -249,7 +236,8 @@
           "extra": [
             "aj technologies co., ltd.",
             "山下善央",
-            "愛知県名古屋市中区栄2-2-23 アーク白川公園ビルディング7f"
+            "愛知県名古屋市中区栄2-2-23 アーク白川公園ビルディング7f",
+            "株式会社ajテクノロジーズ"
           ]
         },
         "amounts": {
@@ -307,11 +295,11 @@
       "turn_count": 41,
       "passage_count": 4,
       "llm_calls": 4,
-      "latency_ms": 6663.037,
+      "latency_ms": 6759.925,
       "coverage": {
         "topics": {
           "expected": 2,
-          "observed": 11,
+          "observed": 14,
           "matched": 0,
           "precision": 0.0,
           "recall": 0.0,
@@ -321,22 +309,25 @@
             "next meeting"
           ],
           "extra": [
+            "ガス",
             "キッチン",
             "リビング",
-            "予算",
             "住宅",
             "土地",
             "子ども誕生",
             "家づくり",
             "家賃",
+            "建物",
             "建築",
             "書斎",
-            "賃貸マンション"
+            "賃貸マンション",
+            "資金計画",
+            "電気"
           ]
         },
         "entities": {
           "expected": 1,
-          "observed": 5,
+          "observed": 14,
           "matched": 0,
           "precision": 0.0,
           "recall": 0.0,
@@ -345,10 +336,19 @@
             "4,500万円"
           ],
           "extra": [
+            "ガス",
+            "キッチン",
+            "モデルハウス",
+            "土地",
             "夫",
             "子ども",
             "家族",
+            "家賃",
+            "建物",
             "来訪者",
+            "総予算",
+            "資金計画",
+            "電気",
             "顧客"
           ]
         },
@@ -367,7 +367,7 @@
         },
         "dates": {
           "expected": 1,
-          "observed": 3,
+          "observed": 4,
           "matched": 0,
           "precision": 0.0,
           "recall": 0.0,
@@ -378,6 +378,7 @@
           "extra": [
             "今週日曜",
             "今週金曜",
+            "５月３０日",
             "５月３０日（土）"
           ]
         },
@@ -402,48 +403,53 @@
             "モデルハウス案内前までに最新の土地相場とハザードマップをまとめた資料を用意する",
             "土地提案",
             "好みのキッチン画像３〜４枚を今週日曜までに弊社公式lineへ送付する",
-            "家賃・電気・ガスの明細提出",
-            "書斎の設計を依頼する",
-            "資金計画書作成"
+            "打ち合わせ",
+            "書斎の設計",
+            "資金計画"
           ]
         },
         "action_items": {
           "expected": 7,
-          "observed": 5,
-          "matched": 5,
-          "precision": 1.0,
-          "recall": 0.7143,
-          "f1": 0.8333,
+          "observed": 0,
+          "matched": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
           "missing": [
+            "キッチン画像",
+            "ハザードマップ",
             "夫に確認",
-            "総額4,500万円内に収まりそうな土地"
+            "家賃・電気・ガス",
+            "建築実例パンフレット",
+            "総額4,500万円内に収まりそうな土地",
+            "資金計画書"
           ],
           "extra": []
         }
       },
-      "missing_total": 13
+      "missing_total": 18
     }
   ],
   "aggregate_coverage": {
     "topics": {
       "expected": 11,
-      "observed": 42,
+      "observed": 43,
       "matched": 1,
-      "precision": 0.0238,
+      "precision": 0.0233,
       "recall": 0.0909
     },
     "entities": {
       "expected": 21,
-      "observed": 21,
-      "matched": 10,
-      "precision": 0.4762,
-      "recall": 0.4762
+      "observed": 29,
+      "matched": 11,
+      "precision": 0.3793,
+      "recall": 0.5238
     },
     "amounts": {
       "expected": 1,
-      "observed": 5,
+      "observed": 4,
       "matched": 1,
-      "precision": 0.2,
+      "precision": 0.25,
       "recall": 1.0
     },
     "dates": {
@@ -455,22 +461,22 @@
     },
     "commitments": {
       "expected": 7,
-      "observed": 9,
+      "observed": 8,
       "matched": 0,
       "precision": 0.0,
       "recall": 0.0
     },
     "action_items": {
       "expected": 7,
-      "observed": 5,
-      "matched": 5,
-      "precision": 1.0,
-      "recall": 0.7143
+      "observed": 0,
+      "matched": 0,
+      "precision": 0.0,
+      "recall": 0.0
     }
   },
   "performance": {
-    "ingestion_latency_ms_p50": 2851.585,
-    "ingestion_latency_ms_p95": 6663.037,
+    "ingestion_latency_ms_p50": 3873.327,
+    "ingestion_latency_ms_p95": 6759.925,
     "total_llm_calls": 8,
     "total_passages": 8
   },
@@ -568,8 +574,8 @@
     "EX_rate": 0.75,
     "VES_rate": 1.0,
     "retry_success_rate": 1.0,
-    "latency_ms_p50": 2022.036,
-    "latency_ms_p95": 2029.785,
+    "latency_ms_p50": 2026.283,
+    "latency_ms_p95": 2041.779,
     "cases": [
       {
         "question": "総予算はいくらですか？",
@@ -580,7 +586,7 @@
         "expected_retry": false,
         "sql": "SELECT SUM(amount_value) AS total_amount FROM v_amounts WHERE amount_currency = 'JPY';",
         "error": null,
-        "latency_ms": 2022.036,
+        "latency_ms": 2041.779,
         "ok": true
       },
       {
@@ -592,7 +598,7 @@
         "expected_retry": false,
         "sql": "SELECT COUNT(*) AS commitment_count FROM v_commitments WHERE status = 'pending';",
         "error": null,
-        "latency_ms": 2017.199,
+        "latency_ms": 2026.283,
         "ok": true
       },
       {
@@ -604,7 +610,7 @@
         "expected_retry": false,
         "sql": "DROP TABLE meetings;",
         "error": "Security validation failed: forbidden keyword: DROP",
-        "latency_ms": 2016.459,
+        "latency_ms": 2021.472,
         "ok": true
       },
       {
@@ -616,13 +622,13 @@
         "expected_retry": true,
         "sql": "SELECT COUNT(*) AS commitment_count FROM v_commitments;",
         "error": null,
-        "latency_ms": 2029.785,
+        "latency_ms": 2011.712,
         "ok": true
       }
     ]
   },
   "few_shot_count": 15,
   "all_required_sample_files_present": true,
-  "total_missing_facts": 31,
+  "total_missing_facts": 35,
   "status": "fail"
 }
