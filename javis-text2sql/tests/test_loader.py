@@ -43,6 +43,9 @@ class FakeConn:
         self.next_id += 1
         return f"id-{self.next_id}"
 
+    async def execute(self, query: str, *args: Any) -> str:
+        return "OK"
+
     async def executemany(self, query: str, rows: list[tuple[Any, ...]]) -> None:
         self.executemany_calls.append((query, rows))
 
@@ -81,3 +84,9 @@ async def test_load_meeting_inserts_meeting_passages_turns_and_commitments() -> 
     assert len(commitment_insert[0][1]) >= 1
     assert turn_insert
     assert len(turn_insert[0][1]) == 3
+    first_row = turn_insert[0][1][0]
+    assert len(first_row) == 7
+    embedding_str = first_row[6]
+    assert embedding_str is not None
+    assert embedding_str.startswith("[")
+    assert embedding_str.endswith("]")

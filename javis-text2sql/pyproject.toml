@@ -12,6 +12,9 @@ dependencies = [
   "pydantic>=2.7",
   "python-dotenv>=1.0",
   "sqlglot>=25",
+  "rapidfuzz>=3.0",
+  "tiktoken",
+  "httpx",
 ]
 
 [project.optional-dependencies]

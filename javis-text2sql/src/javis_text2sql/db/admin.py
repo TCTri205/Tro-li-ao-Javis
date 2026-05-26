@@ -57,6 +57,42 @@ async def seed_entity_aliases(database_url: str, seed_file: Path = SEEDS_DIR / "
     return len(rows)
 
 
+async def seed_golden_queries(
+    database_url: str,
+    embedding_client: Any = None,
+) -> int:
+    from javis_text2sql.query.prompt import FEW_SHOT_EXAMPLES
+    from javis_text2sql.llm.embeddings import get_embedding_client
+
+    pool = await create_pool(database_url)
+    embed_client = embedding_client or get_embedding_client()
+
+    questions = [q for q, _ in FEW_SHOT_EXAMPLES]
+    embeddings = await embed_client.embed_texts(questions)
+
+    rows = []
+    for (q, sql), emb in zip(FEW_SHOT_EXAMPLES, embeddings):
+        rows.append((q, sql, str(emb)))
+
+    try:
+        async with pool.acquire() as conn:
+            async with conn.transaction():
+                await conn.executemany(
+                    """
+                    INSERT INTO golden_queries (question, sql, embedding)
+                    VALUES ($1, $2, $3)
+                    ON CONFLICT (question)
+                    DO UPDATE SET
+                        sql = EXCLUDED.sql,
+                        embedding = EXCLUDED.embedding
+                    """,
+                    rows,
+                )
+    finally:
+        await pool.close()
+    return len(rows)
+
+
 async def verify_views(database_url: str) -> dict[str, Any]:
     pool = await create_pool(database_url)
     try:

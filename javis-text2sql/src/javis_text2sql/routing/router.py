@@ -16,45 +16,40 @@ class RoutingDecision(BaseModel):
 
 
 SQL_INTENTS: dict[SqlIntent, list[str]] = {
-    "aggregate": ["tổng", "sum", "count", "đếm", "bao nhiêu", "いくつ", "合計", "何件"],
-    "filter": ["lọc", "filter", "theo", "where", "条件"],
-    "list": ["liệt kê", "list", "danh sách", "tất cả", "一覧", "リスト"],
-    "status_check": ["pending", "done", "chưa xong", "hoàn thành", "完了", "未完了"],
-    "date_filter": ["deadline", "ngày", "bao giờ", "tuần này", "tháng trước", "期限", "日付", "今週", "先月"],
-    "commitment": ["cam kết", "giao việc", "action item", "nhiệm vụ", "タスク", "約束", "宿題"],
-    "amount": ["ngân sách", "chi phí", "số tiền", "tiền", "budget", "予算", "金額", "万円"],
+    "aggregate": ["いくつ", "合計", "何件", "count", "sum"],
+    "filter": ["条件", "filter", "where"],
+    "list": ["一覧", "リスト", "list"],
+    "status_check": ["完了", "未完了", "pending", "done"],
+    "date_filter": ["期限", "日付", "今週", "先月", "deadline"],
+    "commitment": ["タスク", "約束", "宿題", "action item"],
+    "amount": ["予算", "金額", "万円", "budget", "価格", "費用"],
 }
 
 RAG_SIGNALS = [
-    "tóm tắt",
-    "summary",
-    "nói gì",
-    "quyết định gì",
-    "ý kiến",
-    "quan điểm",
-    "tại sao",
-    "nguyên nhân",
-    "bối cảnh",
-    "説明",
     "要約",
     "なぜ",
     "意見",
+    "説明",
+    "概要",
+    "summary",
+    "何と",
+    "どうして",
+    "決定",
+    "決議",
+    "決",
 ]
 
 NUMERIC_SIGNALS = [
-    "tổng",
-    "bao nhiêu",
-    "đếm",
-    "count",
-    "sum",
-    "số tiền",
-    "ngân sách",
-    "chi phí",
     "何件",
     "合計",
     "いくら",
     "金額",
     "予算",
+    "万円",
+    "count",
+    "sum",
+    "価格",
+    "費用",
 ]
 
 

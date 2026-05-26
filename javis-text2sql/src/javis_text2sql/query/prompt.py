@@ -16,39 +16,39 @@ ALLOWED_VIEWS = [
 
 FEW_SHOT_EXAMPLES = [
     (
-        "Anh Bình có cam kết gì chưa hoàn thành?",
-        "SELECT person, action, deadline FROM v_commitments WHERE person ILIKE '%Bình%' AND status = 'pending';",
+        "山下さんの未完了のコミットメントは何ですか？",
+        "SELECT person, action, deadline FROM v_commitments WHERE person ILIKE '%山下%' AND status = 'pending';",
     ),
     (
-        "Chi phí điện trong các cuộc họp tháng này là bao nhiêu?",
-        "SELECT SUM(amount_value) AS total_amount FROM v_amounts WHERE amount_context ILIKE '%điện%' AND meeting_date >= DATE '2026-05-01';",
+        "今月の会議での電気代の費用はいくらですか？",
+        "SELECT SUM(amount_value) AS total_amount FROM v_amounts WHERE amount_context ILIKE '%電気%' AND meeting_date >= DATE '2026-05-01';",
     ),
     (
-        "Liệt kê tất cả action item quan trọng.",
+        "重要なアクションアイテムをすべて一覧表示してください。",
         "SELECT meeting_title, action_item_text, importance_score FROM v_action_items WHERE importance_score >= 4 ORDER BY meeting_date DESC;",
     ),
     (
-        "Có những câu hỏi nào chưa được trả lời?",
+        "未回答の質問はどのようなものがありますか？",
         "SELECT meeting_title, question_text, importance_score FROM v_open_questions ORDER BY importance_score DESC;",
     ),
     (
-        "Ai nhắc đến ngân sách 4,500万円?",
+        "誰が4,500万円の予算について言及しましたか？",
         "SELECT speaker, turn_content, meeting_date FROM v_speaker_turns WHERE turn_content ILIKE '%4,500%' OR turn_content ILIKE '%４,５００%';",
     ),
     (
-        "Tổng ngân sách JPY được nhắc tới là bao nhiêu?",
+        "言及された日本円（JPY）の総予算はいくらですか？",
         "SELECT SUM(amount_value) AS total_amount, amount_currency FROM v_amounts WHERE amount_currency = 'JPY' GROUP BY amount_currency;",
     ),
     (
-        "Những cam kết đến hạn trước 2026-06-01 là gì?",
+        "2026-06-01より前に期限が切れるコミットメントは何ですか？",
         "SELECT person, action, deadline, deadline_date FROM v_commitments WHERE deadline_date < DATE '2026-06-01';",
     ),
     (
-        "VJ Technologies xuất hiện trong những chủ đề nào?",
+        "VJ Technologies はどのようなトピックで言及されていますか？",
         "SELECT meeting_title, topic, source_type FROM v_topics WHERE topic ILIKE '%VJ Technologies%';",
     ),
     (
-        "Thống kê số cam kết theo trạng thái.",
+        "ステータスごとのコミットメント数を集計してください。",
         "SELECT status, COUNT(*) AS commitment_count FROM v_commitments GROUP BY status ORDER BY commitment_count DESC;",
     ),
     (
@@ -72,7 +72,7 @@ FEW_SHOT_EXAMPLES = [
         "SELECT meeting_title, content, importance_score FROM v_statements WHERE sentiment = 'negative' AND importance_score >= 4;",
     ),
     (
-        "Mỗi người có bao nhiêu lượt phát ngôn?",
+        "各発言者の発言数はそれぞれ何回ですか？",
         "SELECT speaker, COUNT(*) AS turn_count FROM v_speaker_turns GROUP BY speaker ORDER BY turn_count DESC;",
     ),
 ]
@@ -82,10 +82,18 @@ def render_few_shots() -> str:
     return "\n\n".join(f"Question: {question}\nSQL: {sql}" for question, sql in FEW_SHOT_EXAMPLES)
 
 
-def build_sql_system_prompt(reference_date: date, entity_map: dict[str, str] | None = None) -> str:
+def build_sql_system_prompt(
+    reference_date: date,
+    entity_map: dict[str, str] | None = None,
+    few_shots: list[tuple[str, str]] | None = None,
+) -> str:
     entity_lines = "\n".join(f"- {alias} => {canonical}" for alias, canonical in (entity_map or {}).items())
     if not entity_lines:
         entity_lines = "- None"
+    
+    shots = few_shots if few_shots is not None else FEW_SHOT_EXAMPLES
+    rendered_few_shots = "\n\n".join(f"Question: {question}\nSQL: {sql}" for question, sql in shots)
+
     return f"""You are an expert PostgreSQL generator for the Javis Text-to-SQL tool.
 Return exactly one read-only SELECT statement. Do not include markdown fences.
 Only query these allowed semantic views: {", ".join(ALLOWED_VIEWS)}.
@@ -95,7 +103,7 @@ Mapped entities:
 {entity_lines}
 
 Few-shot examples:
-{render_few_shots()}
+{rendered_few_shots}
 """
 
 

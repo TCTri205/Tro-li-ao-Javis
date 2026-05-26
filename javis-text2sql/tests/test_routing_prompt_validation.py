@@ -8,9 +8,9 @@ from javis_text2sql.routing.router import route_question
 
 
 def test_router_classifies_sql_rag_and_hybrid() -> None:
-    assert route_question("Tổng ngân sách là bao nhiêu?").route == "sql"
-    assert route_question("Tóm tắt cuộc họp này").route == "rag"
-    assert route_question("Cuộc họp quyết định gì về ngân sách và con số cụ thể là bao nhiêu?").route == "hybrid"
+    assert route_question("総予算はいくらですか？").route == "sql"
+    assert route_question("この会議を要約してください").route == "rag"
+    assert route_question("予算について会議で何が決定され、具体的な金額はいくらですか？").route == "hybrid"
     assert route_question("予算に関する金額を合計してください。").route == "sql"
 
 

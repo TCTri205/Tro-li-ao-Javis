@@ -28,26 +28,44 @@ class MeetingMeta:
     speaker_count: int
     duration_seconds: int
     summary: str | None
-    source_language: Literal["vi", "ja", "mixed", "en"] = "vi"
+    user_id: str = "00000000-0000-0000-0000-000000000000"
+    source_language: Literal["ja"] = "ja"
 
 
 class AmountInfo(BaseModel):
-    value: float = Field(description="Numeric value of the monetary amount")
-    unit: str = Field(description="Raw monetary unit such as million, man, yen")
-    currency: str = Field(description="Normalized currency code such as VND, JPY, USD")
-    context: str = Field(description="Business context of the amount")
+    value: float = Field(default=0.0, description="Numeric value of the monetary amount")
+    unit: str = Field(default="", description="Raw monetary unit such as million, man, yen")
+    currency: str | None = Field(default=None, description="Normalized currency code such as VND, JPY, USD")
+    context: str = Field(default="", description="Business context of the amount")
+
+    @model_validator(mode="after")
+    def resolve_currency(self) -> "AmountInfo":
+        curr = (self.currency or "").strip().upper()
+        if not curr:
+            unit_lower = (self.unit or "").lower()
+            if any(x in unit_lower for x in ["yen", "円", "man", "万", "jpy"]):
+                self.currency = "JPY"
+            elif any(x in unit_lower for x in ["vnd", "đồng", "dong", "đ"]):
+                self.currency = "VND"
+            elif any(x in unit_lower for x in ["usd", "$", "dollar"]):
+                self.currency = "USD"
+            else:
+                self.currency = "JPY"
+        else:
+            self.currency = curr
+        return self
 
 
 class DateMention(BaseModel):
-    raw_text: str = Field(description="Raw date text")
+    raw_text: str = Field(default="", description="Raw date text")
     resolved_date: date | None = Field(default=None, description="Resolved ISO date when known")
-    confidence: float = Field(ge=0.0, le=1.0, description="Resolution confidence")
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0, description="Resolution confidence")
 
 
 class CommitmentInfo(BaseModel):
     commitment_id: str = Field(default_factory=lambda: str(uuid4()))
-    person: str
-    action: str
+    person: str = Field(default="", description="Person responsible for the commitment")
+    action: str = Field(default="", description="Action to be performed")
     deadline: str | None = None
     deadline_date: date | None = None
     status: CommitmentStatus = "pending"

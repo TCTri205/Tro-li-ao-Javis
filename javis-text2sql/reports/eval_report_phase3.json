@@ -92,7 +92,7 @@
       "turn_count": 21,
       "passage_count": 2,
       "llm_calls": 2,
-      "latency_ms": 0.165,
+      "latency_ms": 0.243,
       "coverage": {
         "topics": {
           "expected": 5,
@@ -169,7 +169,7 @@
       "turn_count": 22,
       "passage_count": 2,
       "llm_calls": 2,
-      "latency_ms": 0.098,
+      "latency_ms": 0.106,
       "coverage": {
         "topics": {
           "expected": 4,
@@ -248,7 +248,7 @@
       "turn_count": 41,
       "passage_count": 4,
       "llm_calls": 4,
-      "latency_ms": 0.331,
+      "latency_ms": 0.28,
       "coverage": {
         "topics": {
           "expected": 2,
@@ -361,8 +361,8 @@
     }
   },
   "performance": {
-    "ingestion_latency_ms_p50": 0.165,
-    "ingestion_latency_ms_p95": 0.331,
+    "ingestion_latency_ms_p50": 0.243,
+    "ingestion_latency_ms_p95": 0.28,
     "total_llm_calls": 8,
     "total_passages": 8
   },
@@ -457,9 +457,11 @@
     "execution_success_rate": 0.75,
     "expected_behavior_accuracy": 1.0,
     "exact_result_match_rate": 1.0,
+    "EX_rate": 0.75,
+    "VES_rate": 1.0,
     "retry_success_rate": 1.0,
-    "latency_ms_p50": 0.401,
-    "latency_ms_p95": 0.597,
+    "latency_ms_p50": 2023.363,
+    "latency_ms_p95": 2025.438,
     "cases": [
       {
         "question": "総予算はいくらですか？",
@@ -470,7 +472,7 @@
         "expected_retry": false,
         "sql": "SELECT SUM(amount_value) AS total_amount FROM v_amounts WHERE amount_currency = 'JPY';",
         "error": null,
-        "latency_ms": 0.401,
+        "latency_ms": 2015.629,
         "ok": true
       },
       {
@@ -482,7 +484,7 @@
         "expected_retry": false,
         "sql": "SELECT COUNT(*) AS commitment_count FROM v_commitments WHERE status = 'pending';",
         "error": null,
-        "latency_ms": 0.353,
+        "latency_ms": 2025.438,
         "ok": true
       },
       {
@@ -494,7 +496,7 @@
         "expected_retry": false,
         "sql": "DROP TABLE meetings;",
         "error": "Security validation failed: forbidden keyword: DROP",
-        "latency_ms": 0.057,
+        "latency_ms": 2023.363,
         "ok": true
       },
       {
@@ -506,7 +508,7 @@
         "expected_retry": true,
         "sql": "SELECT COUNT(*) AS commitment_count FROM v_commitments;",
         "error": null,
-        "latency_ms": 0.597,
+        "latency_ms": 2015.586,
         "ok": true
       }
     ]

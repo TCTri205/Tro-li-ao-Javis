@@ -56,3 +56,23 @@ def test_pydantic_schema_enforces_consistency_and_ranges() -> None:
         importance_score=5,
     )
     assert valid.commitments[0].commitment_id
+
+
+def test_split_turns_sub_chunking_long_turns() -> None:
+    long_sentence = "Đây là một câu khá dài được viết bằng tiếng Việt phục vụ kiểm thử hệ thống Javis Text-to-SQL."
+    from javis_text2sql.etl.chunker import count_tokens
+    sent_tokens = count_tokens(long_sentence)
+    
+    repeats = (400 // sent_tokens) + 3
+    long_content = " ".join([long_sentence] * repeats)
+    
+    raw = f"[10:00:00] SpeakerA: {long_content}"
+    
+    turns = split_turns(raw, reference_date=date(2026, 5, 26), max_tokens=400, overlap_count=1)
+    
+    assert len(turns) > 1
+    for turn in turns:
+        assert turn.speaker == "SpeakerA"
+        assert turn.timestamp is not None
+        assert count_tokens(turn.content) <= 400
+        assert long_sentence in turn.content

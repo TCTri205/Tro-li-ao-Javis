@@ -1,15 +1,17 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS vector;
 
 CREATE TABLE IF NOT EXISTS meetings (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL,
     title TEXT NOT NULL,
     meeting_date DATE NOT NULL,
     speaker_count INT NOT NULL CHECK (speaker_count >= 0),
     duration_seconds INT NOT NULL CHECK (duration_seconds >= 0),
     summary TEXT,
     topics JSONB NOT NULL DEFAULT '[]'::jsonb,
-    source_language VARCHAR(10) NOT NULL DEFAULT 'vi' CHECK (source_language IN ('vi', 'ja', 'mixed', 'en')),
+    source_language VARCHAR(10) NOT NULL DEFAULT 'ja' CHECK (source_language = 'ja'),
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -43,6 +45,7 @@ CREATE TABLE IF NOT EXISTS turns (
     speaker TEXT NOT NULL,
     content TEXT NOT NULL,
     timestamp TIMESTAMPTZ,
+    embedding vector(1536),
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uq_turn_per_passage UNIQUE (passage_id, turn_index)
 );
@@ -51,7 +54,7 @@ CREATE TABLE IF NOT EXISTS entity_aliases (
     id SERIAL PRIMARY KEY,
     canonical_name TEXT NOT NULL,
     alias TEXT NOT NULL,
-    language CHAR(2) NOT NULL CHECK (language IN ('vi', 'ja', 'en')),
+    language CHAR(2) NOT NULL CHECK (language = 'ja'),
     entity_type VARCHAR(50),
     UNIQUE (alias, language)
 );
@@ -83,6 +86,7 @@ CREATE INDEX IF NOT EXISTS idx_passages_entities ON passages USING gin (entities
 CREATE INDEX IF NOT EXISTS idx_passages_amounts ON passages USING gin (amounts);
 CREATE INDEX IF NOT EXISTS idx_passages_turn_types ON passages USING gin (turn_types);
 CREATE INDEX IF NOT EXISTS idx_entity_aliases_trgm ON entity_aliases USING gin (alias gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_turns_embedding ON turns USING hnsw (embedding vector_cosine_ops);
 
 CREATE OR REPLACE VIEW v_topics AS
 SELECT
@@ -202,3 +206,24 @@ SELECT
 FROM meetings m
 JOIN passages p ON p.meeting_id = m.id
 JOIN turns t ON t.passage_id = p.id;
+
+ALTER TABLE meetings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE passages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE turns ENABLE ROW LEVEL SECURITY;
+ALTER TABLE commitments ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS tenant_isolation_policy ON meetings;
+CREATE POLICY tenant_isolation_policy ON meetings
+USING (user_id = NULLIF(current_setting('app.current_user_id', true), '')::uuid);
+
+DROP POLICY IF EXISTS tenant_isolation_policy ON passages;
+CREATE POLICY tenant_isolation_policy ON passages
+USING (meeting_id IN (SELECT id FROM meetings));
+
+DROP POLICY IF EXISTS tenant_isolation_policy ON turns;
+CREATE POLICY tenant_isolation_policy ON turns
+USING (meeting_id IN (SELECT id FROM meetings));
+
+DROP POLICY IF EXISTS tenant_isolation_policy ON commitments;
+CREATE POLICY tenant_isolation_policy ON commitments
+USING (meeting_id IN (SELECT id FROM meetings));

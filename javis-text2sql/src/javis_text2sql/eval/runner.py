@@ -21,12 +21,12 @@ from .golden import GOLDEN_BY_FILE, GOLDEN_FIXTURES, GoldenFixture
 
 
 ROUTING_GOLDEN = [
-    ("Tổng ngân sách là bao nhiêu?", "sql"),
-    ("Liệt kê các cam kết chưa xong.", "sql"),
-    ("Bình đã nói gì về ngân sách?", "hybrid"),
-    ("Tóm tắt cuộc họp này.", "rag"),
+    ("総予算はいくらですか？", "sql"),
+    ("未完了のコミットメントを一覧表示してください。", "sql"),
+    ("山下さんは予算について何と言いましたか？", "hybrid"),
+    ("この会議を要約してください。", "rag"),
     ("予算に関する金額を合計してください。", "sql"),
-    ("AJ Technologies là công ty gì?", "rag"),
+    ("AJ Technologiesとはどのような会社ですか？", "rag"),
 ]
 
 SQL_VALIDATION_GOLDEN = [
@@ -228,7 +228,7 @@ class _EvalConn:
     def transaction(self) -> _EvalTransaction:
         return _EvalTransaction()
 
-    async def execute(self, query: str) -> str:
+    async def execute(self, query: str, *args: Any) -> str:
         return "OK"
 
     async def fetch(self, query: str, *args: Any) -> list[dict[str, Any]]:
@@ -318,6 +318,8 @@ async def _pipeline_metrics() -> dict[str, Any]:
         "execution_success_rate": round(success_count / len(TEXT2SQL_PIPELINE_GOLDEN), 4),
         "expected_behavior_accuracy": round(sum(int(case["ok"]) for case in cases) / len(cases), 4),
         "exact_result_match_rate": round(exact_match_count / len(cases), 4),
+        "EX_rate": round(success_count / len(TEXT2SQL_PIPELINE_GOLDEN), 4),
+        "VES_rate": round(exact_match_count / len(cases), 4),
         "retry_success_rate": round(retry_success / retry_expected, 4) if retry_expected else 1.0,
         "latency_ms_p50": _percentile(latencies, 50),
         "latency_ms_p95": _percentile(latencies, 95),

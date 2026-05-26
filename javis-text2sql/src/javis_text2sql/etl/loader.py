@@ -7,6 +7,7 @@ from datetime import date
 from typing import Any
 
 from javis_text2sql.llm.client import LLMClient
+from javis_text2sql.llm.embeddings import EmbeddingClient, get_embedding_client
 
 from .chunker import chunk_turns_into_passages, passage_content, split_turns
 from .models import MeetingMeta, PassageEnrichmentSchema, Turn, empty_enrichment
@@ -54,9 +55,20 @@ async def load_meeting(
     llm_client: LLMClient,
     turns: list[Turn] | None = None,
     max_turns: int = 10,
+    embedding_client: EmbeddingClient | None = None,
 ) -> str:
     parsed_turns = turns or split_turns(raw_transcript, reference_date=meeting_meta.meeting_date)
     passage_groups = chunk_turns_into_passages(parsed_turns, max_turns=max_turns)
+    
+    # Generate embeddings for all turns
+    embed_client = embedding_client or get_embedding_client()
+    turn_contents = [t.content for t in parsed_turns]
+    embeddings = await embed_client.embed_texts(turn_contents)
+    
+    turn_to_embedding = {}
+    for turn, emb in zip(parsed_turns, embeddings):
+        turn_to_embedding[turn] = emb
+
     semaphore = asyncio.Semaphore(10)
     enrichment_results = await asyncio.gather(
         *[
@@ -73,13 +85,15 @@ async def load_meeting(
 
     async with db_pool.acquire() as conn:
         async with conn.transaction():
+            await conn.execute("SELECT set_config('app.current_user_id', $1, true)", str(meeting_meta.user_id))
             meeting_id = await conn.fetchval(
                 """
                 INSERT INTO meetings
-                    (title, meeting_date, speaker_count, duration_seconds, summary, topics, source_language)
-                VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7)
+                    (user_id, title, meeting_date, speaker_count, duration_seconds, summary, topics, source_language)
+                VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8)
                 RETURNING id
                 """,
+                meeting_meta.user_id,
                 meeting_meta.title,
                 meeting_meta.meeting_date,
                 meeting_meta.speaker_count,
@@ -144,11 +158,19 @@ async def load_meeting(
                 await conn.executemany(
                     """
                     INSERT INTO turns
-                        (passage_id, meeting_id, turn_index, speaker, content, timestamp)
-                    VALUES ($1, $2, $3, $4, $5, $6)
+                        (passage_id, meeting_id, turn_index, speaker, content, timestamp, embedding)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7)
                     """,
                     [
-                        (passage_id, meeting_id, turn.turn_index, turn.speaker, turn.content, turn.timestamp)
+                        (
+                            passage_id,
+                            meeting_id,
+                            turn.turn_index,
+                            turn.speaker,
+                            turn.content,
+                            turn.timestamp,
+                            str(turn_to_embedding.get(turn)) if turn_to_embedding.get(turn) is not None else None,
+                        )
                         for turn in group
                     ],
                 )

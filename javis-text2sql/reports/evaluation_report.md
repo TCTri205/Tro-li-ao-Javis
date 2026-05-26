@@ -68,12 +68,12 @@ Bộ định tuyến câu hỏi phân loại chính xác ý đồ người dùng
 
 | STT | Câu hỏi kiểm thử | Luồng mong đợi | Luồng thực tế | Kết quả |
 | :---: | :--- | :---: | :---: | :---: |
-| 1 | Tổng ngân sách là bao nhiêu? | `sql` | `sql` | Đạt |
-| 2 | Liệt kê các cam kết chưa xong. | `sql` | `sql` | Đạt |
-| 3 | Bình đã nói gì về ngân sách? | `hybrid` | `hybrid` | Đạt |
-| 4 | Tóm tắt cuộc họp này. | `rag` | `rag` | Đạt |
+| 1 | 総予算はいくらですか？ | `sql` | `sql` | Đạt |
+| 2 | 未完了のコミットメントを一覧表示してください。 | `sql` | `sql` | Đạt |
+| 3 | 山下さんは予算について何と言いましたか？ | `hybrid` | `hybrid` | Đạt |
+| 4 | この会議を要約してください。 | `rag` | `rag` | Đạt |
 | 5 | 予算に関する金額を合計してください。 | `sql` | `sql` | Đạt |
-| 6 | AJ Technologies là công ty gì? | `rag` | `rag` | Đạt |
+| 6 | AJ Technologiesとはどのような会社ですか？ | `rag` | `rag` | Đạt |
 
 ---
 
@@ -109,7 +109,7 @@ Bộ định tuyến câu hỏi phân loại chính xác ý đồ người dùng
 ### Các trường hợp xử lý
 
 * **Câu hỏi thông thường**:
-  * Tiếng Nhật: `総予算はいくらですか？` (Tổng ngân sách là bao nhiêu?)
+  * Tiếng Nhật: `総予算はいくらですか？`
   * SQL sinh ra: `SELECT SUM(amount_value) AS total_amount FROM v_amounts WHERE amount_currency = 'JPY';`
   * Trạng thái: Thành công (Không cần retry).
 * **Câu hỏi độc hại**:
