@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Javis Chatbot — API Docs</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:        #0d0f14;
+      --surface:   #151820;
+      --border:    #252a36;
+      --accent:    #4f8ef7;
+      --accent2:   #a78bfa;
+      --green:     #34d399;
+      --orange:    #fb923c;
+      --red:       #f87171;
+      --yellow:    #fbbf24;
+      --text:      #e2e8f0;
+      --muted:     #64748b;
+      --code-bg:   #0a0c10;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Sora', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+
+    /* ── Sidebar ── */
+    .layout { display: flex; min-height: 100vh; }
+
+    nav {
+      width: 240px;
+      flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 32px 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .nav-logo {
+      padding: 0 24px 28px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+    .nav-logo h1 { font-size: 1.1rem; font-weight: 700; color: var(--accent); letter-spacing: -0.02em; }
+    .nav-logo p  { font-size: 0.7rem; color: var(--muted); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.08em; }
+
+    nav a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 24px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-decoration: none;
+      border-left: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    nav a:hover { color: var(--text); background: rgba(79,142,247,0.06); }
+    nav a.active { color: var(--accent); border-left-color: var(--accent); background: rgba(79,142,247,0.08); }
+
+    .nav-section-label {
+      padding: 16px 24px 6px;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+
+    .method-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.6rem;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .GET  { background: rgba(52,211,153,0.15); color: var(--green); }
+    .POST { background: rgba(79,142,247,0.15); color: var(--accent); }
+
+    /* ── Main Content ── */
+    main {
+      flex: 1;
+      max-width: 860px;
+      padding: 56px 48px;
+    }
+
+    /* Hero */
+    .hero {
+      margin-bottom: 56px;
+      padding-bottom: 40px;
+      border-bottom: 1px solid var(--border);
+    }
+    .hero-tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      background: rgba(79,142,247,0.1);
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-size: 2.4rem;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 1.15;
+      margin-bottom: 12px;
+    }
+    .hero h1 span { color: var(--accent); }
+    .hero p { color: var(--muted); font-size: 0.95rem; max-width: 540px; }
+
+    /* Base URL */
+    .base-url-box {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin-bottom: 40px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .base-url-box .label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+    .base-url-box code { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--green); }
+
+    /* Section */
+    .section { margin-bottom: 64px; scroll-margin-top: 32px; }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .section-header .method-badge { font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; }
+    .section h2 { font-size: 1.3rem; font-weight: 600; letter-spacing: -0.02em; }
+
+    .endpoint-path {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 16px;
+      padding-left: 2px;
+    }
+
+    .section p { color: #94a3b8; font-size: 0.9rem; margin-bottom: 20px; }
+
+    /* Divider */
+    .section-divider { border: none; border-top: 1px solid var(--border); margin-bottom: 40px; }
+
+    /* Table */
+    .param-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin-bottom: 28px;
+    }
+    .param-table th {
+      text-align: left;
+      padding: 8px 14px;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .param-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(37,42,54,0.5);
+      vertical-align: top;
+    }
+    .param-table tr:last-child td { border-bottom: none; }
+    .param-table code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--accent2);
+      background: rgba(167,139,250,0.08);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+    .param-table .req { color: var(--red); font-size: 0.7rem; font-weight: 600; }
+    .param-table .opt { color: var(--muted); font-size: 0.7rem; }
+
+    /* Code block */
+    .code-block {
+      position: relative;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+    .code-block-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+    }
+    .code-block-header span { font-size: 0.72rem; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+    .copy-btn {
+      font-size: 0.65rem;
+      color: var(--muted);
+      background: none;
+      border: 1px solid var(--border);
+      padding: 3px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: 'Sora', sans-serif;
+      transition: all 0.15s;
+    }
+    .copy-btn:hover { color: var(--text); border-color: var(--muted); }
+    .copy-btn.copied { color: var(--green); border-color: var(--green); }
+
+    pre {
+      padding: 20px;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      line-height: 1.7;
+      color: #cbd5e1;
+    }
+
+    /* JSON color */
+    .k { color: #7dd3fc; }   /* key */
+    .s { color: #86efac; }   /* string value */
+    .n { color: #fb923c; }   /* number */
+    .b { color: #a78bfa; }   /* bool/null */
+    .p { color: #64748b; }   /* punctuation */
+    .c { color: #475569; font-style: italic; } /* comment */
+
+    /* Status pills */
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+    .status-pill {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+    .s-ingesting .status-dot  { background: var(--yellow); }
+    .s-enriching .status-dot  { background: var(--orange); }
+    .s-embedding .status-dot  { background: var(--accent); }
+    .s-ready     .status-dot  { background: var(--green); }
+    .s-failed    .status-dot  { background: var(--red); }
+    .status-name { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; font-weight: 600; margin-bottom: 2px; }
+    .status-desc { font-size: 0.75rem; color: var(--muted); }
+
+    /* Info box */
+    .info-box {
+      background: rgba(79,142,247,0.06);
+      border: 1px solid rgba(79,142,247,0.2);
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-size: 0.85rem;
+      color: #93c5fd;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+    }
+    .info-box .icon { flex-shrink: 0; margin-top: 2px; }
+
+    .warn-box {
+      background: rgba(251,191,36,0.06);
+      border: 1px solid rgba(251,191,36,0.2);
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-size: 0.85rem;
+      color: #fde68a;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+    }
+
+    /* Flow diagram */
+    .flow {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .flow-step {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    .flow-arrow { color: var(--muted); font-size: 0.9rem; padding: 0 4px; }
+
+    /* Tab (mode/role) */
+    .tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+    .tag {
+      font-size: 0.75rem;
+      padding: 4px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .tag-blue   { border-color: rgba(79,142,247,0.4); color: var(--accent); background: rgba(79,142,247,0.08); }
+    .tag-purple { border-color: rgba(167,139,250,0.4); color: var(--accent2); background: rgba(167,139,250,0.08); }
+    .tag-green  { border-color: rgba(52,211,153,0.4); color: var(--green); background: rgba(52,211,153,0.08); }
+    .tag-orange { border-color: rgba(251,191,36,0.4); color: var(--yellow); background: rgba(251,191,36,0.08); }
+
+    /* Docker section */
+    .docker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+    @media (max-width: 640px) { .docker-grid { grid-template-columns: 1fr; } }
+    .docker-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 18px;
+    }
+    .docker-card h4 { font-size: 0.85rem; font-weight: 600; margin-bottom: 10px; color: var(--text); }
+    .docker-card code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--green);
+      display: block;
+      background: var(--code-bg);
+      padding: 8px 12px;
+      border-radius: 6px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ── Sidebar ── -->
+  <nav>
+    <div class="nav-logo">
+      <h1>Javis Chatbot</h1>
+      <p>API Reference v1</p>
+    </div>
+
+    <div class="nav-section-label">Tổng quan</div>
+    <a href="#overview">🏠 Giới thiệu</a>
+    <a href="#status">🔵 Trạng thái ingest</a>
+
+    <div class="nav-section-label">Endpoints</div>
+    <a href="#chat"><span class="method-badge POST">POST</span> Chat</a>
+    <a href="#ingest-transcript"><span class="method-badge POST">POST</span> Ingest Transcript</a>
+    <a href="#get-transcript"><span class="method-badge GET">GET</span> Transcript Status</a>
+    <a href="#upload-doc"><span class="method-badge POST">POST</span> Upload Document</a>
+    <a href="#get-doc"><span class="method-badge GET">GET</span> Document Status</a>
+
+    <div class="nav-section-label">Khác</div>
+    <a href="#docker">🐳 Docker</a>
+    <a href="#postman">📮 Postman</a>
+  </nav>
+
+  <!-- ── Main ── -->
+  <main>
+
+    <!-- Hero -->
+    <div class="hero" id="overview">
+      <div class="hero-tag">API Reference</div>
+      <h1>Javis <span>Chatbot</span><br/>API Docs</h1>
+      <p>Tài liệu hướng dẫn sử dụng toàn bộ các endpoint của Javis Chatbot API — từ chat, ingest transcript meeting đến upload tài liệu công ty.</p>
+    </div>
+
+    <!-- Base URL -->
+    <div class="base-url-box">
+      <div>
+        <div class="label">Base URL</div>
+        <code>http://localhost:8019/api/v1</code>
+      </div>
+      <div style="border-left:1px solid var(--border); padding-left:16px;">
+        <div class="label">Swagger Docs</div>
+        <code>GET /docs</code>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <span class="icon">💡</span>
+      <span>Nếu server chạy với <code style="color:var(--accent2)">APP_PORT=8000</code>, đổi port thành <code style="color:var(--accent2)">8000</code>. Base URL trong Postman collection dùng biến <code style="color:var(--accent2)">{{chatbot_url}}</code>.</span>
+    </div>
+
+    <hr class="section-divider"/>
+
+    <!-- ── 1. CHAT ── -->
+    <section class="section" id="chat">
+      <div class="section-header">
+        <span class="method-badge POST">POST</span>
+        <h2>Chat</h2>
+      </div>
+      <div class="endpoint-path">/api/v1/chat</div>
+      <p>Gửi tin nhắn đến chatbot. Hỗ trợ 3 chế độ: hỏi dữ liệu meeting transcript, hỏi tài liệu công ty, hoặc web search.</p>
+
+      <h3 style="font-size:0.85rem;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.08em;">Request Body</h3>
+      <table class="param-table">
+        <tr><th>Field</th><th>Type</th><th>Bắt buộc</th><th>Mô tả</th></tr>
+        <tr>
+          <td><code>message</code></td><td>string</td><td class="req">✓</td>
+          <td>Câu hỏi gửi đến chatbot</td>
+        </tr>
+        <tr>
+          <td><code>mode</code></td><td>string</td><td class="req">✓</td>
+          <td>
+            <code>customer_data</code> — hỏi dữ liệu transcript<br/>
+            <code>company_info</code> — hỏi tài liệu công ty đã upload<br/>
+            <code>web_search</code> — tìm kiếm web (stub)
+          </td>
+        </tr>
+        <tr>
+          <td><code>role</code></td><td>string</td><td class="req">✓</td>
+          <td>
+            <code>user</code> — chỉ truy cập dữ liệu của chính mình<br/>
+            <code>admin</code> — truy cập across users hoặc theo <code>target_user_id</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>user_id</code></td><td>UUID</td><td class="req">✓</td>
+          <td>ID của người dùng đang gửi tin</td>
+        </tr>
+        <tr>
+          <td><code>target_user_id</code></td><td>UUID</td><td class="opt">optional</td>
+          <td>Dùng khi <code>role=admin</code>, query dữ liệu của user khác</td>
+        </tr>
+        <tr>
+          <td><code>conversation_id</code></td><td>UUID</td><td class="opt">optional</td>
+          <td>ID cuộc hội thoại để giữ context nhiều lượt</td>
+        </tr>
+      </table>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>JSON Body</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre>{
+  <span class="k">"message"</span><span class="p">:</span> <span class="s">"5月26日の会議で、第2四半期の予算はいくらでしたか？"</span><span class="p">,</span>
+  <span class="k">"mode"</span><span class="p">:</span> <span class="s">"customer_data"</span><span class="p">,</span>
+  <span class="k">"role"</span><span class="p">:</span> <span class="s">"user"</span><span class="p">,</span>
+  <span class="k">"user_id"</span><span class="p">:</span> <span class="s">"00000000-0000-0000-0000-000000000001"</span><span class="p">,</span>
+  <span class="k">"target_user_id"</span><span class="p">:</span> <span class="b">null</span><span class="p">,</span>
+  <span class="k">"conversation_id"</span><span class="p">:</span> <span class="b">null</span>
+}</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>cURL</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre>curl -X POST http://localhost:8019/api/v1/chat \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{
+    "message": "今月の会議の概要を教えてください",
+    "mode": "customer_data",
+    "role": "user",
+    "user_id": "00000000-0000-0000-0000-000000000001"
+  }'</span></pre>
+      </div>
+    </section>
+
+    <hr class="section-divider"/>
+
+    <!-- ── 2. INGEST TRANSCRIPT ── -->
+    <section class="section" id="ingest-transcript">
+      <div class="section-header">
+        <span class="method-badge POST">POST</span>
+        <h2>Ingest Transcript</h2>
+      </div>
+      <div class="endpoint-path">/api/v1/chat/transcript/ingest</div>
+      <p>Upload và xử lý transcript meeting. API trả về ngay lập tức, việc ingest chạy background. Dùng <a href="#get-transcript" style="color:var(--accent)">GET transcript status</a> để kiểm tra tiến trình.</p>
+
+      <div class="flow">
+        <div class="flow-step">POST ingest</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step">nhận transcript_id</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step">polling status</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step" style="color:var(--green)">ready ✓</div>
+      </div>
+
+      <h3 style="font-size:0.85rem;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.08em;">Request Body</h3>
+      <table class="param-table">
+        <tr><th>Field</th><th>Type</th><th>Bắt buộc</th><th>Mô tả</th></tr>
+        <tr><td><code>user_id</code></td><td>UUID</td><td class="req">✓</td><td>ID người dùng sở hữu transcript</td></tr>
+        <tr><td><code>transcript</code></td><td>string</td><td class="req">✓</td><td>Nội dung transcript, format <code>[HH:MM:SS-HH:MM:SS][Tên] nội dung</code></td></tr>
+        <tr><td><code>meeting_date</code></td><td>string</td><td class="opt">optional</td><td>Ngày họp, format <code>YYYY-MM-DD</code></td></tr>
+        <tr><td><code>session_id</code></td><td>string</td><td class="opt">optional</td><td>ID phiên họp để deduplicate</td></tr>
+        <tr><td><code>participants</code></td><td>array</td><td class="opt">optional</td><td>Danh sách tên người tham gia</td></tr>
+        <tr><td><code>speaker_count</code></td><td>int</td><td class="opt">optional</td><td>Số người nói</td></tr>
+        <tr>
+          <td><code>force_reingest</code></td><td>boolean</td><td class="opt">optional</td>
+          <td><code>false</code> (default) — bỏ qua nếu đã tồn tại<br/><code>true</code> — xóa và ingest lại</td>
+        </tr>
+      </table>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>JSON Body</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre>{
+  <span class="k">"session_id"</span><span class="p">:</span> <span class="s">"meeting-001"</span><span class="p">,</span>
+  <span class="k">"user_id"</span><span class="p">:</span> <span class="s">"00000000-0000-0000-0000-000000000001"</span><span class="p">,</span>
+  <span class="k">"meeting_date"</span><span class="p">:</span> <span class="s">"2026-05-27"</span><span class="p">,</span>
+  <span class="k">"participants"</span><span class="p">:</span> [<span class="s">"田中"</span><span class="p">,</span> <span class="s">"佐藤"</span>]<span class="p">,</span>
+  <span class="k">"speaker_count"</span><span class="p">:</span> <span class="n">2</span><span class="p">,</span>
+  <span class="k">"force_reingest"</span><span class="p">:</span> <span class="b">false</span><span class="p">,</span>
+  <span class="k">"transcript"</span><span class="p">:</span> <span class="s">"[00:00:00-00:00:05][話者1] お疲れ様です。"</span>
+}</pre>
+      </div>
+
+      <h3 style="font-size:0.85rem;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.08em;">Response</h3>
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>200 OK</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre>{
+  <span class="k">"status"</span><span class="p">:</span> <span class="s">"success"</span><span class="p">,</span>
+  <span class="k">"data"</span><span class="p">:</span> {
+    <span class="k">"transcript_id"</span><span class="p">:</span> <span class="s">"e0b87850-6ea0-58f5-9bfc-afa606d33754"</span><span class="p">,</span>
+    <span class="k">"status"</span><span class="p">:</span> <span class="s">"ingesting"</span><span class="p">,</span>
+    <span class="k">"chunk_counts"</span><span class="p">:</span> {}<span class="p">,</span>
+    <span class="k">"error"</span><span class="p">:</span> <span class="b">null</span>
+  }
+}</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>cURL</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre>curl -X POST http://localhost:8019/api/v1/chat/transcript/ingest \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{
+    "user_id": "00000000-0000-0000-0000-000000000001",
+    "meeting_date": "2026-05-27",
+    "force_reingest": false,
+    "transcript": "[00:00:00-00:00:05][話者1] お疲れ様です。"
+  }'</span></pre>
+      </div>
+    </section>
+
+    <hr class="section-divider"/>
+
+    <!-- ── 3. GET TRANSCRIPT STATUS ── -->
+    <section class="section" id="get-transcript">
+      <div class="section-header">
+        <span class="method-badge GET">GET</span>
+        <h2>Transcript Status</h2>
+      </div>
+      <div class="endpoint-path">/api/v1/chat/transcripts/{transcript_id}</div>
+      <p>Kiểm tra trạng thái xử lý của một transcript sau khi ingest. Polling endpoint này cho đến khi status = <code style="color:var(--green)">ready</code>.</p>
+
+      <table class="param-table">
+        <tr><th>Path Param</th><th>Type</th><th>Mô tả</th></tr>
+        <tr><td><code>transcript_id</code></td><td>UUID</td><td>ID nhận được từ response của ingest</td></tr>
+      </table>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>200 OK — ready</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre>{
+  <span class="k">"status"</span><span class="p">:</span> <span class="s">"success"</span><span class="p">,</span>
+  <span class="k">"data"</span><span class="p">:</span> {
+    <span class="k">"transcript_id"</span><span class="p">:</span> <span class="s">"e0b87850-6ea0-58f5-9bfc-afa606d33754"</span><span class="p">,</span>
+    <span class="k">"status"</span><span class="p">:</span> <span class="s">"ready"</span><span class="p">,</span>
+    <span class="k">"qdrant_synced"</span><span class="p">:</span> <span class="b">true</span><span class="p">,</span>
+    <span class="k">"error"</span><span class="p">:</span> <span class="b">null</span><span class="p">,</span>
+    <span class="k">"summary"</span><span class="p">:</span> <span class="s">"Cuộc họp bàn về kế hoạch ra mắt AiVoice Pro..."</span>
+  }
+}</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>cURL</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre>curl http://localhost:8019/api/v1/chat/transcripts/e0b87850-6ea0-58f5-9bfc-afa606d33754</pre>
+      </div>
+    </section>
+
+    <hr class="section-divider"/>
+
+    <!-- ── 4. UPLOAD DOCUMENT ── -->
+    <section class="section" id="upload-doc">
+      <div class="section-header">
+        <span class="method-badge POST">POST</span>
+        <h2>Upload Company Document</h2>
+      </div>
+      <div class="endpoint-path">/api/v1/chat/company/upload</div>
+      <p>Upload tài liệu công ty (PDF, DOCX, TXT, MD) để chatbot có thể trả lời câu hỏi ở mode <code>company_info</code>. Xử lý chạy background, trả về ngay.</p>
+
+      <div class="warn-box">
+        <span class="icon">⚠️</span>
+        <span>Request type phải là <strong>multipart/form-data</strong>. <strong>Không</strong> set header <code>Content-Type</code> thủ công — để Postman hoặc client tự thêm boundary.</span>
+      </div>
+
+      <h3 style="font-size:0.85rem;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.08em;">Form Fields</h3>
+      <table class="param-table">
+        <tr><th>Field</th><th>Type</th><th>Bắt buộc</th><th>Mô tả</th></tr>
+        <tr>
+          <td><code>file</code></td><td>File</td><td class="req">✓</td>
+          <td>File cần upload. Định dạng hỗ trợ:<br/>
+            <div class="tags" style="margin-top:6px;">
+              <span class="tag tag-blue">.pdf</span>
+              <span class="tag tag-purple">.docx</span>
+              <span class="tag tag-green">.txt</span>
+              <span class="tag tag-orange">.md</span>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>force_reingest</code></td><td>string</td><td class="opt">optional</td>
+          <td><code>"false"</code> hoặc <code>"true"</code> (string, không phải boolean)</td>
+        </tr>
+      </table>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>200 OK</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre>{
+  <span class="k">"status"</span><span class="p">:</span> <span class="s">"success"</span><span class="p">,</span>
+  <span class="k">"data"</span><span class="p">:</span> {
+    <span class="k">"upload_document_id"</span><span class="p">:</span> <span class="s">"..."</span><span class="p">,</span>
+    <span class="k">"filename"</span><span class="p">:</span> <span class="s">"company_doc.md"</span><span class="p">,</span>
+    <span class="k">"content_type"</span><span class="p">:</span> <span class="s">"text/markdown"</span><span class="p">,</span>
+    <span class="k">"size_bytes"</span><span class="p">:</span> <span class="n">1234</span><span class="p">,</span>
+    <span class="k">"document_id"</span><span class="p">:</span> <span class="s">"b45ba2f5-ed0b-5d42-bee1-247e53cd2f62"</span><span class="p">,</span>
+    <span class="k">"status"</span><span class="p">:</span> <span class="s">"ingesting"</span><span class="p">,</span>
+    <span class="k">"chunk_count"</span><span class="p">:</span> <span class="n">0</span><span class="p">,</span>
+    <span class="k">"error"</span><span class="p">:</span> <span class="b">null</span>
+  }
+}</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>cURL</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre>curl -X POST http://localhost:8019/api/v1/chat/company/upload \
+  -F <span class="s">"file=@/path/to/document.md"</span> \
+  -F <span class="s">"force_reingest=false"</span></pre>
+      </div>
+
+      <div class="info-box">
+        <span class="icon">💡</span>
+        <span>Dùng <code>document_id</code> (không phải <code>upload_document_id</code>) để check status.</span>
+      </div>
+    </section>
+
+    <hr class="section-divider"/>
+
+    <!-- ── 5. GET DOCUMENT STATUS ── -->
+    <section class="section" id="get-doc">
+      <div class="section-header">
+        <span class="method-badge GET">GET</span>
+        <h2>Document Status</h2>
+      </div>
+      <div class="endpoint-path">/api/v1/chat/company/documents/{document_id}</div>
+      <p>Kiểm tra trạng thái xử lý của tài liệu công ty đã upload.</p>
+
+      <table class="param-table">
+        <tr><th>Path Param</th><th>Type</th><th>Mô tả</th></tr>
+        <tr><td><code>document_id</code></td><td>UUID</td><td>Lấy từ field <code>document_id</code> trong response upload</td></tr>
+      </table>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>200 OK — ready</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre>{
+  <span class="k">"status"</span><span class="p">:</span> <span class="s">"success"</span><span class="p">,</span>
+  <span class="k">"data"</span><span class="p">:</span> {
+    <span class="k">"document_id"</span><span class="p">:</span> <span class="s">"b45ba2f5-ed0b-5d42-bee1-247e53cd2f62"</span><span class="p">,</span>
+    <span class="k">"filename"</span><span class="p">:</span> <span class="s">"company_doc.md"</span><span class="p">,</span>
+    <span class="k">"content_type"</span><span class="p">:</span> <span class="s">"text/markdown"</span><span class="p">,</span>
+    <span class="k">"size_bytes"</span><span class="p">:</span> <span class="n">1234</span><span class="p">,</span>
+    <span class="k">"status"</span><span class="p">:</span> <span class="s">"ready"</span><span class="p">,</span>
+    <span class="k">"qdrant_synced"</span><span class="p">:</span> <span class="b">true</span><span class="p">,</span>
+    <span class="k">"page_count"</span><span class="p">:</span> <span class="b">null</span><span class="p">,</span>
+    <span class="k">"chunk_count"</span><span class="p">:</span> <span class="n">5</span>
+  }
+}</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>cURL</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre>curl http://localhost:8019/api/v1/chat/company/documents/b45ba2f5-ed0b-5d42-bee1-247e53cd2f62</pre>
+      </div>
+    </section>
+
+    <hr class="section-divider"/>
+
+    <!-- ── STATUS LEGEND ── -->
+    <section class="section" id="status">
+      <h2 style="margin-bottom:20px;font-size:1.3rem;">Trạng thái Ingest</h2>
+      <p>Cả transcript lẫn document đều có lifecycle như sau:</p>
+
+      <div class="status-grid">
+        <div class="status-pill s-ingesting">
+          <div class="status-dot"></div>
+          <div>
+            <div class="status-name">ingesting</div>
+            <div class="status-desc">Đã nhận request, đang xử lý ban đầu</div>
+          </div>
+        </div>
+        <div class="status-pill s-enriching">
+          <div class="status-dot"></div>
+          <div>
+            <div class="status-name">enriching</div>
+            <div class="status-desc">Đang enrich metadata bằng LLM</div>
+          </div>
+        </div>
+        <div class="status-pill s-embedding">
+          <div class="status-dot"></div>
+          <div>
+            <div class="status-name">embedding</div>
+            <div class="status-desc">Đã ghi DB, đang sync Qdrant</div>
+          </div>
+        </div>
+        <div class="status-pill s-ready">
+          <div class="status-dot"></div>
+          <div>
+            <div class="status-name">ready</div>
+            <div class="status-desc">Hoàn tất, có thể query được</div>
+          </div>
+        </div>
+        <div class="status-pill s-failed">
+          <div class="status-dot"></div>
+          <div>
+            <div class="status-name">failed</div>
+            <div class="status-desc">Ingest thất bại, xem field error</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="section-divider"/>
+
+    <!-- ── DOCKER ── -->
+    <section class="section" id="docker">
+      <h2 style="margin-bottom:8px;font-size:1.3rem;">🐳 Docker</h2>
+      <p style="margin-bottom:20px;">Khởi động server bằng Docker Compose.</p>
+
+      <div class="docker-grid">
+        <div class="docker-card">
+          <h4>Development</h4>
+          <code>docker compose -f docker-compose.dev.yml up -d --build</code>
+        </div>
+        <div class="docker-card">
+          <h4>Production</h4>
+          <code>docker compose -f docker-compose.prod.yml up -d --build</code>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>Xem logs</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre>docker compose -f docker-compose.dev.yml logs -f app</pre>
+      </div>
+    </section>
+
+    <hr class="section-divider"/>
+
+    <!-- ── POSTMAN ── -->
+    <section class="section" id="postman">
+      <h2 style="margin-bottom:8px;font-size:1.3rem;">📮 Postman Tips</h2>
+      <p style="margin-bottom:20px;">Hướng dẫn nhanh dùng Postman collection.</p>
+
+      <div class="info-box" style="margin-bottom:16px;">
+        <span class="icon">🔧</span>
+        <span>Set biến <code>chatbot_url</code> = <code>http://localhost:8019</code> trong Postman Environment.</span>
+      </div>
+
+      <table class="param-table">
+        <tr><th>Request</th><th>Cách config trong Postman</th></tr>
+        <tr>
+          <td>Chat / Ingest Transcript</td>
+          <td>Body → <strong>raw</strong> → chọn <strong>JSON</strong></td>
+        </tr>
+        <tr>
+          <td>Upload Document</td>
+          <td>Body → <strong>form-data</strong> → key <code>file</code> chọn type <strong>File</strong>, chọn file; key <code>force_reingest</code> type <strong>Text</strong></td>
+        </tr>
+        <tr>
+          <td>Content-Type với upload</td>
+          <td><strong>Không set</strong> thủ công — Postman tự gán <code>multipart/form-data; boundary=...</code></td>
+        </tr>
+      </table>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  function copyCode(btn) {
+    const pre = btn.closest('.code-block').querySelector('pre');
+    navigator.clipboard.writeText(pre.innerText).then(() => {
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1800);
+    });
+  }
+
+  // Highlight active nav on scroll
+  const sections = document.querySelectorAll('.section, .hero');
+  const links    = document.querySelectorAll('nav a');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const match = document.querySelector(`nav a[href="#${e.target.id}"]`);
+        if (match) match.classList.add('active');
+      }
+    });
+  }, { threshold: 0.3 });
+  sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
