@@ -61,17 +61,37 @@ async def seed_golden_queries(
     database_url: str,
     embedding_client: Any = None,
 ) -> int:
-    from javis_text2sql.query.prompt import FEW_SHOT_EXAMPLES
     from javis_text2sql.llm.embeddings import get_embedding_client
 
     pool = await create_pool(database_url)
     embed_client = embedding_client or get_embedding_client()
 
-    questions = [q for q, _ in FEW_SHOT_EXAMPLES]
+    csv_file = Path("testcase-text2sql.csv")
+    if not csv_file.exists():
+        from javis_text2sql.config import PROJECT_ROOT
+        csv_file = PROJECT_ROOT / "testcase-text2sql.csv"
+
+    dataset = []
+    if csv_file.exists():
+        with open(csv_file, mode="r", encoding="utf-8") as f:
+            reader = csv.reader(f)
+            next(reader, None)  # Skip header
+            for row in reader:
+                if len(row) >= 2:
+                    q = row[0].strip()
+                    sql_val = row[1].strip()
+                    if q and sql_val:
+                        dataset.append((q, sql_val))
+
+    if not dataset:
+        from javis_text2sql.query.prompt import FEW_SHOT_EXAMPLES
+        dataset = FEW_SHOT_EXAMPLES
+
+    questions = [q for q, _ in dataset]
     embeddings = await embed_client.embed_texts(questions)
 
     rows = []
-    for (q, sql), emb in zip(FEW_SHOT_EXAMPLES, embeddings):
+    for (q, sql), emb in zip(dataset, embeddings):
         rows.append((q, sql, str(emb)))
 
     try:

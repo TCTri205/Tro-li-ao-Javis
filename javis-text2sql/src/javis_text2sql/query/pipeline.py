@@ -267,17 +267,14 @@ async def generate_sql(
     reference_date: date,
     few_shots: list[tuple[str, str]],
 ) -> str:
-    system_prompt = build_sql_system_prompt(reference_date=reference_date, entity_map=entities)
+    system_prompt = build_sql_system_prompt(
+        reference_date=reference_date, entity_map=entities, few_shots=few_shots
+    )
     
-    # Inject dynamic few-shots and relative temporal context
-    rendered_few_shots = "\n\n".join(f"Question: {q}\nSQL: {s}" for q, s in few_shots)
     temporal_block = generate_temporal_context(reference_date)
 
     enriched_system_prompt = f"""{system_prompt}
 {temporal_block}
-
-Few-shot examples:
-{rendered_few_shots}
 """
     return clean_sql_markdown(await llm_client.generate(system=enriched_system_prompt, user=question))
 
@@ -342,7 +339,7 @@ async def text2sql_pipeline(
         sql = await generate_sql(question, entities, llm_client, reference_date, few_shots)
         
         # 5. Security Validation
-        validation = validate_sql(sql)
+        validation = validate_sql(sql, question=question)
         if not validation.ok:
             result = Text2SQLResult(
                 success=False,
@@ -361,7 +358,7 @@ async def text2sql_pipeline(
         except Exception as db_error:
             logger.warning("SQL execution failed, retrying once: %s", db_error)
             refined_sql = await refine_sql(question, sql, str(db_error), llm_client, reference_date)
-            refined_validation = validate_sql(refined_sql)
+            refined_validation = validate_sql(refined_sql, question=question)
             if not refined_validation.ok:
                 result = Text2SQLResult(
                     success=False,

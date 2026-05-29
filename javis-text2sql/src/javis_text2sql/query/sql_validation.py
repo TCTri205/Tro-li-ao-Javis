@@ -62,7 +62,7 @@ def _fallback_validate(sql: str) -> SqlValidationResult:
     return SqlValidationResult(True, parser="fallback")
 
 
-def validate_sql(sql: str, allow_fallback: bool = True) -> SqlValidationResult:
+def validate_sql(sql: str, question: str | None = None, allow_fallback: bool = True) -> SqlValidationResult:
     sql = clean_sql_markdown(sql)
     if not sql:
         return SqlValidationResult(False, "empty SQL")
@@ -97,6 +97,51 @@ def validate_sql(sql: str, allow_fallback: bool = True) -> SqlValidationResult:
         bad_tables = sorted({table for table in tables if table not in ALLOWED_VIEWS})
         if bad_tables:
             return SqlValidationResult(False, f"only allowed semantic views can be queried: {bad_tables}")
+
+        # --- ADVANCED AST SEMANTIC CHECKS ---
+        
+        # 1. Block Star (*) and COUNT(*)
+        if parsed.find(exp.Star) is not None:
+            return SqlValidationResult(
+                False, 
+                "Anti-pattern detected: Do not use SELECT * or COUNT(*). Please select explicit columns or use COUNT(1)."
+            )
+
+        # 2. Block completed status on v_commitments
+        if "v_commitments" in tables:
+            for eq in parsed.find_all(exp.EQ):
+                left, right = eq.left, eq.right
+                if isinstance(left, exp.Column) and left.name.lower() == "status":
+                    if isinstance(right, exp.Literal) and right.this.lower() in ("completed", "success"):
+                        return SqlValidationResult(
+                            False,
+                            "Database schema mismatch: 'completed' status is invalid. Use status = 'done' for completed commitments."
+                        )
+
+        # 3. Require source_type filter when querying v_topics
+        if "v_topics" in tables:
+            columns = [c.name.lower() for c in parsed.find_all(exp.Column)]
+            if "source_type" not in columns:
+                return SqlValidationResult(
+                    False,
+                    "Semantic rule violated: Querying 'v_topics' requires explicit filtering on 'source_type' (e.g. source_type = 'topic' or source_type = 'entity')."
+                )
+
+        # 4. Enforce DISTINCT when query asks for different/unique items
+        if question and ("異なる" in question or "different" in question.lower()):
+            has_distinct = parsed.args.get("distinct") is not None
+            if not has_distinct:
+                # Check inside COUNT function as well
+                count_distinct = False
+                for count_func in parsed.find_all(exp.Count):
+                    if count_func.args.get("distinct"):
+                        count_distinct = True
+                if not count_distinct:
+                    return SqlValidationResult(
+                        False,
+                        "Semantic rule violated: Query asks for different/distinct items but SQL is missing the DISTINCT keyword."
+                    )
+
         return SqlValidationResult(True)
     except Exception as exc:
         return SqlValidationResult(False, f"SQL parse error: {exc}")

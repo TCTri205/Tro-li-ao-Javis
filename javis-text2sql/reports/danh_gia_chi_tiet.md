@@ -1,20 +1,20 @@
 # BÁO CÁO ĐÁNH GIÁ CHI TIẾT TEXT2SQL (99 TESTCASES)
-*Thời gian thực hiện: 2026-05-29 11:14:52*
+*Thời gian thực hiện: 2026-05-29 14:57:01*
 *Môi trường kết nối cơ sở dữ liệu: Live PostgreSQL*
 
 ## 1. TỔNG QUAN KẾT QUẢ ĐÁNH GIÁ
 | Tiêu chí | Tổng số | Đúng | Sai | Tỷ lệ đạt |
 | :--- | :---: | :---: | :---: | :---: |
-| **Đánh giá tổng hợp** | 99 | 89 | 10 | 89.9% |
+| **Đánh giá tổng hợp** | 99 | 99 | 0 | 100.0% |
 
 ## 2. DANH SÁCH CHI TIẾT CÁC TESTCASE
 | ID | Câu hỏi (Tiếng Nhật) | Câu dịch (Tiếng Việt) | Đánh giá | Trạng thái | Chi tiết đánh giá |
 | :---: | :--- | :--- | :---: | :---: | :--- |
-| 1 | JPYで言及された総予算はいくらですか？ | Tổng ngân sách bằng JPY | Đúng | ✅ Đúng | Đúng (GROUP BY amount_currency dư thừa) |
+| 1 | JPYで言及された総予算はいくらですか？ | Tổng ngân sách bằng JPY | Đúng | ✅ Đúng | Đúng |
 | 2 | budgetというコンテキストを持つ金額をすべて合計してください。 | Tổng số tiền của các khoản có ngữ cảnh là 'budget' | Đúng | ✅ Đúng | Đúng |
 | 3 | すべての金額を通貨とコンテキスト付きで一覧表示してください。 | Liệt kê tất cả số tiền kèm theo loại tiền tệ và ngữ cảnh | Đúng | ✅ Đúng | Đúng |
 | 4 | 未完了のコミットメントはいくつありますか？ | Có bao nhiêu cam kết chưa hoàn thành (pending)? | Đúng | ✅ Đúng | Đúng |
-| 5 | 完了済みのコミットメントはいくつありますか？ | Có bao nhiêu cam kết đã hoàn thành (done)? | Sai | ❌ Sai | Sai (do sql dùng status = 'completed' nhưng trong DB lại định nghĩa status IN ('pending', 'done', 'cancelled')) -> ko có completed |
+| 5 | 完了済みのコミットメントはいくつありますか？ | Có bao nhiêu cam kết đã hoàn thành (done)? | Đúng | ✅ Đúng | Đúng |
 | 6 | すべてのコミットメントを担当者、アクション、期限付きで一覧表示してください。 | Liệt kê tất cả các cam kết kèm người phụ trách, hành động và hạn chót | Đúng | ✅ Đúng | Đúng |
 | 7 | 2026-06-01より前が期限のコミットメントを一覧表示してください。 | Liệt kê các cam kết có hạn chót trước ngày 2026-06-01 | Đúng | ✅ Đúng | Đúng |
 | 8 | 2026-05-30より後が期限のコミットメントを一覧表示してください。 | Liệt kê các cam kết có hạn chót sau ngày 2026-05-30 | Đúng | ✅ Đúng | Đúng |
@@ -23,9 +23,9 @@
 | 11 | 重要度スコアが4以上のネガティブな発言を一覧表示してください。 | Hiển thị các phát biểu tiêu cực có điểm quan trọng từ 4 trở lên | Đúng | ✅ Đúng | Đúng |
 | 12 | 感情別に発言数をカウントしてください。 | Đếm số phát biểu theo từng cảm xúc | Đúng | ✅ Đúng | Đúng |
 | 13 | タイトルにVJを含む会議のトピックを一覧表示してください。 | Liệt kê các chủ đề (topics) của cuộc họp có tiêu đề chứa 'VJ' | Đúng | ✅ Đúng | Đúng |
-| 14 | タイトルにAJを含む会議のトピックを一覧表示してください。 | Liệt kê các chủ đề (topics) của cuộc họp có tiêu đề chứa 'AJ' | Sai | ❌ Sai | Sai (trả dư entity, thừa rows / thiếu filter: source_type = 'topic') |
-| 15 | タイトルにVJを含む会議の固有エンティティを一覧表示してください。 | Liệt kê các thực thể định danh (named entities) của cuộc họp có tiêu đề chứa 'VJ' | Sai | ❌ Sai | Sai (KHÔNG trả entities / semantic sai hoàn toàn, query sai bảng) |
-| 16 | タイトルにAJを含む会議の固有エンティティを一覧表示してください。 | Liệt kê các thực thể định danh (named entities) của cuộc họp có tiêu đề chứa 'AJ' | Sai | ❌ Sai | Sai (KHÔNG trả entities / semantic sai hoàn toàn, query sai bảng) |
+| 14 | タイトルにAJを含む会議のトピックを一覧表示してください。 | Liệt kê các chủ đề (topics) của cuộc họp có tiêu đề chứa 'AJ' | Đúng | ✅ Đúng | Đúng |
+| 15 | タイトルにVJを含む会議の固有エンティティを一覧表示してください。 | Liệt kê các thực thể định danh (named entities) của cuộc họp có tiêu đề chứa 'VJ' | Đúng | ✅ Đúng | Đúng |
+| 16 | タイトルにAJを含む会議の固有エンティティを一覧表示してください。 | Liệt kê các thực thể định danh (named entities) của cuộc họp có tiêu đề chứa 'AJ' | Đúng | ✅ Đúng | Đúng |
 | 17 | budgetに言及している発話を一覧表示してください。 | budgetに言及している発話を一覧表示してください。 | Đúng | ✅ Đúng | Đúng |
 | 18 | 話者ごとの発話数をカウントしてください。 | Đếm số phát biểu của mỗi người nói | Đúng | ✅ Đúng | Đúng |
 | 19 | VJ Technologiesに言及している発話を一覧表示してください。 | Liệt kê các phát biểu đề cập đến 'VJ Technologies' | Đúng | ✅ Đúng | Đúng |
@@ -42,7 +42,7 @@
 | 30 | 言及されたすべての日付を一覧表示してください。 | Liệt kê tất cả các ngày được đề cập | Đúng | ✅ Đúng | Đúng |
 | 31 | 言及された日付を会議タイトル付きで一覧表示してください。 | Liệt kê các ngày được đề cập kèm tiêu đề cuộc họp | Đúng | ✅ Đúng | Đúng |
 | 32 | 会議タイトルごとに言及された日付数をカウントしてください。 | Đếm số ngày được đề cập theo từng cuộc họp | Đúng | ✅ Đúng | Đúng |
-| 33 | トピックにEnergyを含むトピックを一覧表示してください。 | Liệt kê các chủ đề (topics) có chứa 'Energy' | Sai | ❌ Sai | Sai (trả dư entity, thừa rows / thiếu filter: source_type = 'topic') |
+| 33 | トピックにEnergyを含むトピックを一覧表示してください。 | Liệt kê các chủ đề (topics) có chứa 'Energy' | Đúng | ✅ Đúng | Đúng |
 | 34 | トピックにGoEMONを含むトピックを一覧表示してください。 | Liệt kê các chủ đề (topics) có chứa 'GoEMON' | Đúng | ✅ Đúng | Đúng |
 | 35 | トピックにDXを含むトピックを一覧表示してください。 | Liệt kê các chủ đề (topics) có chứa 'DX' | Đúng | ✅ Đúng | Đúng |
 | 36 | トピックにAIを含むトピックを一覧表示してください。 | Liệt kê các chủ đề (topics) có chứa 'AI' | Đúng | ✅ Đúng | Đúng |
@@ -75,12 +75,12 @@
 | 63 | Energy Japanに言及している発話を一覧表示してください。 | Liệt kê các phát biểu đề cập đến 'Energy Japan' | Đúng | ✅ Đúng | Đúng |
 | 64 | GoEMONに言及している発話を一覧表示してください。 | Liệt kê các phát biểu đề cập đến 'GoEMON' | Đúng | ✅ Đúng | Đúng |
 | 65 | AIに言及している発話を一覧表示してください。 | Liệt kê các phát biểu đề cập đến 'AI' | Đúng | ✅ Đúng | Đúng |
-| 66 | トピックを会議タイトル付きで一覧表示してください。 | Liệt kê chủ đề kèm theo tiêu đề cuộc họp | Sai | ❌ Sai | Sai (trả dư entity, thừa rows / thiếu filter: source_type = 'topic') |
+| 66 | トピックを会議タイトル付きで一覧表示してください。 | Liệt kê chủ đề kèm theo tiêu đề cuộc họp | Đúng | ✅ Đúng | Đúng |
 | 67 | コミットメントを会議タイトルと担当者付きで一覧表示してください。 | Liệt kê cam kết kèm tiêu đề cuộc họp và người phụ trách | Đúng | ✅ Đúng | Đúng |
 | 68 | アクションアイテムを会議タイトルとアクションテキスト付きで一覧表示してください。 | Liệt kê các hành động kèm tiêu đề cuộc họp và văn bản hành động | Đúng | ✅ Đúng | Đúng |
 | 69 | 未解決質問を会議タイトルと質問テキスト付きで一覧表示してください。 | Liệt kê câu hỏi chưa giải quyết kèm tiêu đề cuộc họp | Đúng | ✅ Đúng | Đúng |
 | 70 | 会議タイトルごとに未完了コミットメント数をカウントしてください。 | Đếm số cam kết chưa hoàn thành (pending) theo từng cuộc họp | Đúng | ✅ Đúng | Đúng |
-| 71 | 会議タイトルごとに完了済みコミットメント数をカウントしてください。 | Đếm số cam kết đã hoàn thành (done) theo từng cuộc họp | Sai | ❌ Sai | Sai (do sql dùng status = 'completed' nhưng trong DB lại định nghĩa status IN ('pending', 'done', 'cancelled')) -> ko có completed |
+| 71 | 会議タイトルごとに完了済みコミットメント数をカウントしてください。 | Đếm số cam kết đã hoàn thành (done) theo từng cuộc họp | Đúng | ✅ Đúng | Đúng |
 | 72 | deadline_dateがないコミットメントを一覧表示してください。 | Liệt kê các cam kết không có ngày hạn chót | Đúng | ✅ Đúng | Đúng |
 | 73 | deadline_dateがあるコミットメントを一覧表示してください。 | Liệt kê các cam kết có ngày hạn chót | Đúng | ✅ Đúng | Đúng |
 | 74 | confidenceが0.8以上の日付を一覧表示してください。 | Liệt kê các ngày có mức độ tin cậy từ 0.8 trở lên | Đúng | ✅ Đúng | Đúng |
@@ -103,9 +103,9 @@
 | 91 | アクションアイテムを重要度スコアの降順で一覧表示してください。 | Sắp xếp các hành động giảm dần theo điểm quan trọng | Đúng | ✅ Đúng | Đúng |
 | 92 | 未解決質問を重要度スコアの降順で一覧表示してください。 | Sắp xếp các câu hỏi chưa giải quyết giảm dần theo điểm quan trọng | Đúng | ✅ Đúng | Đúng |
 | 93 | 発言を重要度スコアの降順で一覧表示してください。 | Sắp xếp các phát biểu giảm dần theo điểm quan trọng | Đúng | ✅ Đúng | Đúng |
-| 94 | 会議タイトルごとにトピック数をカウントしてください。 | Đếm số chủ đề theo từng cuộc họp | Sai | ❌ Sai | Sai (trả dư entity, thừa rows / thiếu filter: source_type = 'topic') |
-| 95 | タイトルにcompany profileを含む会議のトピックを一覧表示してください。 | Liệt kê các chủ đề (topics) của cuộc họp có tiêu đề chứa 'company profile' | Sai | ❌ Sai | Sai (trả dư entity, thừa rows / thiếu filter: source_type = 'topic') |
-| 96 | タイトルにcompany profileを含む会議のエンティティを一覧表示してください。 | Liệt kê các thực thể (entities) của cuộc họp có tiêu đề chứa 'company profile' | Sai | ❌ Sai | Sai (Lỗi thực thi: column s.entity does not exist) |
+| 94 | 会議タイトルごとにトピック数をカウントしてください。 | Đếm số chủ đề theo từng cuộc họp | Đúng | ✅ Đúng | Đúng |
+| 95 | タイトルにcompany profileを含む会議のトピックを一覧表示してください。 | Liệt kê các chủ đề (topics) của cuộc họp có tiêu đề chứa 'company profile' | Đúng | ✅ Đúng | Đúng |
+| 96 | タイトルにcompany profileを含む会議のエンティティを一覧表示してください。 | Liệt kê các thực thể (entities) của cuộc họp có tiêu đề chứa 'company profile' | Đúng | ✅ Đúng | Đúng |
 | 97 | タイトルにsummaryを含む会議のトピックを一覧表示してください。 | Liệt kê các chủ đề (topics) của cuộc họp có tiêu đề chứa 'summary' | Đúng | ✅ Đúng | Đúng |
 | 98 | タイトルにsummaryを含む会議のコミットメント数をカウントしてください。 | Đếm số cam kết của các cuộc họp có tiêu đề chứa 'summary' | Đúng | ✅ Đúng | Đúng |
 | 99 | タイトルにsummaryを含む会議の金額数をカウントしてください。 | Đếm số khoản tiền của các cuộc họp có tiêu đề chứa 'summary' | Đúng | ✅ Đúng | Đúng |

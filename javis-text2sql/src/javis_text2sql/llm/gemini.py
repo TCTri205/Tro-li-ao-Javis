@@ -8,29 +8,26 @@ from typing import Any
 import httpx
 
 from javis_text2sql.llm.client import LLMClient, SchemaT
-from javis_text2sql.llm.gemini import GeminiClient
 
 logger = logging.getLogger(__name__)
 
 
-class GroqClient(LLMClient):
+class GeminiClient(LLMClient):
     def __init__(
         self,
         api_keys: list[str],
-        model: str = "llama-3.3-70b-versatile",
+        model: str = "gemini-2.5-flash",
         temperature: float = 0.0,
         max_tokens: int = 1024,
-        gemini_client: GeminiClient | None = None,
     ) -> None:
         if not api_keys:
-            raise ValueError("At least one Groq API key must be provided")
+            raise ValueError("At least one Gemini API key must be provided")
         self.api_keys = [k.strip() for k in api_keys if k.strip()]
         if not self.api_keys:
-            raise ValueError("At least one non-empty Groq API key must be provided")
+            raise ValueError("At least one non-empty Gemini API key must be provided")
         self.model = model
         self.temperature = temperature
         self.max_tokens = max_tokens
-        self.gemini_client = gemini_client
 
         # Index for round-robin rotation
         self._current_index = 0
@@ -42,7 +39,7 @@ class GroqClient(LLMClient):
             self._current_index = (self._current_index + 1) % len(self.api_keys)
             return key
 
-    async def _request_with_rotation(
+    async def _request(
         self, messages: list[dict[str, str]], response_format: dict[str, Any] | None = None
     ) -> str:
         num_keys = len(self.api_keys)
@@ -67,22 +64,24 @@ class GroqClient(LLMClient):
                 payload["response_format"] = response_format
 
             key_display = f"{api_key[:6]}...{api_key[-4:]}" if len(api_key) > 10 else "invalid_key"
+            logger.info(f"Sending request to Gemini ({self.model}) with key {key_display}")
+
             try:
                 async with httpx.AsyncClient(timeout=30.0) as client:
                     response = await client.post(
-                        "https://api.groq.com/openai/v1/chat/completions",
+                        "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
                         json=payload,
                         headers=headers,
                     )
                     
                     if response.status_code == 429:
                         logger.warning(
-                            f"Groq API key ({key_display}) returned 429 Rate Limit. Rotating to next key."
+                            f"Gemini API key ({key_display}) returned 429 Rate Limit. Rotating to next key."
                         )
                         # If a full rotation has failed with 429, back off to reset the limit window
                         if (attempt + 1) % num_keys == 0:
                             sleep_time = 5 * ((attempt + 1) // num_keys)
-                            logger.warning(f"All keys rate limited. Sleeping for {sleep_time}s before retrying...")
+                            logger.warning(f"All Gemini keys rate limited. Sleeping for {sleep_time}s before retrying...")
                             await asyncio.sleep(sleep_time)
                         continue
                     
@@ -91,7 +90,7 @@ class GroqClient(LLMClient):
                     return str(data["choices"][0]["message"]["content"])
             except Exception as e:
                 logger.warning(
-                    f"Groq request failed with key ({key_display}): {e}. Retrying with next key if available."
+                    f"Gemini request failed with key ({key_display}): {e}. Retrying with next key if available."
                 )
                 last_exception = e
                 if (attempt + 1) % num_keys == 0:
@@ -99,26 +98,11 @@ class GroqClient(LLMClient):
                     await asyncio.sleep(sleep_time)
                 continue
 
-        if self.gemini_client:
-            logger.warning(
-                f"All {num_keys} Groq API keys failed after {max_attempts} attempts. "
-                f"Falling back to Gemini ({self.gemini_client.model})."
-            )
-            try:
-                return await self.gemini_client._request(messages, response_format)
-            except Exception as gemini_err:
-                logger.error(f"Gemini fallback request also failed: {gemini_err}")
-                raise RuntimeError(
-                    f"All {num_keys} Groq API keys failed, and Gemini fallback also failed. "
-                    f"Last Groq error: {last_exception}. Gemini error: {gemini_err}"
-                ) from gemini_err
-
         raise RuntimeError(
-            f"All {num_keys} Groq API keys failed after {max_attempts} attempts. Last error: {last_exception}"
+            f"All {num_keys} Gemini API keys failed after {max_attempts} attempts. Last error: {last_exception}"
         )
 
     async def structured_output(self, system: str, user: str, schema: type[SchemaT]) -> SchemaT:
-        # Groq's JSON mode expects the user or system prompt to instruct JSON format.
         schema_json = json.dumps(schema.model_json_schema())
         modified_system = (
             f"{system}\n\n"
@@ -130,7 +114,7 @@ class GroqClient(LLMClient):
             {"role": "system", "content": modified_system},
             {"role": "user", "content": user},
         ]
-        content = await self._request_with_rotation(messages, response_format={"type": "json_object"})
+        content = await self._request(messages, response_format={"type": "json_object"})
         
         parsed = json.loads(content)
         return schema.model_validate(parsed)
@@ -140,4 +124,4 @@ class GroqClient(LLMClient):
             {"role": "system", "content": system},
             {"role": "user", "content": user},
         ]
-        return await self._request_with_rotation(messages)
+        return await self._request(messages)

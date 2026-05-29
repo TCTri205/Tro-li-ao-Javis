@@ -24,8 +24,8 @@ def test_prompt_contains_exactly_15_few_shot_examples_and_allowed_views() -> Non
 
 def test_sql_cleaning_and_validation() -> None:
     assert clean_sql_markdown("```sql\nSELECT * FROM v_topics;\n```") == "SELECT * FROM v_topics;"
-    assert validate_sql("SELECT * FROM v_commitments;").ok
+    assert validate_sql("SELECT person, action FROM v_commitments;").ok
     assert validate_sql("SELECT SUM(amount_value) FROM v_amounts;").ok
-    assert not validate_sql("SELECT * FROM commitments;").ok
+    assert not validate_sql("SELECT person FROM commitments;").ok
     assert not validate_sql("DELETE FROM commitments;").ok
-    assert not validate_sql("SELECT * FROM v_topics; DROP TABLE meetings;").ok
+    assert not validate_sql("SELECT topic FROM v_topics; DROP TABLE meetings;").ok

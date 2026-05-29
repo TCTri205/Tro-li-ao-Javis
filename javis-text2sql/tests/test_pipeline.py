@@ -61,7 +61,7 @@ class FakePool:
 @pytest.mark.asyncio
 async def test_pipeline_success_path_uses_readonly_transaction() -> None:
     conn = FakeConn()
-    llm = FixtureLLMClient(generated_sql=["SELECT COUNT(*) AS answer FROM v_commitments;"])
+    llm = FixtureLLMClient(generated_sql=["SELECT COUNT(1) AS answer FROM v_commitments;"])
     result = await text2sql_pipeline("コミットメントを数えてください", FakePool(conn), llm, date(2026, 5, 26))
 
     assert result.success
@@ -86,13 +86,13 @@ async def test_pipeline_retries_once_after_execution_error() -> None:
     conn = FakeConn(fail_first_execution=True)
     llm = FixtureLLMClient(
         generated_sql=["SELECT missing_column FROM v_commitments;"],
-        refined_sql=["SELECT COUNT(*) AS answer FROM v_commitments;"],
+        refined_sql=["SELECT COUNT(1) AS answer FROM v_commitments;"],
     )
     result = await text2sql_pipeline("コミットメントを数えてください", FakePool(conn), llm, date(2026, 5, 26))
 
     assert result.success
     assert result.retry_used
-    assert result.sql == "SELECT COUNT(*) AS answer FROM v_commitments;"
+    assert result.sql == "SELECT COUNT(1) AS answer FROM v_commitments;"
     assert conn.execution_count == 2
 
 

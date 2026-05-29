@@ -67,6 +67,18 @@ async def _cmd_eval(args: argparse.Namespace) -> None:
     print(json.dumps(report, ensure_ascii=False, indent=2, default=list))
 
 
+async def _cmd_eval_testcases(args: argparse.Namespace) -> None:
+    settings = Settings.from_env()
+    database_url = args.database_url or require_database_url(settings.database_url)
+    
+    from javis_text2sql.eval.eval_testcases import run_evaluation, save_report
+    csv_path = Path(args.csv)
+    output_path = Path(args.output)
+    
+    results = await run_evaluation(csv_path, database_url, args.user_id, args.verbose)
+    save_report(results, output_path)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="javis-text2sql")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -94,6 +106,14 @@ def build_parser() -> argparse.ArgumentParser:
     evaluate.add_argument("--output")
     evaluate.add_argument("--fixture-llm", action="store_true")
     evaluate.set_defaults(handler=_cmd_eval)
+
+    eval_testcases = sub.add_parser("eval-testcases")
+    eval_testcases.add_argument("--csv", default="testcase-text2sql.csv")
+    eval_testcases.add_argument("--output", default="reports/eval_testcases.json")
+    eval_testcases.add_argument("--user-id", default="00000000-0000-0000-0000-000000000000")
+    eval_testcases.add_argument("--verbose", action="store_true")
+    eval_testcases.add_argument("--database-url")
+    eval_testcases.set_defaults(handler=_cmd_eval_testcases)
     return parser
 
 
