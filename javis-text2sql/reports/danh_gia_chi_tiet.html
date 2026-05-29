@@ -1,0 +1,2138 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Javis Text2SQL - Báo cáo Đánh giá Chi tiết</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(17, 25, 40, 0.65);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --primary: #8b5cf6;
+            --primary-glow: rgba(139, 92, 246, 0.15);
+            --accent: #06b6d4;
+            --success: #10b981;
+            --success-glow: rgba(16, 185, 129, 0.15);
+            --danger: #ef4444;
+            --danger-glow: rgba(239, 68, 68, 0.15);
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.15) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            line-height: 1.6;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-area h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            background: linear-gradient(135deg, #fff 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.25rem;
+        }
+
+        .logo-area p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .timestamp {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            backdrop-filter: blur(12px);
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .metric-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 1.75rem;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+        }
+
+        .metric-card.total::before { background: var(--primary); }
+        .metric-card.success::before { background: var(--success); }
+        .metric-card.danger::before { background: var(--danger); }
+        .metric-card.rate::before { background: var(--accent); }
+
+        .metric-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        .metric-label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 2.25rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .controls {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 1.25rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(12px);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .search-wrapper {
+            position: relative;
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .search-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .filter-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 0.6rem 1.2rem;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .filter-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+        }
+
+        .filter-btn.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+            box-shadow: 0 0 12px var(--primary-glow);
+        }
+
+        .table-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            overflow: hidden;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1.2rem 1.5rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.95rem;
+            vertical-align: top;
+        }
+
+        tr {
+            transition: background-color 0.2s ease;
+        }
+
+        tr:hover td {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        .case-id {
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        .question-col {
+            max-width: 320px;
+        }
+
+        .ja-text {
+            font-weight: 500;
+            margin-bottom: 0.4rem;
+        }
+
+        .vi-text {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        .sql-code {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 0.6rem 0.8rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            color: #c084fc;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-width: 450px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.35rem 0.85rem;
+            border-radius: 99px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: var(--success-glow);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .badge-danger {
+            background: var(--danger-glow);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .diagnostic-text {
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .diagnostic-text.fail-reason {
+            color: #fda4af;
+            background: rgba(239, 68, 68, 0.08);
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            border: 1px solid rgba(239, 68, 68, 0.15);
+            max-width: 350px;
+        }
+
+        .diagnostic-text.pass-details {
+            color: var(--text-muted);
+        }
+
+        .diagnostic-text.warning-details {
+            color: #fcd34d;
+            background: rgba(245, 158, 11, 0.08);
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            border: 1px solid rgba(245, 158, 11, 0.15);
+            max-width: 350px;
+        }
+
+        @media (max-width: 1024px) {
+            body { padding: 1rem; }
+            .controls { flex-direction: column; align-items: stretch; }
+            .search-wrapper { min-width: 100%; }
+            .filter-buttons { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-area">
+                <h1>Javis Text2SQL</h1>
+                <p>Báo cáo Đánh giá Chất lượng Ngữ nghĩa và Thừa hành</p>
+            </div>
+            <div class="timestamp">
+                Thời gian quét: 2026-05-29 11:14:52
+            </div>
+        </header>
+
+        <section class="metrics-grid">
+            <div class="metric-card total">
+                <div class="metric-label">Tổng số Test Cases</div>
+                <div class="metric-value">99</div>
+                <div class="metric-desc">Tập kiểm thử tiêu chuẩn javis-text2sql</div>
+            </div>
+            <div class="metric-card success">
+                <div class="metric-label font-bold">Số lượng Đúng</div>
+                <div class="metric-value" style="color: var(--success);">89</div>
+                <div class="metric-desc">Vượt qua các kiểm tra cú pháp, schema và nghiệp vụ</div>
+            </div>
+            <div class="metric-card danger">
+                <div class="metric-label font-bold">Số lượng Sai</div>
+                <div class="metric-value" style="color: var(--danger);">10</div>
+                <div class="metric-desc">Phát hiện lỗi logic hoặc lệch chuẩn cơ sở dữ liệu</div>
+            </div>
+            <div class="metric-card rate">
+                <div class="metric-label">Tỷ lệ chính xác</div>
+                <div class="metric-value" style="color: var(--accent);">89.9%</div>
+                <div class="metric-desc">Chỉ số chất lượng mô hình hiện tại</div>
+            </div>
+        </section>
+
+        <section class="controls">
+            <div class="search-wrapper">
+                <input type="text" id="searchInput" class="search-input" placeholder="Tìm kiếm theo ID, Câu hỏi, SQL hoặc lý do lỗi...">
+            </div>
+            <div class="filter-buttons">
+                <button class="filter-btn active" onclick="filterTable('all', this)">Tất cả (99)</button>
+                <button class="filter-btn" style="color: var(--success);" onclick="filterTable('pass', this)">Đúng (89)</button>
+                <button class="filter-btn" style="color: var(--danger);" onclick="filterTable('fail', this)">Sai (10)</button>
+            </div>
+        </section>
+
+        <section class="table-card">
+            <div class="table-responsive">
+                <table id="evaluationTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 5%;">ID</th>
+                            <th style="width: 30%;">Câu hỏi & Bản dịch</th>
+                            <th style="width: 35%;">Truy vấn SQL Kiểm thử</th>
+                            <th style="width: 10%; text-align: center;">Trạng thái</th>
+                            <th style="width: 20%;">Chi tiết đánh giá</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+    
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#1</td>
+                            <td class="question-col">
+                                <div class="ja-text">JPYで言及された総予算はいくらですか？</div>
+                                <div class="vi-text">Tổng ngân sách bằng JPY</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT SUM(amount_value) AS total_amount, amount_currency FROM v_amounts WHERE amount_currency = 'JPY' GROUP BY amount_currency;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text warning-details">Đúng (GROUP BY amount_currency dư thừa)</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#2</td>
+                            <td class="question-col">
+                                <div class="ja-text">budgetというコンテキストを持つ金額をすべて合計してください。</div>
+                                <div class="vi-text">Tổng số tiền của các khoản có ngữ cảnh là 'budget'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT SUM(amount_value) AS total_amount FROM v_amounts WHERE amount_context ILIKE '%budget%';</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#3</td>
+                            <td class="question-col">
+                                <div class="ja-text">すべての金額を通貨とコンテキスト付きで一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê tất cả số tiền kèm theo loại tiền tệ và ngữ cảnh</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT amount_value, amount_currency, amount_context FROM v_amounts</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#4</td>
+                            <td class="question-col">
+                                <div class="ja-text">未完了のコミットメントはいくつありますか？</div>
+                                <div class="vi-text">Có bao nhiêu cam kết chưa hoàn thành (pending)?</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT COUNT(*) AS commitment_count FROM v_commitments WHERE status = 'pending';</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="fail">
+                            <td class="case-id">#5</td>
+                            <td class="question-col">
+                                <div class="ja-text">完了済みのコミットメントはいくつありますか？</div>
+                                <div class="vi-text">Có bao nhiêu cam kết đã hoàn thành (done)?</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT COUNT(*) AS completed_commitments FROM v_commitments WHERE status = 'completed'</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-danger">Sai</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text fail-reason">Sai (do sql dùng status = 'completed' nhưng trong DB lại định nghĩa status IN ('pending', 'done', 'cancelled')) -> ko có completed</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#6</td>
+                            <td class="question-col">
+                                <div class="ja-text">すべてのコミットメントを担当者、アクション、期限付きで一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê tất cả các cam kết kèm người phụ trách, hành động và hạn chót</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT person, action, deadline FROM v_commitments ORDER BY deadline_date ASC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#7</td>
+                            <td class="question-col">
+                                <div class="ja-text">2026-06-01より前が期限のコミットメントを一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các cam kết có hạn chót trước ngày 2026-06-01</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT person, action, deadline, deadline_date FROM v_commitments WHERE deadline_date < DATE '2026-06-01'</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#8</td>
+                            <td class="question-col">
+                                <div class="ja-text">2026-05-30より後が期限のコミットメントを一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các cam kết có hạn chót sau ngày 2026-05-30</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT person, action, deadline FROM v_commitments WHERE deadline_date > DATE '2026-05-30';</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#9</td>
+                            <td class="question-col">
+                                <div class="ja-text">重要度スコアが4以上のアクションアイテムを表示してください。</div>
+                                <div class="vi-text">Hiển thị các hành động có điểm quan trọng từ 4 trở lên</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, action_item_text, importance_score FROM v_action_items WHERE importance_score >= 4 ORDER BY meeting_date DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#10</td>
+                            <td class="question-col">
+                                <div class="ja-text">すべての未解決の質問を重要度スコア付きで表示してください。</div>
+                                <div class="vi-text">Hiển thị tất cả câu hỏi chưa giải quyết kèm điểm quan trọng</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, question_text, importance_score FROM v_open_questions ORDER BY importance_score DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#11</td>
+                            <td class="question-col">
+                                <div class="ja-text">重要度スコアが4以上のネガティブな発言を一覧表示してください。</div>
+                                <div class="vi-text">Hiển thị các phát biểu tiêu cực có điểm quan trọng từ 4 trở lên</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, content, importance_score FROM v_statements WHERE sentiment = 'negative' AND importance_score >= 4 ORDER BY importance_score DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#12</td>
+                            <td class="question-col">
+                                <div class="ja-text">感情別に発言数をカウントしてください。</div>
+                                <div class="vi-text">Đếm số phát biểu theo từng cảm xúc</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT sentiment, COUNT(*) AS statement_count FROM v_statements GROUP BY sentiment ORDER BY statement_count DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#13</td>
+                            <td class="question-col">
+                                <div class="ja-text">タイトルにVJを含む会議のトピックを一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các chủ đề (topics) của cuộc họp có tiêu đề chứa 'VJ'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, topic, source_type FROM v_topics WHERE meeting_title ILIKE '%VJ%';</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="fail">
+                            <td class="case-id">#14</td>
+                            <td class="question-col">
+                                <div class="ja-text">タイトルにAJを含む会議のトピックを一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các chủ đề (topics) của cuộc họp có tiêu đề chứa 'AJ'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, topic FROM v_topics WHERE meeting_title ILIKE '%AJ%';</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-danger">Sai</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text fail-reason">Sai (trả dư entity, thừa rows / thiếu filter: source_type = 'topic')</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="fail">
+                            <td class="case-id">#15</td>
+                            <td class="question-col">
+                                <div class="ja-text">タイトルにVJを含む会議の固有エンティティを一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các thực thể định danh (named entities) của cuộc họp có tiêu đề chứa 'VJ'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT DISTINCT meeting_title FROM v_topics WHERE topic ILIKE '%VJ%'</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-danger">Sai</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text fail-reason">Sai (KHÔNG trả entities / semantic sai hoàn toàn, query sai bảng)</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="fail">
+                            <td class="case-id">#16</td>
+                            <td class="question-col">
+                                <div class="ja-text">タイトルにAJを含む会議の固有エンティティを一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các thực thể định danh (named entities) của cuộc họp có tiêu đề chứa 'AJ'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT DISTINCT meeting_title, speaker FROM v_speaker_turns WHERE meeting_title ILIKE '%AJ%'</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-danger">Sai</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text fail-reason">Sai (KHÔNG trả entities / semantic sai hoàn toàn, query sai bảng)</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#17</td>
+                            <td class="question-col">
+                                <div class="ja-text">budgetに言及している発話を一覧表示してください。</div>
+                                <div class="vi-text">budgetに言及している発話を一覧表示してください。</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT speaker, turn_content, meeting_date FROM v_speaker_turns WHERE turn_content ILIKE '%budget%' OR turn_content ILIKE '%予算%';</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#18</td>
+                            <td class="question-col">
+                                <div class="ja-text">話者ごとの発話数をカウントしてください。</div>
+                                <div class="vi-text">Đếm số phát biểu của mỗi người nói</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT speaker, COUNT(*) AS turn_count FROM v_speaker_turns GROUP BY speaker ORDER BY turn_count DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#19</td>
+                            <td class="question-col">
+                                <div class="ja-text">VJ Technologiesに言及している発話を一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các phát biểu đề cập đến 'VJ Technologies'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT speaker, turn_content, meeting_date FROM v_speaker_turns WHERE turn_content ILIKE '%VJ Technologies%';</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#20</td>
+                            <td class="question-col">
+                                <div class="ja-text">AJ Technologiesに言及している発話を一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các phát biểu đề cập đến 'AJ Technologies'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT speaker, turn_content, meeting_date FROM v_speaker_turns WHERE turn_content ILIKE '%AJ Technologies%';</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#21</td>
+                            <td class="question-col">
+                                <div class="ja-text">通貨ごとにamount_valueを合計してください。</div>
+                                <div class="vi-text">Tổng số tiền theo từng loại tiền tệ</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT amount_currency, SUM(amount_value) AS total_amount FROM v_amounts GROUP BY amount_currency ORDER BY total_amount DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#22</td>
+                            <td class="question-col">
+                                <div class="ja-text">会議タイトルごとにamount_valueを合計してください。</div>
+                                <div class="vi-text">Tổng số tiền theo từng cuộc họp</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, SUM(amount_value) AS total_amount FROM v_amounts GROUP BY meeting_title ORDER BY total_amount DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#23</td>
+                            <td class="question-col">
+                                <div class="ja-text">通貨がJPYの金額を一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các số tiền có đơn vị là JPY</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT amount_value, amount_context, meeting_date FROM v_amounts WHERE amount_currency = 'JPY' ORDER BY meeting_date DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#24</td>
+                            <td class="question-col">
+                                <div class="ja-text">コンテキストにbudgetを含む金額を一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các số tiền có ngữ cảnh chứa 'budget'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT amount_value, amount_context, amount_currency FROM v_amounts WHERE amount_context ILIKE '%budget%'</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#25</td>
+                            <td class="question-col">
+                                <div class="ja-text">アクションアイテム数をカウントしてください。</div>
+                                <div class="vi-text">Đếm tổng số hành động cần làm (action items)</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT COUNT(*) AS action_item_count FROM v_action_items</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#26</td>
+                            <td class="question-col">
+                                <div class="ja-text">アクションアイテムを会議日付の降順で一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các hành động kèm ngày họp</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, action_item_text, importance_score FROM v_action_items ORDER BY meeting_date DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#27</td>
+                            <td class="question-col">
+                                <div class="ja-text">ステータスごとにコミットメント数を集計してください。</div>
+                                <div class="vi-text">Đếm số cam kết theo từng trạng thái</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT status, COUNT(*) AS commitment_count FROM v_commitments GROUP BY status ORDER BY commitment_count DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#28</td>
+                            <td class="question-col">
+                                <div class="ja-text">担当者名にYamashitaを含むコミットメントを一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các cam kết của người phụ trách 'Yamashita'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT person, action, deadline FROM v_commitments WHERE person ILIKE '%Yamashita%';</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#29</td>
+                            <td class="question-col">
+                                <div class="ja-text">担当者名にYoshioを含むコミットメントを一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các cam kết của người phụ trách 'Yoshio'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT person, action, deadline FROM v_commitments WHERE person ILIKE '%Yoshio%';</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#30</td>
+                            <td class="question-col">
+                                <div class="ja-text">言及されたすべての日付を一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê tất cả các ngày được đề cập</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, date_raw_text, date_resolved FROM v_dates</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#31</td>
+                            <td class="question-col">
+                                <div class="ja-text">言及された日付を会議タイトル付きで一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các ngày được đề cập kèm tiêu đề cuộc họp</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, date_raw_text, date_resolved FROM v_dates ORDER BY date_resolved ASC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#32</td>
+                            <td class="question-col">
+                                <div class="ja-text">会議タイトルごとに言及された日付数をカウントしてください。</div>
+                                <div class="vi-text">Đếm số ngày được đề cập theo từng cuộc họp</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, COUNT(*) AS date_count FROM v_dates GROUP BY meeting_title ORDER BY date_count DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="fail">
+                            <td class="case-id">#33</td>
+                            <td class="question-col">
+                                <div class="ja-text">トピックにEnergyを含むトピックを一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các chủ đề (topics) có chứa 'Energy'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, topic FROM v_topics WHERE topic ILIKE '%Energy%';</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-danger">Sai</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text fail-reason">Sai (trả dư entity, thừa rows / thiếu filter: source_type = 'topic')</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#34</td>
+                            <td class="question-col">
+                                <div class="ja-text">トピックにGoEMONを含むトピックを一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các chủ đề (topics) có chứa 'GoEMON'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, topic, source_type FROM v_topics WHERE topic ILIKE '%GoEMON%';</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#35</td>
+                            <td class="question-col">
+                                <div class="ja-text">トピックにDXを含むトピックを一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các chủ đề (topics) có chứa 'DX'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, topic, source_type FROM v_topics WHERE topic ILIKE '%DX%';</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#36</td>
+                            <td class="question-col">
+                                <div class="ja-text">トピックにAIを含むトピックを一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các chủ đề (topics) có chứa 'AI'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, topic, source_type FROM v_topics WHERE topic ILIKE '%AI%'</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#37</td>
+                            <td class="question-col">
+                                <div class="ja-text">アクションにbudgetを含むコミットメントを一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các cam kết có hành động chứa 'budget'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT person, action, deadline FROM v_commitments WHERE action ILIKE '%budget%';</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#38</td>
+                            <td class="question-col">
+                                <div class="ja-text">アクションテキストにbudgetを含むアクションアイテムを一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các hành động có chứa 'budget'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, action_item_text, importance_score FROM v_action_items WHERE action_item_text ILIKE '%budget%' ORDER BY meeting_date DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#39</td>
+                            <td class="question-col">
+                                <div class="ja-text">重要度スコアが5以上の発言を一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các phát biểu có điểm quan trọng từ 5 trở lên</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, content, importance_score FROM v_statements WHERE importance_score >= 5 ORDER BY importance_score DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#40</td>
+                            <td class="question-col">
+                                <div class="ja-text">ネガティブ感情の発話を一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các phát biểu mang cảm xúc tiêu cực (negative)</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, content, importance_score FROM v_statements WHERE sentiment = 'negative'</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#41</td>
+                            <td class="question-col">
+                                <div class="ja-text">topics内の異なるmeeting_id数をカウントしてください。</div>
+                                <div class="vi-text">Đếm số cuộc họp khác nhau trong bảng topics</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT COUNT(DISTINCT meeting_id) AS meeting_count FROM v_topics</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#42</td>
+                            <td class="question-col">
+                                <div class="ja-text">commitments内の異なるmeeting_id数をカウントしてください。</div>
+                                <div class="vi-text">Đếm số cuộc họp khác nhau trong bảng commitments</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT COUNT(DISTINCT meeting_id) AS meeting_count FROM v_commitments;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#43</td>
+                            <td class="question-col">
+                                <div class="ja-text">topicsから会議タイトルと日付を一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê tiêu đề và ngày họp từ bảng topics</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, meeting_date FROM v_topics ORDER BY meeting_date DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#44</td>
+                            <td class="question-col">
+                                <div class="ja-text">commitmentsから会議タイトルと日付を一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê tiêu đề và ngày họp từ bảng commitments</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, meeting_date FROM v_commitments ORDER BY meeting_date DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#45</td>
+                            <td class="question-col">
+                                <div class="ja-text">amountsから会議タイトルと日付を一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê tiêu đề và ngày họp từ bảng amounts</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, meeting_date FROM v_amounts ORDER BY meeting_date DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#46</td>
+                            <td class="question-col">
+                                <div class="ja-text">タイトルにHousingを含む会議の発話を一覧表示してください。</div>
+                                <div class="vi-text">タイトルにHousingを含む会議の発話を一覧表示してください。</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, speaker, turn_content FROM v_speaker_turns WHERE meeting_title ILIKE '%Housing%'</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#47</td>
+                            <td class="question-col">
+                                <div class="ja-text">タイトルにHousingを含む会議のすべてのコミットメントを表示してください。</div>
+                                <div class="vi-text">Hiển thị tất cả cam kết của các cuộc họp có tiêu đề chứa 'Housing'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, person, action, deadline FROM v_commitments WHERE meeting_title ILIKE '%Housing%'</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#48</td>
+                            <td class="question-col">
+                                <div class="ja-text">タイトルにHousingを含む会議のコミットメント数をカウントしてください。</div>
+                                <div class="vi-text">Đếm số cam kết của các cuộc họp có tiêu đề chứa 'Housing'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT COUNT(*) AS commitment_count FROM v_commitments WHERE meeting_title ILIKE '%Housing%';</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#49</td>
+                            <td class="question-col">
+                                <div class="ja-text">タイトルにHousingを含む会議の金額を表示してください。</div>
+                                <div class="vi-text">Hiển thị số tiền của các cuộc họp có tiêu đề chứa 'Housing'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, amount_value, amount_currency FROM v_amounts WHERE meeting_title ILIKE '%Housing%';</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#50</td>
+                            <td class="question-col">
+                                <div class="ja-text">source_typeがentityのトピックを一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các thực thể (source_type = 'entity')</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, topic FROM v_topics WHERE source_type = 'entity'</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#51</td>
+                            <td class="question-col">
+                                <div class="ja-text">source_typeごとにトピック数をカウントしてください。</div>
+                                <div class="vi-text">Đếm số chủ đề theo từng loại source_type</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT source_type, COUNT(*) AS topic_count FROM v_topics GROUP BY source_type ORDER BY topic_count DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#52</td>
+                            <td class="question-col">
+                                <div class="ja-text">会議日付が2026-05-26のトピックを一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các chủ đề của cuộc họp ngày 2026-05-26</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, topic, source_type FROM v_topics WHERE meeting_date = DATE '2026-05-26'</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#53</td>
+                            <td class="question-col">
+                                <div class="ja-text">会議日付が2026-05-26のコミットメントを一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các cam kết của cuộc họp ngày 2026-05-26</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT person, action, deadline FROM v_commitments WHERE meeting_date = DATE '2026-05-26'</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#54</td>
+                            <td class="question-col">
+                                <div class="ja-text">会議日付が2026-05-26のアクションアイテムを一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các hành động kèm ngày họp</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, action_item_text, importance_score FROM v_action_items WHERE meeting_date = DATE '2026-05-26' ORDER BY importance_score DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#55</td>
+                            <td class="question-col">
+                                <div class="ja-text">会議日付が2026-05-26の未解決質問を一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các câu hỏi chưa giải quyết của cuộc họp ngày 2026-05-26</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, question_text, importance_score FROM v_open_questions WHERE meeting_date = DATE '2026-05-26' ORDER BY importance_score DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#56</td>
+                            <td class="question-col">
+                                <div class="ja-text">amount_valueが1000以上の金額を一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các số tiền có giá trị từ 1000 trở lên</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, amount_context, amount_value, amount_currency FROM v_amounts WHERE amount_value >= 1000 ORDER BY amount_value DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#57</td>
+                            <td class="question-col">
+                                <div class="ja-text">金額をamount_valueの降順で一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các khoản tiền sắp xếp giảm dần theo giá trị</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT amount_context, amount_value, amount_currency FROM v_amounts ORDER BY amount_value DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#58</td>
+                            <td class="question-col">
+                                <div class="ja-text">コンテキストにelectricを含む総金額を表示してください。</div>
+                                <div class="vi-text">Tổng số tiền của các khoản có ngữ cảnh chứa 'electric'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT SUM(amount_value) AS total_amount FROM v_amounts WHERE amount_context ILIKE '%electric%';</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#59</td>
+                            <td class="question-col">
+                                <div class="ja-text">コンテキストにbudgetを含む総金額を表示してください。</div>
+                                <div class="vi-text">Tổng số tiền của các khoản có ngữ cảnh chứa 'budget'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT SUM(amount_value) AS total_amount FROM v_amounts WHERE amount_context ILIKE '%budget%'</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#60</td>
+                            <td class="question-col">
+                                <div class="ja-text">話者がdocumentの発話数をカウントしてください。</div>
+                                <div class="vi-text">Đếm số phát biểu của người nói 'document'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT speaker, COUNT(*) AS turn_count FROM v_speaker_turns WHERE speaker ILIKE '%document%' GROUP BY speaker ORDER BY turn_count DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#61</td>
+                            <td class="question-col">
+                                <div class="ja-text">異なる話者を一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các người nói khác nhau</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT DISTINCT speaker FROM v_speaker_turns</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#62</td>
+                            <td class="question-col">
+                                <div class="ja-text">異なる話者数をカウントしてください。</div>
+                                <div class="vi-text">Đếm số người nói khác nhau</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT COUNT(DISTINCT speaker) AS speaker_count FROM v_speaker_turns</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#63</td>
+                            <td class="question-col">
+                                <div class="ja-text">Energy Japanに言及している発話を一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các phát biểu đề cập đến 'Energy Japan'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT speaker, turn_content, meeting_date FROM v_speaker_turns WHERE turn_content ILIKE '%Energy Japan%'</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#64</td>
+                            <td class="question-col">
+                                <div class="ja-text">GoEMONに言及している発話を一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các phát biểu đề cập đến 'GoEMON'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT speaker, turn_content, meeting_date FROM v_speaker_turns WHERE turn_content ILIKE '%GoEMON%';</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#65</td>
+                            <td class="question-col">
+                                <div class="ja-text">AIに言及している発話を一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các phát biểu đề cập đến 'AI'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT speaker, turn_content, meeting_date FROM v_speaker_turns WHERE turn_content ILIKE '%AI%'</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="fail">
+                            <td class="case-id">#66</td>
+                            <td class="question-col">
+                                <div class="ja-text">トピックを会議タイトル付きで一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê chủ đề kèm theo tiêu đề cuộc họp</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, topic FROM v_topics ORDER BY meeting_title;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-danger">Sai</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text fail-reason">Sai (trả dư entity, thừa rows / thiếu filter: source_type = 'topic')</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#67</td>
+                            <td class="question-col">
+                                <div class="ja-text">コミットメントを会議タイトルと担当者付きで一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê cam kết kèm tiêu đề cuộc họp và người phụ trách</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, person, action, deadline FROM v_commitments ORDER BY meeting_title, person;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#68</td>
+                            <td class="question-col">
+                                <div class="ja-text">アクションアイテムを会議タイトルとアクションテキスト付きで一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các hành động kèm tiêu đề cuộc họp và văn bản hành động</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, action_item_text FROM v_action_items ORDER BY meeting_date DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#69</td>
+                            <td class="question-col">
+                                <div class="ja-text">未解決質問を会議タイトルと質問テキスト付きで一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê câu hỏi chưa giải quyết kèm tiêu đề cuộc họp</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, question_text FROM v_open_questions ORDER BY meeting_title ASC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#70</td>
+                            <td class="question-col">
+                                <div class="ja-text">会議タイトルごとに未完了コミットメント数をカウントしてください。</div>
+                                <div class="vi-text">Đếm số cam kết chưa hoàn thành (pending) theo từng cuộc họp</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, COUNT(*) AS pending_commitment_count FROM v_commitments WHERE status = 'pending' GROUP BY meeting_title ORDER BY pending_commitment_count DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="fail">
+                            <td class="case-id">#71</td>
+                            <td class="question-col">
+                                <div class="ja-text">会議タイトルごとに完了済みコミットメント数をカウントしてください。</div>
+                                <div class="vi-text">Đếm số cam kết đã hoàn thành (done) theo từng cuộc họp</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, COUNT(*) AS completed_commitment_count FROM v_commitments WHERE status = 'completed' GROUP BY meeting_title ORDER BY completed_commitment_count DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-danger">Sai</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text fail-reason">Sai (do sql dùng status = 'completed' nhưng trong DB lại định nghĩa status IN ('pending', 'done', 'cancelled')) -> ko có completed</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#72</td>
+                            <td class="question-col">
+                                <div class="ja-text">deadline_dateがないコミットメントを一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các cam kết không có ngày hạn chót</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT person, action, deadline FROM v_commitments WHERE deadline_date IS NULL;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#73</td>
+                            <td class="question-col">
+                                <div class="ja-text">deadline_dateがあるコミットメントを一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các cam kết có ngày hạn chót</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT person, action, deadline, deadline_date FROM v_commitments WHERE deadline_date IS NOT NULL;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#74</td>
+                            <td class="question-col">
+                                <div class="ja-text">confidenceが0.8以上の日付を一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các ngày có mức độ tin cậy từ 0.8 trở lên</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, date_raw_text, date_resolved, confidence FROM v_dates WHERE confidence >= 0.8</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#75</td>
+                            <td class="question-col">
+                                <div class="ja-text">confidenceが1.0未満の日付を一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các ngày có mức độ tin cậy nhỏ hơn 1.0</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, date_raw_text, date_resolved, confidence FROM v_dates WHERE confidence < 1.0</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#76</td>
+                            <td class="question-col">
+                                <div class="ja-text">重要度スコアが4以上のアクションアイテム数をカウントしてください。</div>
+                                <div class="vi-text">Hiển thị các hành động có điểm quan trọng từ 4 trở lên</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT COUNT(*) AS action_item_count FROM v_action_items WHERE importance_score >= 4</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#77</td>
+                            <td class="question-col">
+                                <div class="ja-text">重要度スコアが4以上の未解決質問数をカウントしてください。</div>
+                                <div class="vi-text">Đếm số câu hỏi chưa giải quyết có điểm quan trọng từ 4 trở lên</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT COUNT(*) AS open_question_count FROM v_open_questions WHERE importance_score >= 4</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#78</td>
+                            <td class="question-col">
+                                <div class="ja-text">感情がneutralの発言を一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các phát biểu có cảm xúc trung lập (neutral)</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, content, importance_score FROM v_statements WHERE sentiment = 'neutral'</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#79</td>
+                            <td class="question-col">
+                                <div class="ja-text">会議タイトルごとに発言数をカウントしてください。</div>
+                                <div class="vi-text">Đếm số phát biểu theo từng cuộc họp</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, COUNT(*) AS turn_count FROM v_speaker_turns GROUP BY meeting_title ORDER BY turn_count DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#80</td>
+                            <td class="question-col">
+                                <div class="ja-text">会議タイトルごとに発話数をカウントしてください。</div>
+                                <div class="vi-text">Đếm số phát biểu theo từng cuộc họp</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, COUNT(*) AS turn_count FROM v_speaker_turns GROUP BY meeting_title ORDER BY turn_count DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#81</td>
+                            <td class="question-col">
+                                <div class="ja-text">発話数が多い上位5人の話者を一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê 5 người nói phát biểu nhiều nhất</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT speaker, COUNT(*) AS turn_count FROM v_speaker_turns GROUP BY speaker ORDER BY turn_count DESC LIMIT 5;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#82</td>
+                            <td class="question-col">
+                                <div class="ja-text">4500に言及している発話を一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các phát biểu đề cập đến số tiền 4,500</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT speaker, turn_content, meeting_date FROM v_speaker_turns WHERE turn_content ILIKE '%4,500%' OR turn_content ILIKE '%４,５００%'</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#83</td>
+                            <td class="question-col">
+                                <div class="ja-text">unitにmanを含むamount_valueを合計してください。</div>
+                                <div class="vi-text">Tổng số tiền của các khoản có đơn vị chứa 'man'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT SUM(amount_value) AS total_amount FROM v_amounts WHERE amount_unit ILIKE '%man%';</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#84</td>
+                            <td class="question-col">
+                                <div class="ja-text">タイトルにVJを含む会議の金額コンテキストと値を一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê số tiền và ngữ cảnh của cuộc họp chứa 'VJ'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT amount_context, amount_value FROM v_amounts WHERE meeting_title ILIKE '%VJ%'</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#85</td>
+                            <td class="question-col">
+                                <div class="ja-text">VJ Technologiesに言及している会議タイトルを一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê tiêu đề cuộc họp đề cập đến 'VJ Technologies'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title FROM v_topics WHERE topic ILIKE '%VJ Technologies%'</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#86</td>
+                            <td class="question-col">
+                                <div class="ja-text">AJ Technologiesに言及している会議タイトルを一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê tiêu đề cuộc họp đề cập đến 'AJ Technologies'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT DISTINCT meeting_title FROM v_topics WHERE topic ILIKE '%AJ Technologies%';</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#87</td>
+                            <td class="question-col">
+                                <div class="ja-text">ONE Financial Serviceに言及している会議タイトルを一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê tiêu đề cuộc họp đề cập đến 'ONE Financial Service'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT DISTINCT meeting_title FROM v_topics WHERE topic ILIKE '%ONE Financial Service%'</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#88</td>
+                            <td class="question-col">
+                                <div class="ja-text">Energy Japanに言及している会議タイトルを一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê tiêu đề cuộc họp đề cập đến 'Energy Japan'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT DISTINCT meeting_title FROM v_topics WHERE topic ILIKE '%Energy Japan%'</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#89</td>
+                            <td class="question-col">
+                                <div class="ja-text">コミットメントをdeadline_dateの昇順で一覧表示してください。</div>
+                                <div class="vi-text">Sắp xếp cam kết theo thứ tự tăng dần của ngày hạn chót</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT person, action, deadline, deadline_date FROM v_commitments ORDER BY deadline_date ASC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#90</td>
+                            <td class="question-col">
+                                <div class="ja-text">deadlineにthis weekを含むコミットメントを一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các cam kết có hạn chót trong tuần này</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT person, action, deadline FROM v_commitments WHERE deadline ILIKE '%this week%' OR deadline ILIKE '%今週%';</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#91</td>
+                            <td class="question-col">
+                                <div class="ja-text">アクションアイテムを重要度スコアの降順で一覧表示してください。</div>
+                                <div class="vi-text">Sắp xếp các hành động giảm dần theo điểm quan trọng</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, action_item_text, importance_score FROM v_action_items ORDER BY importance_score DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#92</td>
+                            <td class="question-col">
+                                <div class="ja-text">未解決質問を重要度スコアの降順で一覧表示してください。</div>
+                                <div class="vi-text">Sắp xếp các câu hỏi chưa giải quyết giảm dần theo điểm quan trọng</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, question_text, importance_score FROM v_open_questions ORDER BY importance_score DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#93</td>
+                            <td class="question-col">
+                                <div class="ja-text">発言を重要度スコアの降順で一覧表示してください。</div>
+                                <div class="vi-text">Sắp xếp các phát biểu giảm dần theo điểm quan trọng</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, content, importance_score FROM v_statements ORDER BY importance_score DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="fail">
+                            <td class="case-id">#94</td>
+                            <td class="question-col">
+                                <div class="ja-text">会議タイトルごとにトピック数をカウントしてください。</div>
+                                <div class="vi-text">Đếm số chủ đề theo từng cuộc họp</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, COUNT(*) AS topic_count FROM v_topics GROUP BY meeting_title ORDER BY topic_count DESC;</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-danger">Sai</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text fail-reason">Sai (trả dư entity, thừa rows / thiếu filter: source_type = 'topic')</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="fail">
+                            <td class="case-id">#95</td>
+                            <td class="question-col">
+                                <div class="ja-text">タイトルにcompany profileを含む会議のトピックを一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các chủ đề (topics) của cuộc họp có tiêu đề chứa 'company profile'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, topic FROM v_topics WHERE meeting_title ILIKE '%company profile%';</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-danger">Sai</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text fail-reason">Sai (trả dư entity, thừa rows / thiếu filter: source_type = 'topic')</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="fail">
+                            <td class="case-id">#96</td>
+                            <td class="question-col">
+                                <div class="ja-text">タイトルにcompany profileを含む会議のエンティティを一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các thực thể (entities) của cuộc họp có tiêu đề chứa 'company profile'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT DISTINCT t.meeting_title, s.entity 
+FROM v_topics t 
+JOIN v_statements s ON t.meeting_id = s.meeting_id 
+WHERE t.meeting_title ILIKE '%company profile%';</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-danger">Sai</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text fail-reason">Sai (Lỗi thực thi: column s.entity does not exist)</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#97</td>
+                            <td class="question-col">
+                                <div class="ja-text">タイトルにsummaryを含む会議のトピックを一覧表示してください。</div>
+                                <div class="vi-text">Liệt kê các chủ đề (topics) của cuộc họp có tiêu đề chứa 'summary'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT meeting_title, topic, source_type FROM v_topics WHERE meeting_title ILIKE '%summary%';</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#98</td>
+                            <td class="question-col">
+                                <div class="ja-text">タイトルにsummaryを含む会議のコミットメント数をカウントしてください。</div>
+                                <div class="vi-text">Đếm số cam kết của các cuộc họp có tiêu đề chứa 'summary'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT COUNT(*) AS commitment_count FROM v_commitments WHERE meeting_title ILIKE '%summary%';</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                        <tr class="testcase-row" data-status="pass">
+                            <td class="case-id">#99</td>
+                            <td class="question-col">
+                                <div class="ja-text">タイトルにsummaryを含む会議の金額数をカウントしてください。</div>
+                                <div class="vi-text">Đếm số khoản tiền của các cuộc họp có tiêu đề chứa 'summary'</div>
+                            </td>
+                            <td>
+                                <pre class="sql-code"><code>SELECT COUNT(*) AS amount_count FROM v_amounts WHERE meeting_title ILIKE '%summary%';</code></pre>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-success">Đúng</span>
+                            </td>
+                            <td>
+                                <div class="diagnostic-text pass-details">Đúng</div>
+                            </td>
+                        </tr>
+        
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        function filterTable(status, btnElement) {
+            // Update active state of filter buttons
+            const buttons = document.querySelectorAll('.filter-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            btnElement.classList.add('active');
+
+            // Filter table rows
+            const rows = document.querySelectorAll('.testcase-row');
+            rows.forEach(row => {
+                const rowStatus = row.getAttribute('data-status');
+                if (status === 'all' || rowStatus === status) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        // Live text searching
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('.testcase-row');
+            
+            // Clear active filter button to show search across all
+            if (query !== '') {
+                const buttons = document.querySelectorAll('.filter-btn');
+                buttons.forEach(btn => btn.classList.remove('active'));
+                buttons[0].classList.add('active');
+            }
+
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

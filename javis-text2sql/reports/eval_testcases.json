@@ -1,0 +1,3718 @@
+[
+  {
+    "id": 1,
+    "query": "JPYで言及された総予算はいくらですか？",
+    "sql": "SELECT SUM(amount_value) AS total_amount, amount_currency FROM v_amounts WHERE amount_currency = 'JPY' GROUP BY amount_currency;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_amounts"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 76.51,
+    "row_count": 1,
+    "semantic_score": 0.93,
+    "semantic_severity": "warning",
+    "semantic_diagnostics": {
+      "semantic_score": 0.93,
+      "severity": "warning",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 0.5
+      },
+      "details": {
+        "anti_patterns": [
+          "Đúng (GROUP BY amount_currency dư thừa)"
+        ]
+      }
+    }
+  },
+  {
+    "id": 2,
+    "query": "budgetというコンテキストを持つ金額をすべて合計してください。",
+    "sql": "SELECT SUM(amount_value) AS total_amount FROM v_amounts WHERE amount_context ILIKE '%budget%';",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_amounts"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 10.04,
+    "row_count": 1,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 3,
+    "query": "すべての金額を通貨とコンテキスト付きで一覧表示してください。",
+    "sql": "SELECT amount_value, amount_currency, amount_context FROM v_amounts",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_amounts"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 7.68,
+    "row_count": 18,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 4,
+    "query": "未完了のコミットメントはいくつありますか？",
+    "sql": "SELECT COUNT(*) AS commitment_count FROM v_commitments WHERE status = 'pending';",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_commitments"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 16.74,
+    "row_count": 1,
+    "semantic_score": 0.93,
+    "semantic_severity": "warning",
+    "semantic_diagnostics": {
+      "semantic_score": 0.93,
+      "severity": "warning",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 0.5,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {
+        "column_check": [
+          "SELECT * used instead of explicit column selection"
+        ]
+      }
+    }
+  },
+  {
+    "id": 5,
+    "query": "完了済みのコミットメントはいくつありますか？",
+    "sql": "SELECT COUNT(*) AS completed_commitments FROM v_commitments WHERE status = 'completed'",
+    "overall_pass": false,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_commitments"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 7.94,
+    "row_count": 1,
+    "semantic_score": 0.79,
+    "semantic_severity": "error",
+    "semantic_diagnostics": {
+      "semantic_score": 0.79,
+      "severity": "error",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 0.0,
+        "column_check": 0.5,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {
+        "filter_check": [
+          "Sai (do sql dùng status = 'completed' nhưng trong DB lại định nghĩa status IN ('pending', 'done', 'cancelled')) -> ko có completed"
+        ],
+        "column_check": [
+          "SELECT * used instead of explicit column selection"
+        ]
+      }
+    }
+  },
+  {
+    "id": 6,
+    "query": "すべてのコミットメントを担当者、アクション、期限付きで一覧表示してください。",
+    "sql": "SELECT person, action, deadline FROM v_commitments ORDER BY deadline_date ASC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_commitments"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 10.51,
+    "row_count": 35,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 7,
+    "query": "2026-06-01より前が期限のコミットメントを一覧表示してください。",
+    "sql": "SELECT person, action, deadline, deadline_date FROM v_commitments WHERE deadline_date < DATE '2026-06-01'",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_commitments"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 8.77,
+    "row_count": 8,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 8,
+    "query": "2026-05-30より後が期限のコミットメントを一覧表示してください。",
+    "sql": "SELECT person, action, deadline FROM v_commitments WHERE deadline_date > DATE '2026-05-30';",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_commitments"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 6.98,
+    "row_count": 0,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 9,
+    "query": "重要度スコアが4以上のアクションアイテムを表示してください。",
+    "sql": "SELECT meeting_title, action_item_text, importance_score FROM v_action_items WHERE importance_score >= 4 ORDER BY meeting_date DESC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_action_items"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 11.06,
+    "row_count": 2,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 10,
+    "query": "すべての未解決の質問を重要度スコア付きで表示してください。",
+    "sql": "SELECT meeting_title, question_text, importance_score FROM v_open_questions ORDER BY importance_score DESC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_open_questions"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 7.64,
+    "row_count": 0,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 11,
+    "query": "重要度スコアが4以上のネガティブな発言を一覧表示してください。",
+    "sql": "SELECT meeting_title, content, importance_score FROM v_statements WHERE sentiment = 'negative' AND importance_score >= 4 ORDER BY importance_score DESC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_statements"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 9.65,
+    "row_count": 4,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 12,
+    "query": "感情別に発言数をカウントしてください。",
+    "sql": "SELECT sentiment, COUNT(*) AS statement_count FROM v_statements GROUP BY sentiment ORDER BY statement_count DESC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_statements"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 8.31,
+    "row_count": 2,
+    "semantic_score": 0.93,
+    "semantic_severity": "warning",
+    "semantic_diagnostics": {
+      "semantic_score": 0.93,
+      "severity": "warning",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 0.5,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {
+        "column_check": [
+          "SELECT * used instead of explicit column selection"
+        ]
+      }
+    }
+  },
+  {
+    "id": 13,
+    "query": "タイトルにVJを含む会議のトピックを一覧表示してください。",
+    "sql": "SELECT meeting_title, topic, source_type FROM v_topics WHERE meeting_title ILIKE '%VJ%';",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_topics"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 11.19,
+    "row_count": 97,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 14,
+    "query": "タイトルにAJを含む会議のトピックを一覧表示してください。",
+    "sql": "SELECT meeting_title, topic FROM v_topics WHERE meeting_title ILIKE '%AJ%';",
+    "overall_pass": false,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_topics"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 8.06,
+    "row_count": 92,
+    "semantic_score": 0.86,
+    "semantic_severity": "error",
+    "semantic_diagnostics": {
+      "semantic_score": 0.86,
+      "severity": "error",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 0.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {
+        "filter_check": [
+          "Sai (trả dư entity, thừa rows / thiếu filter: source_type = 'topic')"
+        ]
+      }
+    }
+  },
+  {
+    "id": 15,
+    "query": "タイトルにVJを含む会議の固有エンティティを一覧表示してください。",
+    "sql": "SELECT DISTINCT meeting_title FROM v_topics WHERE topic ILIKE '%VJ%'",
+    "overall_pass": false,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_topics"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 8.45,
+    "row_count": 2,
+    "semantic_score": 0.86,
+    "semantic_severity": "error",
+    "semantic_diagnostics": {
+      "semantic_score": 0.86,
+      "severity": "error",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 0.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {
+        "filter_check": [
+          "Missing expected filter condition: source_type = 'entity'",
+          "Sai (KHÔNG trả entities / semantic sai hoàn toàn, query sai bảng)"
+        ]
+      }
+    }
+  },
+  {
+    "id": 16,
+    "query": "タイトルにAJを含む会議の固有エンティティを一覧表示してください。",
+    "sql": "SELECT DISTINCT meeting_title, speaker FROM v_speaker_turns WHERE meeting_title ILIKE '%AJ%'",
+    "overall_pass": false,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_speaker_turns"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 36.98,
+    "row_count": 10,
+    "semantic_score": 0.57,
+    "semantic_severity": "error",
+    "semantic_diagnostics": {
+      "semantic_score": 0.57,
+      "severity": "error",
+      "scores": {
+        "view_selection": 0.0,
+        "filter_check": 0.0,
+        "column_check": 0.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {
+        "view_selection": [
+          "Incorrect view selection: used ['v_speaker_turns'], expected ['v_topics']",
+          "Sai (KHÔNG trả entities / semantic sai hoàn toàn, query sai bảng)"
+        ],
+        "filter_check": [
+          "Missing expected filter condition: source_type = 'entity'",
+          "Sai (KHÔNG trả entities / semantic sai hoàn toàn, query sai bảng)"
+        ],
+        "column_check": [
+          "Sai (KHÔNG trả entities / semantic sai hoàn toàn, query sai bảng)"
+        ]
+      }
+    }
+  },
+  {
+    "id": 17,
+    "query": "budgetに言及している発話を一覧表示してください。",
+    "sql": "SELECT speaker, turn_content, meeting_date FROM v_speaker_turns WHERE turn_content ILIKE '%budget%' OR turn_content ILIKE '%予算%';",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_speaker_turns"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 22.06,
+    "row_count": 15,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 18,
+    "query": "話者ごとの発話数をカウントしてください。",
+    "sql": "SELECT speaker, COUNT(*) AS turn_count FROM v_speaker_turns GROUP BY speaker ORDER BY turn_count DESC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_speaker_turns"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 7.9,
+    "row_count": 15,
+    "semantic_score": 0.93,
+    "semantic_severity": "warning",
+    "semantic_diagnostics": {
+      "semantic_score": 0.93,
+      "severity": "warning",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 0.5,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {
+        "column_check": [
+          "SELECT * used instead of explicit column selection"
+        ]
+      }
+    }
+  },
+  {
+    "id": 19,
+    "query": "VJ Technologiesに言及している発話を一覧表示してください。",
+    "sql": "SELECT speaker, turn_content, meeting_date FROM v_speaker_turns WHERE turn_content ILIKE '%VJ Technologies%';",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_speaker_turns"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 6.93,
+    "row_count": 20,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 20,
+    "query": "AJ Technologiesに言及している発話を一覧表示してください。",
+    "sql": "SELECT speaker, turn_content, meeting_date FROM v_speaker_turns WHERE turn_content ILIKE '%AJ Technologies%';",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_speaker_turns"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 6.56,
+    "row_count": 20,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 21,
+    "query": "通貨ごとにamount_valueを合計してください。",
+    "sql": "SELECT amount_currency, SUM(amount_value) AS total_amount FROM v_amounts GROUP BY amount_currency ORDER BY total_amount DESC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_amounts"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 7.55,
+    "row_count": 1,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 22,
+    "query": "会議タイトルごとにamount_valueを合計してください。",
+    "sql": "SELECT meeting_title, SUM(amount_value) AS total_amount FROM v_amounts GROUP BY meeting_title ORDER BY total_amount DESC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_amounts"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 6.28,
+    "row_count": 2,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 23,
+    "query": "通貨がJPYの金額を一覧表示してください。",
+    "sql": "SELECT amount_value, amount_context, meeting_date FROM v_amounts WHERE amount_currency = 'JPY' ORDER BY meeting_date DESC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_amounts"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 5.97,
+    "row_count": 18,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 24,
+    "query": "コンテキストにbudgetを含む金額を一覧表示してください。",
+    "sql": "SELECT amount_value, amount_context, amount_currency FROM v_amounts WHERE amount_context ILIKE '%budget%'",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_amounts"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 6.72,
+    "row_count": 0,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 25,
+    "query": "アクションアイテム数をカウントしてください。",
+    "sql": "SELECT COUNT(*) AS action_item_count FROM v_action_items",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_action_items"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 6.04,
+    "row_count": 1,
+    "semantic_score": 0.93,
+    "semantic_severity": "warning",
+    "semantic_diagnostics": {
+      "semantic_score": 0.93,
+      "severity": "warning",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 0.5,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {
+        "column_check": [
+          "SELECT * used instead of explicit column selection"
+        ]
+      }
+    }
+  },
+  {
+    "id": 26,
+    "query": "アクションアイテムを会議日付の降順で一覧表示してください。",
+    "sql": "SELECT meeting_title, action_item_text, importance_score FROM v_action_items ORDER BY meeting_date DESC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_action_items"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 6.36,
+    "row_count": 8,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 27,
+    "query": "ステータスごとにコミットメント数を集計してください。",
+    "sql": "SELECT status, COUNT(*) AS commitment_count FROM v_commitments GROUP BY status ORDER BY commitment_count DESC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_commitments"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 5.77,
+    "row_count": 1,
+    "semantic_score": 0.93,
+    "semantic_severity": "warning",
+    "semantic_diagnostics": {
+      "semantic_score": 0.93,
+      "severity": "warning",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 0.5,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {
+        "column_check": [
+          "SELECT * used instead of explicit column selection"
+        ]
+      }
+    }
+  },
+  {
+    "id": 28,
+    "query": "担当者名にYamashitaを含むコミットメントを一覧表示してください。",
+    "sql": "SELECT person, action, deadline FROM v_commitments WHERE person ILIKE '%Yamashita%';",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_commitments"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 6.18,
+    "row_count": 0,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 29,
+    "query": "担当者名にYoshioを含むコミットメントを一覧表示してください。",
+    "sql": "SELECT person, action, deadline FROM v_commitments WHERE person ILIKE '%Yoshio%';",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_commitments"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 5.46,
+    "row_count": 0,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 30,
+    "query": "言及されたすべての日付を一覧表示してください。",
+    "sql": "SELECT meeting_title, date_raw_text, date_resolved FROM v_dates",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_dates"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 6.91,
+    "row_count": 16,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 31,
+    "query": "言及された日付を会議タイトル付きで一覧表示してください。",
+    "sql": "SELECT meeting_title, date_raw_text, date_resolved FROM v_dates ORDER BY date_resolved ASC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_dates"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 5.33,
+    "row_count": 16,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 32,
+    "query": "会議タイトルごとに言及された日付数をカウントしてください。",
+    "sql": "SELECT meeting_title, COUNT(*) AS date_count FROM v_dates GROUP BY meeting_title ORDER BY date_count DESC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_dates"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 5.94,
+    "row_count": 2,
+    "semantic_score": 0.93,
+    "semantic_severity": "warning",
+    "semantic_diagnostics": {
+      "semantic_score": 0.93,
+      "severity": "warning",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 0.5,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {
+        "column_check": [
+          "SELECT * used instead of explicit column selection"
+        ]
+      }
+    }
+  },
+  {
+    "id": 33,
+    "query": "トピックにEnergyを含むトピックを一覧表示してください。",
+    "sql": "SELECT meeting_title, topic FROM v_topics WHERE topic ILIKE '%Energy%';",
+    "overall_pass": false,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_topics"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 6.28,
+    "row_count": 5,
+    "semantic_score": 0.86,
+    "semantic_severity": "error",
+    "semantic_diagnostics": {
+      "semantic_score": 0.86,
+      "severity": "error",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 0.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {
+        "filter_check": [
+          "Sai (trả dư entity, thừa rows / thiếu filter: source_type = 'topic')"
+        ]
+      }
+    }
+  },
+  {
+    "id": 34,
+    "query": "トピックにGoEMONを含むトピックを一覧表示してください。",
+    "sql": "SELECT meeting_title, topic, source_type FROM v_topics WHERE topic ILIKE '%GoEMON%';",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_topics"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 6.6,
+    "row_count": 15,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 35,
+    "query": "トピックにDXを含むトピックを一覧表示してください。",
+    "sql": "SELECT meeting_title, topic, source_type FROM v_topics WHERE topic ILIKE '%DX%';",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_topics"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 6.77,
+    "row_count": 15,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 36,
+    "query": "トピックにAIを含むトピックを一覧表示してください。",
+    "sql": "SELECT meeting_title, topic, source_type FROM v_topics WHERE topic ILIKE '%AI%'",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_topics"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 6.82,
+    "row_count": 13,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 37,
+    "query": "アクションにbudgetを含むコミットメントを一覧表示してください。",
+    "sql": "SELECT person, action, deadline FROM v_commitments WHERE action ILIKE '%budget%';",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_commitments"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 5.72,
+    "row_count": 0,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 38,
+    "query": "アクションテキストにbudgetを含むアクションアイテムを一覧表示してください。",
+    "sql": "SELECT meeting_title, action_item_text, importance_score FROM v_action_items WHERE action_item_text ILIKE '%budget%' ORDER BY meeting_date DESC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_action_items"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 5.37,
+    "row_count": 0,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 39,
+    "query": "重要度スコアが5以上の発言を一覧表示してください。",
+    "sql": "SELECT meeting_title, content, importance_score FROM v_statements WHERE importance_score >= 5 ORDER BY importance_score DESC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_statements"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 5.71,
+    "row_count": 4,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 40,
+    "query": "ネガティブ感情の発話を一覧表示してください。",
+    "sql": "SELECT meeting_title, content, importance_score FROM v_statements WHERE sentiment = 'negative'",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_statements"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 6.17,
+    "row_count": 4,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 41,
+    "query": "topics内の異なるmeeting_id数をカウントしてください。",
+    "sql": "SELECT COUNT(DISTINCT meeting_id) AS meeting_count FROM v_topics",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_topics"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 8.98,
+    "row_count": 1,
+    "semantic_score": 0.93,
+    "semantic_severity": "warning",
+    "semantic_diagnostics": {
+      "semantic_score": 0.93,
+      "severity": "warning",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 0.5,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {
+        "structure": [
+          "Missing DISTINCT clause (expected unique result)"
+        ]
+      }
+    }
+  },
+  {
+    "id": 42,
+    "query": "commitments内の異なるmeeting_id数をカウントしてください。",
+    "sql": "SELECT COUNT(DISTINCT meeting_id) AS meeting_count FROM v_commitments;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_commitments"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 5.84,
+    "row_count": 1,
+    "semantic_score": 0.93,
+    "semantic_severity": "warning",
+    "semantic_diagnostics": {
+      "semantic_score": 0.93,
+      "severity": "warning",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 0.5,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {
+        "structure": [
+          "Missing DISTINCT clause (expected unique result)"
+        ]
+      }
+    }
+  },
+  {
+    "id": 43,
+    "query": "topicsから会議タイトルと日付を一覧表示してください。",
+    "sql": "SELECT meeting_title, meeting_date FROM v_topics ORDER BY meeting_date DESC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_topics"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 7.0,
+    "row_count": 248,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 44,
+    "query": "commitmentsから会議タイトルと日付を一覧表示してください。",
+    "sql": "SELECT meeting_title, meeting_date FROM v_commitments ORDER BY meeting_date DESC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_commitments"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 6.32,
+    "row_count": 35,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 45,
+    "query": "amountsから会議タイトルと日付を一覧表示してください。",
+    "sql": "SELECT meeting_title, meeting_date FROM v_amounts ORDER BY meeting_date DESC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_amounts"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 5.92,
+    "row_count": 18,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 46,
+    "query": "タイトルにHousingを含む会議の発話を一覧表示してください。",
+    "sql": "SELECT meeting_title, speaker, turn_content FROM v_speaker_turns WHERE meeting_title ILIKE '%Housing%'",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_speaker_turns"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 6.67,
+    "row_count": 123,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 47,
+    "query": "タイトルにHousingを含む会議のすべてのコミットメントを表示してください。",
+    "sql": "SELECT meeting_title, person, action, deadline FROM v_commitments WHERE meeting_title ILIKE '%Housing%'",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_commitments"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 5.29,
+    "row_count": 29,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 48,
+    "query": "タイトルにHousingを含む会議のコミットメント数をカウントしてください。",
+    "sql": "SELECT COUNT(*) AS commitment_count FROM v_commitments WHERE meeting_title ILIKE '%Housing%';",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_commitments"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 5.13,
+    "row_count": 1,
+    "semantic_score": 0.93,
+    "semantic_severity": "warning",
+    "semantic_diagnostics": {
+      "semantic_score": 0.93,
+      "severity": "warning",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 0.5,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {
+        "column_check": [
+          "SELECT * used instead of explicit column selection"
+        ]
+      }
+    }
+  },
+  {
+    "id": 49,
+    "query": "タイトルにHousingを含む会議の金額を表示してください。",
+    "sql": "SELECT meeting_title, amount_value, amount_currency FROM v_amounts WHERE meeting_title ILIKE '%Housing%';",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_amounts"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 5.07,
+    "row_count": 12,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 50,
+    "query": "source_typeがentityのトピックを一覧表示してください。",
+    "sql": "SELECT meeting_title, topic FROM v_topics WHERE source_type = 'entity'",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_topics"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 5.92,
+    "row_count": 109,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 51,
+    "query": "source_typeごとにトピック数をカウントしてください。",
+    "sql": "SELECT source_type, COUNT(*) AS topic_count FROM v_topics GROUP BY source_type ORDER BY topic_count DESC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_topics"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 6.35,
+    "row_count": 2,
+    "semantic_score": 0.93,
+    "semantic_severity": "warning",
+    "semantic_diagnostics": {
+      "semantic_score": 0.93,
+      "severity": "warning",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 0.5,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {
+        "column_check": [
+          "SELECT * used instead of explicit column selection"
+        ]
+      }
+    }
+  },
+  {
+    "id": 52,
+    "query": "会議日付が2026-05-26のトピックを一覧表示してください。",
+    "sql": "SELECT meeting_title, topic, source_type FROM v_topics WHERE meeting_date = DATE '2026-05-26'",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_topics"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 6.11,
+    "row_count": 248,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 53,
+    "query": "会議日付が2026-05-26のコミットメントを一覧表示してください。",
+    "sql": "SELECT person, action, deadline FROM v_commitments WHERE meeting_date = DATE '2026-05-26'",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_commitments"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 5.54,
+    "row_count": 35,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 54,
+    "query": "会議日付が2026-05-26のアクションアイテムを一覧表示してください。",
+    "sql": "SELECT meeting_title, action_item_text, importance_score FROM v_action_items WHERE meeting_date = DATE '2026-05-26' ORDER BY importance_score DESC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_action_items"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 8.79,
+    "row_count": 8,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 55,
+    "query": "会議日付が2026-05-26の未解決質問を一覧表示してください。",
+    "sql": "SELECT meeting_title, question_text, importance_score FROM v_open_questions WHERE meeting_date = DATE '2026-05-26' ORDER BY importance_score DESC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_open_questions"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 7.74,
+    "row_count": 0,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 56,
+    "query": "amount_valueが1000以上の金額を一覧表示してください。",
+    "sql": "SELECT meeting_title, amount_context, amount_value, amount_currency FROM v_amounts WHERE amount_value >= 1000 ORDER BY amount_value DESC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_amounts"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 8.53,
+    "row_count": 12,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 57,
+    "query": "金額をamount_valueの降順で一覧表示してください。",
+    "sql": "SELECT amount_context, amount_value, amount_currency FROM v_amounts ORDER BY amount_value DESC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_amounts"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 7.31,
+    "row_count": 18,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 58,
+    "query": "コンテキストにelectricを含む総金額を表示してください。",
+    "sql": "SELECT SUM(amount_value) AS total_amount FROM v_amounts WHERE amount_context ILIKE '%electric%';",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_amounts"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 7.48,
+    "row_count": 1,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 59,
+    "query": "コンテキストにbudgetを含む総金額を表示してください。",
+    "sql": "SELECT SUM(amount_value) AS total_amount FROM v_amounts WHERE amount_context ILIKE '%budget%'",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_amounts"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 8.05,
+    "row_count": 1,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 60,
+    "query": "話者がdocumentの発話数をカウントしてください。",
+    "sql": "SELECT speaker, COUNT(*) AS turn_count FROM v_speaker_turns WHERE speaker ILIKE '%document%' GROUP BY speaker ORDER BY turn_count DESC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_speaker_turns"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 7.49,
+    "row_count": 1,
+    "semantic_score": 0.93,
+    "semantic_severity": "warning",
+    "semantic_diagnostics": {
+      "semantic_score": 0.93,
+      "severity": "warning",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 0.5,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {
+        "column_check": [
+          "SELECT * used instead of explicit column selection"
+        ]
+      }
+    }
+  },
+  {
+    "id": 61,
+    "query": "異なる話者を一覧表示してください。",
+    "sql": "SELECT DISTINCT speaker FROM v_speaker_turns",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_speaker_turns"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 7.85,
+    "row_count": 15,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 62,
+    "query": "異なる話者数をカウントしてください。",
+    "sql": "SELECT COUNT(DISTINCT speaker) AS speaker_count FROM v_speaker_turns",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_speaker_turns"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 9.53,
+    "row_count": 1,
+    "semantic_score": 0.93,
+    "semantic_severity": "warning",
+    "semantic_diagnostics": {
+      "semantic_score": 0.93,
+      "severity": "warning",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 0.5,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {
+        "structure": [
+          "Missing DISTINCT clause (expected unique result)"
+        ]
+      }
+    }
+  },
+  {
+    "id": 63,
+    "query": "Energy Japanに言及している発話を一覧表示してください。",
+    "sql": "SELECT speaker, turn_content, meeting_date FROM v_speaker_turns WHERE turn_content ILIKE '%Energy Japan%'",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_speaker_turns"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 9.2,
+    "row_count": 4,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 64,
+    "query": "GoEMONに言及している発話を一覧表示してください。",
+    "sql": "SELECT speaker, turn_content, meeting_date FROM v_speaker_turns WHERE turn_content ILIKE '%GoEMON%';",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_speaker_turns"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 8.55,
+    "row_count": 12,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 65,
+    "query": "AIに言及している発話を一覧表示してください。",
+    "sql": "SELECT speaker, turn_content, meeting_date FROM v_speaker_turns WHERE turn_content ILIKE '%AI%'",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_speaker_turns"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 7.42,
+    "row_count": 32,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 66,
+    "query": "トピックを会議タイトル付きで一覧表示してください。",
+    "sql": "SELECT meeting_title, topic FROM v_topics ORDER BY meeting_title;",
+    "overall_pass": false,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_topics"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 9.05,
+    "row_count": 248,
+    "semantic_score": 0.86,
+    "semantic_severity": "error",
+    "semantic_diagnostics": {
+      "semantic_score": 0.86,
+      "severity": "error",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 0.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {
+        "filter_check": [
+          "Sai (trả dư entity, thừa rows / thiếu filter: source_type = 'topic')"
+        ]
+      }
+    }
+  },
+  {
+    "id": 67,
+    "query": "コミットメントを会議タイトルと担当者付きで一覧表示してください。",
+    "sql": "SELECT meeting_title, person, action, deadline FROM v_commitments ORDER BY meeting_title, person;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_commitments"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 9.89,
+    "row_count": 35,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 68,
+    "query": "アクションアイテムを会議タイトルとアクションテキスト付きで一覧表示してください。",
+    "sql": "SELECT meeting_title, action_item_text FROM v_action_items ORDER BY meeting_date DESC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_action_items"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 9.29,
+    "row_count": 8,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 69,
+    "query": "未解決質問を会議タイトルと質問テキスト付きで一覧表示してください。",
+    "sql": "SELECT meeting_title, question_text FROM v_open_questions ORDER BY meeting_title ASC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_open_questions"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 8.21,
+    "row_count": 0,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 70,
+    "query": "会議タイトルごとに未完了コミットメント数をカウントしてください。",
+    "sql": "SELECT meeting_title, COUNT(*) AS pending_commitment_count FROM v_commitments WHERE status = 'pending' GROUP BY meeting_title ORDER BY pending_commitment_count DESC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_commitments"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 8.51,
+    "row_count": 2,
+    "semantic_score": 0.93,
+    "semantic_severity": "warning",
+    "semantic_diagnostics": {
+      "semantic_score": 0.93,
+      "severity": "warning",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 0.5,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {
+        "column_check": [
+          "SELECT * used instead of explicit column selection"
+        ]
+      }
+    }
+  },
+  {
+    "id": 71,
+    "query": "会議タイトルごとに完了済みコミットメント数をカウントしてください。",
+    "sql": "SELECT meeting_title, COUNT(*) AS completed_commitment_count FROM v_commitments WHERE status = 'completed' GROUP BY meeting_title ORDER BY completed_commitment_count DESC;",
+    "overall_pass": false,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_commitments"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 14.23,
+    "row_count": 0,
+    "semantic_score": 0.79,
+    "semantic_severity": "error",
+    "semantic_diagnostics": {
+      "semantic_score": 0.79,
+      "severity": "error",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 0.0,
+        "column_check": 0.5,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {
+        "filter_check": [
+          "Sai (do sql dùng status = 'completed' nhưng trong DB lại định nghĩa status IN ('pending', 'done', 'cancelled')) -> ko có completed"
+        ],
+        "column_check": [
+          "SELECT * used instead of explicit column selection"
+        ]
+      }
+    }
+  },
+  {
+    "id": 72,
+    "query": "deadline_dateがないコミットメントを一覧表示してください。",
+    "sql": "SELECT person, action, deadline FROM v_commitments WHERE deadline_date IS NULL;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_commitments"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 6.99,
+    "row_count": 27,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 73,
+    "query": "deadline_dateがあるコミットメントを一覧表示してください。",
+    "sql": "SELECT person, action, deadline, deadline_date FROM v_commitments WHERE deadline_date IS NOT NULL;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_commitments"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 8.38,
+    "row_count": 8,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 74,
+    "query": "confidenceが0.8以上の日付を一覧表示してください。",
+    "sql": "SELECT meeting_title, date_raw_text, date_resolved, confidence FROM v_dates WHERE confidence >= 0.8",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_dates"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 7.95,
+    "row_count": 16,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 75,
+    "query": "confidenceが1.0未満の日付を一覧表示してください。",
+    "sql": "SELECT meeting_title, date_raw_text, date_resolved, confidence FROM v_dates WHERE confidence < 1.0",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_dates"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 6.68,
+    "row_count": 2,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 76,
+    "query": "重要度スコアが4以上のアクションアイテム数をカウントしてください。",
+    "sql": "SELECT COUNT(*) AS action_item_count FROM v_action_items WHERE importance_score >= 4",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_action_items"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 7.3,
+    "row_count": 1,
+    "semantic_score": 0.93,
+    "semantic_severity": "warning",
+    "semantic_diagnostics": {
+      "semantic_score": 0.93,
+      "severity": "warning",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 0.5,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {
+        "column_check": [
+          "SELECT * used instead of explicit column selection"
+        ]
+      }
+    }
+  },
+  {
+    "id": 77,
+    "query": "重要度スコアが4以上の未解決質問数をカウントしてください。",
+    "sql": "SELECT COUNT(*) AS open_question_count FROM v_open_questions WHERE importance_score >= 4",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_open_questions"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 12.54,
+    "row_count": 1,
+    "semantic_score": 0.93,
+    "semantic_severity": "warning",
+    "semantic_diagnostics": {
+      "semantic_score": 0.93,
+      "severity": "warning",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 0.5,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {
+        "column_check": [
+          "SELECT * used instead of explicit column selection"
+        ]
+      }
+    }
+  },
+  {
+    "id": 78,
+    "query": "感情がneutralの発言を一覧表示してください。",
+    "sql": "SELECT meeting_title, content, importance_score FROM v_statements WHERE sentiment = 'neutral'",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_statements"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 8.66,
+    "row_count": 24,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 79,
+    "query": "会議タイトルごとに発言数をカウントしてください。",
+    "sql": "SELECT meeting_title, COUNT(*) AS turn_count FROM v_speaker_turns GROUP BY meeting_title ORDER BY turn_count DESC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_speaker_turns"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 7.91,
+    "row_count": 3,
+    "semantic_score": 0.93,
+    "semantic_severity": "warning",
+    "semantic_diagnostics": {
+      "semantic_score": 0.93,
+      "severity": "warning",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 0.5,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {
+        "column_check": [
+          "SELECT * used instead of explicit column selection"
+        ]
+      }
+    }
+  },
+  {
+    "id": 80,
+    "query": "会議タイトルごとに発話数をカウントしてください。",
+    "sql": "SELECT meeting_title, COUNT(*) AS turn_count FROM v_speaker_turns GROUP BY meeting_title ORDER BY turn_count DESC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_speaker_turns"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 7.24,
+    "row_count": 3,
+    "semantic_score": 0.93,
+    "semantic_severity": "warning",
+    "semantic_diagnostics": {
+      "semantic_score": 0.93,
+      "severity": "warning",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 0.5,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {
+        "column_check": [
+          "SELECT * used instead of explicit column selection"
+        ]
+      }
+    }
+  },
+  {
+    "id": 81,
+    "query": "発話数が多い上位5人の話者を一覧表示してください。",
+    "sql": "SELECT speaker, COUNT(*) AS turn_count FROM v_speaker_turns GROUP BY speaker ORDER BY turn_count DESC LIMIT 5;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_speaker_turns"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 9.43,
+    "row_count": 5,
+    "semantic_score": 0.93,
+    "semantic_severity": "warning",
+    "semantic_diagnostics": {
+      "semantic_score": 0.93,
+      "severity": "warning",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 0.5,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {
+        "column_check": [
+          "SELECT * used instead of explicit column selection"
+        ]
+      }
+    }
+  },
+  {
+    "id": 82,
+    "query": "4500に言及している発話を一覧表示してください。",
+    "sql": "SELECT speaker, turn_content, meeting_date FROM v_speaker_turns WHERE turn_content ILIKE '%4,500%' OR turn_content ILIKE '%４,５００%'",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_speaker_turns"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 18.86,
+    "row_count": 18,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 83,
+    "query": "unitにmanを含むamount_valueを合計してください。",
+    "sql": "SELECT SUM(amount_value) AS total_amount FROM v_amounts WHERE amount_unit ILIKE '%man%';",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_amounts"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 7.72,
+    "row_count": 1,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 84,
+    "query": "タイトルにVJを含む会議の金額コンテキストと値を一覧表示してください。",
+    "sql": "SELECT amount_context, amount_value FROM v_amounts WHERE meeting_title ILIKE '%VJ%'",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_amounts"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 6.83,
+    "row_count": 0,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 85,
+    "query": "VJ Technologiesに言及している会議タイトルを一覧表示してください。",
+    "sql": "SELECT meeting_title FROM v_topics WHERE topic ILIKE '%VJ Technologies%'",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_topics"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 9.34,
+    "row_count": 11,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 86,
+    "query": "AJ Technologiesに言及している会議タイトルを一覧表示してください。",
+    "sql": "SELECT DISTINCT meeting_title FROM v_topics WHERE topic ILIKE '%AJ Technologies%';",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_topics"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 7.87,
+    "row_count": 1,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 87,
+    "query": "ONE Financial Serviceに言及している会議タイトルを一覧表示してください。",
+    "sql": "SELECT DISTINCT meeting_title FROM v_topics WHERE topic ILIKE '%ONE Financial Service%'",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_topics"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 8.75,
+    "row_count": 1,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 88,
+    "query": "Energy Japanに言及している会議タイトルを一覧表示してください。",
+    "sql": "SELECT DISTINCT meeting_title FROM v_topics WHERE topic ILIKE '%Energy Japan%'",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_topics"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 8.19,
+    "row_count": 1,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 89,
+    "query": "コミットメントをdeadline_dateの昇順で一覧表示してください。",
+    "sql": "SELECT person, action, deadline, deadline_date FROM v_commitments ORDER BY deadline_date ASC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_commitments"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 9.02,
+    "row_count": 35,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 90,
+    "query": "deadlineにthis weekを含むコミットメントを一覧表示してください。",
+    "sql": "SELECT person, action, deadline FROM v_commitments WHERE deadline ILIKE '%this week%' OR deadline ILIKE '%今週%';",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_commitments"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 8.73,
+    "row_count": 8,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 91,
+    "query": "アクションアイテムを重要度スコアの降順で一覧表示してください。",
+    "sql": "SELECT meeting_title, action_item_text, importance_score FROM v_action_items ORDER BY importance_score DESC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_action_items"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 8.4,
+    "row_count": 8,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 92,
+    "query": "未解決質問を重要度スコアの降順で一覧表示してください。",
+    "sql": "SELECT meeting_title, question_text, importance_score FROM v_open_questions ORDER BY importance_score DESC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_open_questions"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 6.18,
+    "row_count": 0,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 93,
+    "query": "発言を重要度スコアの降順で一覧表示してください。",
+    "sql": "SELECT meeting_title, content, importance_score FROM v_statements ORDER BY importance_score DESC;",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_statements"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 8.98,
+    "row_count": 28,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 94,
+    "query": "会議タイトルごとにトピック数をカウントしてください。",
+    "sql": "SELECT meeting_title, COUNT(*) AS topic_count FROM v_topics GROUP BY meeting_title ORDER BY topic_count DESC;",
+    "overall_pass": false,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_topics"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 12.03,
+    "row_count": 3,
+    "semantic_score": 0.79,
+    "semantic_severity": "error",
+    "semantic_diagnostics": {
+      "semantic_score": 0.79,
+      "severity": "error",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 0.0,
+        "column_check": 0.5,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {
+        "filter_check": [
+          "Sai (trả dư entity, thừa rows / thiếu filter: source_type = 'topic')"
+        ],
+        "column_check": [
+          "SELECT * used instead of explicit column selection"
+        ]
+      }
+    }
+  },
+  {
+    "id": 95,
+    "query": "タイトルにcompany profileを含む会議のトピックを一覧表示してください。",
+    "sql": "SELECT meeting_title, topic FROM v_topics WHERE meeting_title ILIKE '%company profile%';",
+    "overall_pass": false,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_topics"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 8.22,
+    "row_count": 189,
+    "semantic_score": 0.86,
+    "semantic_severity": "error",
+    "semantic_diagnostics": {
+      "semantic_score": 0.86,
+      "severity": "error",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 0.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {
+        "filter_check": [
+          "Sai (trả dư entity, thừa rows / thiếu filter: source_type = 'topic')"
+        ]
+      }
+    }
+  },
+  {
+    "id": 96,
+    "query": "タイトルにcompany profileを含む会議のエンティティを一覧表示してください。",
+    "sql": "SELECT DISTINCT t.meeting_title, s.entity \r\nFROM v_topics t \r\nJOIN v_statements s ON t.meeting_id = s.meeting_id \r\nWHERE t.meeting_title ILIKE '%company profile%';",
+    "overall_pass": false,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_topics",
+      "v_statements"
+    ],
+    "exec_ok": false,
+    "exec_error": "column s.entity does not exist",
+    "exec_latency_ms": 13.38,
+    "row_count": 0,
+    "semantic_score": 0.5,
+    "semantic_severity": "error",
+    "semantic_diagnostics": {
+      "semantic_score": 0.5,
+      "severity": "error",
+      "scores": {
+        "view_selection": 0.5,
+        "filter_check": 0.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 0.0,
+        "anti_patterns": 0.0
+      },
+      "details": {
+        "view_selection": [
+          "Partial view match: used ['v_topics', 'v_statements'], expected ['v_topics']"
+        ],
+        "filter_check": [
+          "Sai (KHÔNG trả entities / semantic sai hoàn toàn, query sai bảng)"
+        ],
+        "cross_view": [
+          "Unnecessary JOIN(s) on table(s) ['v_statements']"
+        ],
+        "anti_patterns": [
+          "Hallucinated column: 'entity' in view 'v_statements'"
+        ]
+      }
+    }
+  },
+  {
+    "id": 97,
+    "query": "タイトルにsummaryを含む会議のトピックを一覧表示してください。",
+    "sql": "SELECT meeting_title, topic, source_type FROM v_topics WHERE meeting_title ILIKE '%summary%';",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_topics"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 9.09,
+    "row_count": 59,
+    "semantic_score": 1.0,
+    "semantic_severity": "pass",
+    "semantic_diagnostics": {
+      "semantic_score": 1.0,
+      "severity": "pass",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 1.0,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {}
+    }
+  },
+  {
+    "id": 98,
+    "query": "タイトルにsummaryを含む会議のコミットメント数をカウントしてください。",
+    "sql": "SELECT COUNT(*) AS commitment_count FROM v_commitments WHERE meeting_title ILIKE '%summary%';",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_commitments"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 9.2,
+    "row_count": 1,
+    "semantic_score": 0.93,
+    "semantic_severity": "warning",
+    "semantic_diagnostics": {
+      "semantic_score": 0.93,
+      "severity": "warning",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 0.5,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {
+        "column_check": [
+          "SELECT * used instead of explicit column selection"
+        ]
+      }
+    }
+  },
+  {
+    "id": 99,
+    "query": "タイトルにsummaryを含む会議の金額数をカウントしてください。",
+    "sql": "SELECT COUNT(*) AS amount_count FROM v_amounts WHERE meeting_title ILIKE '%summary%';",
+    "overall_pass": true,
+    "syntax_ok": true,
+    "syntax_error": "",
+    "security_ok": true,
+    "security_error": "",
+    "schema_ok": true,
+    "schema_error": "",
+    "unknown_tables": [],
+    "referenced_views": [
+      "v_amounts"
+    ],
+    "exec_ok": true,
+    "exec_error": "",
+    "exec_latency_ms": 13.56,
+    "row_count": 1,
+    "semantic_score": 0.93,
+    "semantic_severity": "warning",
+    "semantic_diagnostics": {
+      "semantic_score": 0.93,
+      "severity": "warning",
+      "scores": {
+        "view_selection": 1.0,
+        "filter_check": 1.0,
+        "column_check": 0.5,
+        "aggregation": 1.0,
+        "structure": 1.0,
+        "cross_view": 1.0,
+        "anti_patterns": 1.0
+      },
+      "details": {
+        "column_check": [
+          "SELECT * used instead of explicit column selection"
+        ]
+      }
+    }
+  }
+]

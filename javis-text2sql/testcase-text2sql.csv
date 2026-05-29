@@ -1,0 +1,103 @@
+query,sql
+JPYで言及された総予算はいくらですか？,"SELECT SUM(amount_value) AS total_amount, amount_currency FROM v_amounts WHERE amount_currency = 'JPY' GROUP BY amount_currency;"
+budgetというコンテキストを持つ金額をすべて合計してください。,SELECT SUM(amount_value) AS total_amount FROM v_amounts WHERE amount_context ILIKE '%budget%';
+すべての金額を通貨とコンテキスト付きで一覧表示してください。,"SELECT amount_value, amount_currency, amount_context FROM v_amounts"
+未完了のコミットメントはいくつありますか？,SELECT COUNT(*) AS commitment_count FROM v_commitments WHERE status = 'pending';
+完了済みのコミットメントはいくつありますか？,SELECT COUNT(*) AS completed_commitments FROM v_commitments WHERE status = 'completed'
+すべてのコミットメントを担当者、アクション、期限付きで一覧表示してください。,"SELECT person, action, deadline FROM v_commitments ORDER BY deadline_date ASC;"
+2026-06-01より前が期限のコミットメントを一覧表示してください。,"SELECT person, action, deadline, deadline_date FROM v_commitments WHERE deadline_date < DATE '2026-06-01'"
+2026-05-30より後が期限のコミットメントを一覧表示してください。,"SELECT person, action, deadline FROM v_commitments WHERE deadline_date > DATE '2026-05-30';"
+重要度スコアが4以上のアクションアイテムを表示してください。,"SELECT meeting_title, action_item_text, importance_score FROM v_action_items WHERE importance_score >= 4 ORDER BY meeting_date DESC;"
+すべての未解決の質問を重要度スコア付きで表示してください。,"SELECT meeting_title, question_text, importance_score FROM v_open_questions ORDER BY importance_score DESC;"
+重要度スコアが4以上のネガティブな発言を一覧表示してください。,"SELECT meeting_title, content, importance_score FROM v_statements WHERE sentiment = 'negative' AND importance_score >= 4 ORDER BY importance_score DESC;"
+感情別に発言数をカウントしてください。,"SELECT sentiment, COUNT(*) AS statement_count FROM v_statements GROUP BY sentiment ORDER BY statement_count DESC;"
+タイトルにVJを含む会議のトピックを一覧表示してください。,"SELECT meeting_title, topic, source_type FROM v_topics WHERE meeting_title ILIKE '%VJ%';"
+タイトルにAJを含む会議のトピックを一覧表示してください。,"SELECT meeting_title, topic FROM v_topics WHERE meeting_title ILIKE '%AJ%';"
+タイトルにVJを含む会議の固有エンティティを一覧表示してください。,SELECT DISTINCT meeting_title FROM v_topics WHERE topic ILIKE '%VJ%'
+タイトルにAJを含む会議の固有エンティティを一覧表示してください。,"SELECT DISTINCT meeting_title, speaker FROM v_speaker_turns WHERE meeting_title ILIKE '%AJ%'"
+budgetに言及している発話を一覧表示してください。,"SELECT speaker, turn_content, meeting_date FROM v_speaker_turns WHERE turn_content ILIKE '%budget%' OR turn_content ILIKE '%予算%';"
+話者ごとの発話数をカウントしてください。,"SELECT speaker, COUNT(*) AS turn_count FROM v_speaker_turns GROUP BY speaker ORDER BY turn_count DESC;"
+VJ Technologiesに言及している発話を一覧表示してください。,"SELECT speaker, turn_content, meeting_date FROM v_speaker_turns WHERE turn_content ILIKE '%VJ Technologies%';"
+AJ Technologiesに言及している発話を一覧表示してください。,"SELECT speaker, turn_content, meeting_date FROM v_speaker_turns WHERE turn_content ILIKE '%AJ Technologies%';"
+通貨ごとにamount_valueを合計してください。,"SELECT amount_currency, SUM(amount_value) AS total_amount FROM v_amounts GROUP BY amount_currency ORDER BY total_amount DESC;"
+会議タイトルごとにamount_valueを合計してください。,"SELECT meeting_title, SUM(amount_value) AS total_amount FROM v_amounts GROUP BY meeting_title ORDER BY total_amount DESC;"
+通貨がJPYの金額を一覧表示してください。,"SELECT amount_value, amount_context, meeting_date FROM v_amounts WHERE amount_currency = 'JPY' ORDER BY meeting_date DESC;"
+コンテキストにbudgetを含む金額を一覧表示してください。,"SELECT amount_value, amount_context, amount_currency FROM v_amounts WHERE amount_context ILIKE '%budget%'"
+アクションアイテム数をカウントしてください。,SELECT COUNT(*) AS action_item_count FROM v_action_items
+アクションアイテムを会議日付の降順で一覧表示してください。,"SELECT meeting_title, action_item_text, importance_score FROM v_action_items ORDER BY meeting_date DESC;"
+ステータスごとにコミットメント数を集計してください。,"SELECT status, COUNT(*) AS commitment_count FROM v_commitments GROUP BY status ORDER BY commitment_count DESC;"
+担当者名にYamashitaを含むコミットメントを一覧表示してください。,"SELECT person, action, deadline FROM v_commitments WHERE person ILIKE '%Yamashita%';"
+担当者名にYoshioを含むコミットメントを一覧表示してください。,"SELECT person, action, deadline FROM v_commitments WHERE person ILIKE '%Yoshio%';"
+言及されたすべての日付を一覧表示してください。,"SELECT meeting_title, date_raw_text, date_resolved FROM v_dates"
+言及された日付を会議タイトル付きで一覧表示してください。,"SELECT meeting_title, date_raw_text, date_resolved FROM v_dates ORDER BY date_resolved ASC;"
+会議タイトルごとに言及された日付数をカウントしてください。,"SELECT meeting_title, COUNT(*) AS date_count FROM v_dates GROUP BY meeting_title ORDER BY date_count DESC;"
+トピックにEnergyを含むトピックを一覧表示してください。,"SELECT meeting_title, topic FROM v_topics WHERE topic ILIKE '%Energy%';"
+トピックにGoEMONを含むトピックを一覧表示してください。,"SELECT meeting_title, topic, source_type FROM v_topics WHERE topic ILIKE '%GoEMON%';"
+トピックにDXを含むトピックを一覧表示してください。,"SELECT meeting_title, topic, source_type FROM v_topics WHERE topic ILIKE '%DX%';"
+トピックにAIを含むトピックを一覧表示してください。,"SELECT meeting_title, topic, source_type FROM v_topics WHERE topic ILIKE '%AI%'"
+アクションにbudgetを含むコミットメントを一覧表示してください。,"SELECT person, action, deadline FROM v_commitments WHERE action ILIKE '%budget%';"
+アクションテキストにbudgetを含むアクションアイテムを一覧表示してください。,"SELECT meeting_title, action_item_text, importance_score FROM v_action_items WHERE action_item_text ILIKE '%budget%' ORDER BY meeting_date DESC;"
+重要度スコアが5以上の発言を一覧表示してください。,"SELECT meeting_title, content, importance_score FROM v_statements WHERE importance_score >= 5 ORDER BY importance_score DESC;"
+ネガティブ感情の発話を一覧表示してください。,"SELECT meeting_title, content, importance_score FROM v_statements WHERE sentiment = 'negative'"
+topics内の異なるmeeting_id数をカウントしてください。,SELECT COUNT(DISTINCT meeting_id) AS meeting_count FROM v_topics
+commitments内の異なるmeeting_id数をカウントしてください。,SELECT COUNT(DISTINCT meeting_id) AS meeting_count FROM v_commitments;
+topicsから会議タイトルと日付を一覧表示してください。,"SELECT meeting_title, meeting_date FROM v_topics ORDER BY meeting_date DESC;"
+commitmentsから会議タイトルと日付を一覧表示してください。,"SELECT meeting_title, meeting_date FROM v_commitments ORDER BY meeting_date DESC;"
+amountsから会議タイトルと日付を一覧表示してください。,"SELECT meeting_title, meeting_date FROM v_amounts ORDER BY meeting_date DESC;"
+タイトルにHousingを含む会議の発話を一覧表示してください。,"SELECT meeting_title, speaker, turn_content FROM v_speaker_turns WHERE meeting_title ILIKE '%Housing%'"
+タイトルにHousingを含む会議のすべてのコミットメントを表示してください。,"SELECT meeting_title, person, action, deadline FROM v_commitments WHERE meeting_title ILIKE '%Housing%'"
+タイトルにHousingを含む会議のコミットメント数をカウントしてください。,SELECT COUNT(*) AS commitment_count FROM v_commitments WHERE meeting_title ILIKE '%Housing%';
+タイトルにHousingを含む会議の金額を表示してください。,"SELECT meeting_title, amount_value, amount_currency FROM v_amounts WHERE meeting_title ILIKE '%Housing%';"
+source_typeがentityのトピックを一覧表示してください。,"SELECT meeting_title, topic FROM v_topics WHERE source_type = 'entity'"
+source_typeごとにトピック数をカウントしてください。,"SELECT source_type, COUNT(*) AS topic_count FROM v_topics GROUP BY source_type ORDER BY topic_count DESC;"
+会議日付が2026-05-26のトピックを一覧表示してください。,"SELECT meeting_title, topic, source_type FROM v_topics WHERE meeting_date = DATE '2026-05-26'"
+会議日付が2026-05-26のコミットメントを一覧表示してください。,"SELECT person, action, deadline FROM v_commitments WHERE meeting_date = DATE '2026-05-26'"
+会議日付が2026-05-26のアクションアイテムを一覧表示してください。,"SELECT meeting_title, action_item_text, importance_score FROM v_action_items WHERE meeting_date = DATE '2026-05-26' ORDER BY importance_score DESC;"
+会議日付が2026-05-26の未解決質問を一覧表示してください。,"SELECT meeting_title, question_text, importance_score FROM v_open_questions WHERE meeting_date = DATE '2026-05-26' ORDER BY importance_score DESC;"
+amount_valueが1000以上の金額を一覧表示してください。,"SELECT meeting_title, amount_context, amount_value, amount_currency FROM v_amounts WHERE amount_value >= 1000 ORDER BY amount_value DESC;"
+金額をamount_valueの降順で一覧表示してください。,"SELECT amount_context, amount_value, amount_currency FROM v_amounts ORDER BY amount_value DESC;"
+コンテキストにelectricを含む総金額を表示してください。,SELECT SUM(amount_value) AS total_amount FROM v_amounts WHERE amount_context ILIKE '%electric%';
+コンテキストにbudgetを含む総金額を表示してください。,SELECT SUM(amount_value) AS total_amount FROM v_amounts WHERE amount_context ILIKE '%budget%'
+話者がdocumentの発話数をカウントしてください。,"SELECT speaker, COUNT(*) AS turn_count FROM v_speaker_turns WHERE speaker ILIKE '%document%' GROUP BY speaker ORDER BY turn_count DESC;"
+異なる話者を一覧表示してください。,SELECT DISTINCT speaker FROM v_speaker_turns
+異なる話者数をカウントしてください。,SELECT COUNT(DISTINCT speaker) AS speaker_count FROM v_speaker_turns
+Energy Japanに言及している発話を一覧表示してください。,"SELECT speaker, turn_content, meeting_date FROM v_speaker_turns WHERE turn_content ILIKE '%Energy Japan%'"
+GoEMONに言及している発話を一覧表示してください。,"SELECT speaker, turn_content, meeting_date FROM v_speaker_turns WHERE turn_content ILIKE '%GoEMON%';"
+AIに言及している発話を一覧表示してください。,"SELECT speaker, turn_content, meeting_date FROM v_speaker_turns WHERE turn_content ILIKE '%AI%'"
+トピックを会議タイトル付きで一覧表示してください。,"SELECT meeting_title, topic FROM v_topics ORDER BY meeting_title;"
+コミットメントを会議タイトルと担当者付きで一覧表示してください。,"SELECT meeting_title, person, action, deadline FROM v_commitments ORDER BY meeting_title, person;"
+アクションアイテムを会議タイトルとアクションテキスト付きで一覧表示してください。,"SELECT meeting_title, action_item_text FROM v_action_items ORDER BY meeting_date DESC;"
+未解決質問を会議タイトルと質問テキスト付きで一覧表示してください。,"SELECT meeting_title, question_text FROM v_open_questions ORDER BY meeting_title ASC;"
+会議タイトルごとに未完了コミットメント数をカウントしてください。,"SELECT meeting_title, COUNT(*) AS pending_commitment_count FROM v_commitments WHERE status = 'pending' GROUP BY meeting_title ORDER BY pending_commitment_count DESC;"
+会議タイトルごとに完了済みコミットメント数をカウントしてください。,"SELECT meeting_title, COUNT(*) AS completed_commitment_count FROM v_commitments WHERE status = 'completed' GROUP BY meeting_title ORDER BY completed_commitment_count DESC;"
+deadline_dateがないコミットメントを一覧表示してください。,"SELECT person, action, deadline FROM v_commitments WHERE deadline_date IS NULL;"
+deadline_dateがあるコミットメントを一覧表示してください。,"SELECT person, action, deadline, deadline_date FROM v_commitments WHERE deadline_date IS NOT NULL;"
+confidenceが0.8以上の日付を一覧表示してください。,"SELECT meeting_title, date_raw_text, date_resolved, confidence FROM v_dates WHERE confidence >= 0.8"
+confidenceが1.0未満の日付を一覧表示してください。,"SELECT meeting_title, date_raw_text, date_resolved, confidence FROM v_dates WHERE confidence < 1.0"
+重要度スコアが4以上のアクションアイテム数をカウントしてください。,SELECT COUNT(*) AS action_item_count FROM v_action_items WHERE importance_score >= 4
+重要度スコアが4以上の未解決質問数をカウントしてください。,SELECT COUNT(*) AS open_question_count FROM v_open_questions WHERE importance_score >= 4
+感情がneutralの発言を一覧表示してください。,"SELECT meeting_title, content, importance_score FROM v_statements WHERE sentiment = 'neutral'"
+会議タイトルごとに発言数をカウントしてください。,"SELECT meeting_title, COUNT(*) AS turn_count FROM v_speaker_turns GROUP BY meeting_title ORDER BY turn_count DESC;"
+会議タイトルごとに発話数をカウントしてください。,"SELECT meeting_title, COUNT(*) AS turn_count FROM v_speaker_turns GROUP BY meeting_title ORDER BY turn_count DESC;"
+発話数が多い上位5人の話者を一覧表示してください。,"SELECT speaker, COUNT(*) AS turn_count FROM v_speaker_turns GROUP BY speaker ORDER BY turn_count DESC LIMIT 5;"
+4500に言及している発話を一覧表示してください。,"SELECT speaker, turn_content, meeting_date FROM v_speaker_turns WHERE turn_content ILIKE '%4,500%' OR turn_content ILIKE '%４,５００%'"
+unitにmanを含むamount_valueを合計してください。,SELECT SUM(amount_value) AS total_amount FROM v_amounts WHERE amount_unit ILIKE '%man%';
+タイトルにVJを含む会議の金額コンテキストと値を一覧表示してください。,"SELECT amount_context, amount_value FROM v_amounts WHERE meeting_title ILIKE '%VJ%'"
+VJ Technologiesに言及している会議タイトルを一覧表示してください。,SELECT meeting_title FROM v_topics WHERE topic ILIKE '%VJ Technologies%'
+AJ Technologiesに言及している会議タイトルを一覧表示してください。,SELECT DISTINCT meeting_title FROM v_topics WHERE topic ILIKE '%AJ Technologies%';
+ONE Financial Serviceに言及している会議タイトルを一覧表示してください。,SELECT DISTINCT meeting_title FROM v_topics WHERE topic ILIKE '%ONE Financial Service%'
+Energy Japanに言及している会議タイトルを一覧表示してください。,SELECT DISTINCT meeting_title FROM v_topics WHERE topic ILIKE '%Energy Japan%'
+コミットメントをdeadline_dateの昇順で一覧表示してください。,"SELECT person, action, deadline, deadline_date FROM v_commitments ORDER BY deadline_date ASC;"
+deadlineにthis weekを含むコミットメントを一覧表示してください。,"SELECT person, action, deadline FROM v_commitments WHERE deadline ILIKE '%this week%' OR deadline ILIKE '%今週%';"
+アクションアイテムを重要度スコアの降順で一覧表示してください。,"SELECT meeting_title, action_item_text, importance_score FROM v_action_items ORDER BY importance_score DESC;"
+未解決質問を重要度スコアの降順で一覧表示してください。,"SELECT meeting_title, question_text, importance_score FROM v_open_questions ORDER BY importance_score DESC;"
+発言を重要度スコアの降順で一覧表示してください。,"SELECT meeting_title, content, importance_score FROM v_statements ORDER BY importance_score DESC;"
+会議タイトルごとにトピック数をカウントしてください。,"SELECT meeting_title, COUNT(*) AS topic_count FROM v_topics GROUP BY meeting_title ORDER BY topic_count DESC;"
+タイトルにcompany profileを含む会議のトピックを一覧表示してください。,"SELECT meeting_title, topic FROM v_topics WHERE meeting_title ILIKE '%company profile%';"
+タイトルにcompany profileを含む会議のエンティティを一覧表示してください。,"SELECT DISTINCT t.meeting_title, s.entity 
+FROM v_topics t 
+JOIN v_statements s ON t.meeting_id = s.meeting_id 
+WHERE t.meeting_title ILIKE '%company profile%';"
+タイトルにsummaryを含む会議のトピックを一覧表示してください。,"SELECT meeting_title, topic, source_type FROM v_topics WHERE meeting_title ILIKE '%summary%';"
+タイトルにsummaryを含む会議のコミットメント数をカウントしてください。,SELECT COUNT(*) AS commitment_count FROM v_commitments WHERE meeting_title ILIKE '%summary%';
+タイトルにsummaryを含む会議の金額数をカウントしてください。,SELECT COUNT(*) AS amount_count FROM v_amounts WHERE meeting_title ILIKE '%summary%';

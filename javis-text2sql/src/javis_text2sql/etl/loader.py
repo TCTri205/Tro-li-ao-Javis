@@ -135,24 +135,31 @@ async def load_meeting(
 
                 commitments = schema_data.get("commitments") or []
                 if commitments:
+                    parsed_commitments = []
+                    for item in commitments:
+                        d_val = item.get("deadline_date")
+                        d_obj = None
+                        if d_val:
+                            try:
+                                d_obj = date.fromisoformat(d_val) if isinstance(d_val, str) else d_val
+                            except Exception:
+                                d_obj = None
+                        parsed_commitments.append((
+                            passage_id,
+                            meeting_id,
+                            item["person"],
+                            item["action"],
+                            item.get("deadline"),
+                            d_obj,
+                            item.get("status", "pending"),
+                        ))
                     await conn.executemany(
                         """
                         INSERT INTO commitments
                             (passage_id, meeting_id, person, action, deadline, deadline_date, status)
                         VALUES ($1, $2, $3, $4, $5, $6, $7)
                         """,
-                        [
-                            (
-                                passage_id,
-                                meeting_id,
-                                item["person"],
-                                item["action"],
-                                item.get("deadline"),
-                                item.get("deadline_date"),
-                                item.get("status", "pending"),
-                            )
-                            for item in commitments
-                        ],
+                        parsed_commitments,
                     )
 
                 await conn.executemany(
