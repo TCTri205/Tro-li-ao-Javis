@@ -116,14 +116,15 @@ Allowed views and their columns (ONLY query these):
 STRICT SCHEMA RULES:
 1. NO passage_id in v_speaker_turns: The view `v_speaker_turns` DOES NOT have a `passage_id` column! Never SELECT or filter by `passage_id` when querying `v_speaker_turns`.
 2. NO source_type except in v_topics: Only the view `v_topics` has the `source_type` column! Never refer to `source_type` in any other views.
-3. ARRAY type for turn_types: The `turn_types` column in both `v_statements` and `v_speaker_turns` is a text ARRAY (text[]). You cannot use direct string comparisons (e.g. `turn_types = 'statement'` or `turn_types LIKE ...`). Instead, you MUST use PostgreSQL array operators, for example: `'statement' = ANY(turn_types)`.
+3. ARRAY type for turn_types: ONLY the column `turn_types` in `v_statements` and `v_speaker_turns` is a text ARRAY (text[]). You must use PostgreSQL array operators (e.g. `'statement' = ANY(turn_types)`) ONLY for `turn_types`. ALL other columns like `sentiment`, `status`, and `speaker` are regular text columns (NOT arrays). You MUST use simple string equality (e.g., `sentiment = 'negative'`) for them. NEVER use array operators like `= ANY(...)` on `sentiment`.
 4. Japanese terminologies mapping:
    - "発話" (speaker turns/utterance) ALWAYS maps to `v_speaker_turns`. Use it when counting utterances per speaker or finding who said what.
    - "発言" (statement/remark/sentiment) ALWAYS maps to `v_statements`. Use it when the query asks about statements/remarks with emotions/sentiments or importance scores (e.g. "感情がneutralの発言", "重要度スコアが...の発言").
 5. Anti-patterns: NEVER use `COUNT(*)` or `SELECT *`. Always use explicit column names or `COUNT(1)` to prevent parser warnings.
-6. Uniqueness: When a query asks for "different" (異なる) items, always use `SELECT DISTINCT` at the top level or `SELECT DISTINCT COUNT(...)`. If distinct results are not explicitly requested, do NOT use `DISTINCT`.
+6. Uniqueness: When a query asks for "different" (異なる) items, always use `SELECT DISTINCT` at the top level or `SELECT DISTINCT COUNT(...)`. If distinct results are not explicitly requested, do NOT use `DISTINCT` (especially for listing utterances/turns `v_speaker_turns`).
 7. Aggregations: Avoid grouping by constant filter values. For example, if you filter by `amount_currency = 'JPY'`, do not include `GROUP BY amount_currency`.
-8. SELECT DISTINCT with ORDER BY: If you use `SELECT DISTINCT` and also need to `ORDER BY` a column (e.g. importance_score), that sorted column MUST be included in the SELECT clause (e.g. `SELECT DISTINCT question_text, importance_score ... ORDER BY importance_score`). Otherwise, PostgreSQL will throw an execution error.
+8. SELECT DISTINCT with ORDER BY: If you use `SELECT DISTINCT`, you CANNOT `ORDER BY` columns that are not included in the `SELECT` clause. For example, `SELECT DISTINCT meeting_title FROM v_topics ORDER BY meeting_date DESC;` is INVALID because `meeting_date` is not in the select list. To sort by `meeting_date`, you MUST select it: `SELECT DISTINCT meeting_title, meeting_date FROM v_topics ORDER BY meeting_date DESC;`. If the user does not request sorting, do not add an `ORDER BY` clause when using `SELECT DISTINCT`.
+9. NO status in v_open_questions: The view `v_open_questions` only contains open/unresolved questions. It does NOT have a `status` column. Do not filter by `status` or use `status <> 'resolved'` when querying `v_open_questions`.
 
 Mapped entities:
 {entity_lines}
@@ -157,12 +158,13 @@ Allowed views and their columns (ONLY query these):
 STRICT SCHEMA RULES:
 1. NO passage_id in v_speaker_turns: The view `v_speaker_turns` DOES NOT have a `passage_id` column! Never SELECT or filter by `passage_id` when querying `v_speaker_turns`.
 2. NO source_type except in v_topics: Only the view `v_topics` has the `source_type` column! Never refer to `source_type` in any other views.
-3. ARRAY type for turn_types: The `turn_types` column in both `v_statements` and `v_speaker_turns` is a text ARRAY (text[]). You cannot use direct string comparisons (e.g. `turn_types = 'statement'` or `turn_types LIKE ...`). Instead, you MUST use PostgreSQL array operators, for example: `'statement' = ANY(turn_types)`.
+3. ARRAY type for turn_types: ONLY the column `turn_types` in `v_statements` and `v_speaker_turns` is a text ARRAY (text[]). You must use PostgreSQL array operators (e.g. `'statement' = ANY(turn_types)`) ONLY for `turn_types`. ALL other columns like `sentiment`, `status`, and `speaker` are regular text columns (NOT arrays). You MUST use simple string equality (e.g., `sentiment = 'negative'`) for them. NEVER use array operators like `= ANY(...)` on `sentiment`.
 4. Japanese terminologies mapping:
    - "発話" (speaker turns/utterance) ALWAYS maps to `v_speaker_turns`. Use it when counting utterances per speaker or finding who said what.
    - "発言" (statement/remark/sentiment) ALWAYS maps to `v_statements`. Use it when the query asks about statements/remarks with emotions/sentiments or importance scores (e.g. "感情がneutralの発言", "重要度スコアが...の発言").
 5. Anti-patterns: NEVER use `COUNT(*)` or `SELECT *`. Always use explicit column names or `COUNT(1)`.
-6. Uniqueness: Use `SELECT DISTINCT` or `SELECT DISTINCT COUNT(...)` when "different" (異なる) is mentioned. If distinct results are not explicitly requested, do NOT use `DISTINCT`.
+6. Uniqueness: Use `SELECT DISTINCT` or `SELECT DISTINCT COUNT(...)` when "different" (異なる) is mentioned. If distinct results are not explicitly requested, do NOT use `DISTINCT` (especially for listing utterances/turns `v_speaker_turns`).
 7. Aggregations: Avoid grouping by constant filter values.
-8. SELECT DISTINCT with ORDER BY: If you use `SELECT DISTINCT` and also need to `ORDER BY` a column (e.g. importance_score), that sorted column MUST be included in the SELECT clause (e.g. `SELECT DISTINCT question_text, importance_score ... ORDER BY importance_score`). Otherwise, PostgreSQL will throw an execution error.
+8. SELECT DISTINCT with ORDER BY: If you use `SELECT DISTINCT`, you CANNOT `ORDER BY` columns that are not included in the `SELECT` clause. For example, `SELECT DISTINCT meeting_title FROM v_topics ORDER BY meeting_date DESC;` is INVALID because `meeting_date` is not in the select list. To sort by `meeting_date`, you MUST select it: `SELECT DISTINCT meeting_title, meeting_date FROM v_topics ORDER BY meeting_date DESC;`. If the user does not request sorting, do not add an `ORDER BY` clause when using `SELECT DISTINCT`.
+9. NO status in v_open_questions: The view `v_open_questions` only contains open/unresolved questions. It does NOT have a `status` column. Do not filter by `status` or use `status <> 'resolved'` when querying `v_open_questions`.
 """

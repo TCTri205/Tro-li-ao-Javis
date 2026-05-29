@@ -18,6 +18,7 @@ from javis_text2sql.llm.embeddings import EmbeddingClient, get_embedding_client
 
 from .prompt import build_refine_prompt, build_sql_system_prompt
 from .sql_validation import clean_sql_markdown, validate_sql
+from .numeric_sql import heuristic_numeric_intent, run_numeric_sql
 
 
 logger = logging.getLogger(__name__)
@@ -327,6 +328,20 @@ async def text2sql_pipeline(
     cached_result = cache.get(question, user_id, reference_date)
     if cached_result:
         return cached_result
+
+    # 1.5. Numeric Interceptor
+    intent = heuristic_numeric_intent(question, reference_date)
+    if intent.operator != "skip" and intent.target != "none":
+        logger.info("Numeric interceptor activated for question: %s -> intent: %s", question, intent)
+        async with db_pool.acquire() as conn:
+            numeric_result = await run_numeric_sql(conn, intent, user_id, statement_timeout_ms=statement_timeout_ms)
+        result = Text2SQLResult(
+            success=True,
+            sql=numeric_result.sql_used,
+            data=[row.model_dump() for row in numeric_result.rows],
+        )
+        cache.set(question, user_id, reference_date, result)
+        return result
 
     async with db_pool.acquire() as conn:
         # 2. Entity Mapping with pg_trgm

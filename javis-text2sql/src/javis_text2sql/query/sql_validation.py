@@ -34,6 +34,16 @@ def clean_sql_markdown(raw_sql: str) -> str:
     fence_match = re.search(r"```(?:sql)?\s*(.*?)```", sql, flags=re.IGNORECASE | re.DOTALL)
     if fence_match:
         sql = fence_match.group(1).strip()
+    
+    # Strip block comments /* ... */
+    sql = re.sub(r"/\*.*?\*/", "", sql, flags=re.DOTALL)
+    
+    # Strip single-line comments -- ...
+    cleaned_lines = []
+    for line in sql.splitlines():
+        cleaned_lines.append(re.sub(r"--.*$", "", line))
+    sql = "\n".join(cleaned_lines).strip()
+    
     return sql.strip()
 
 

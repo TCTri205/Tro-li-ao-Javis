@@ -1,0 +1,349 @@
+# Numeric SQL Tool — Phương Án Triển Khai Hoàn Chỉnh (v3)
+
+> [!NOTE]
+> Phiên bản này đã cập nhật theo feedback từ codex review, sửa 5 lỗ hổng nghiêm trọng trong plan v2.
+
+## Bối Cảnh
+
+Bản nháp trong `docs/cai_tien/` mô tả một công cụ aggregate meeting metadata dùng SQL có kiểm soát: LLM **không sinh SQL tự do** mà chỉ điền form JSON (`NumericIntent`), sau đó Python chọn SQL template và chạy parameterized query.
+
+> [!IMPORTANT]
+> Bản nháp (`Untitled`) được viết cho hệ thống khác (`app.chat.*` / `transcripts` / `chunks_turn`). Repo này dùng `meetings` / `passages` / `turns`. **Toàn bộ SQL, import, execution phải viết lại.**
+
+---
+
+## Phân Tích Schema Mapping
+
+| Bản nháp | Repo thực tế | Ghi chú |
+|----------|-------------|---------|
+| `transcripts` | `meetings` | Tên khác, cột tương tự |
+| `t.session_id` | ❌ không tồn tại | Bỏ |
+| `t.participants` | ❌ không tồn tại | Sub-query `ARRAY_AGG(DISTINCT speaker) FROM turns` |
+| `chunks_turn` | `turns` | `turns.speaker`, `turns.meeting_id` |
+| `sqlalchemy.text()` | asyncpg `conn.fetch(sql, *args)` | Positional params `$1, $2, $3` |
+| `AuthzScope`, `UserRole` | Không có | Dùng `user_id` + RLS |
+| `LLMClient.complete_json()` | `LLMClient.structured_output()` | Signature khác |
+
+---
+
+## Proposed Changes
+
+### Component 0 — Baseline Fix (TRƯỚC TIÊN)
+
+#### [MODIFY] [runner.py](file:///d:/VJ/Tro-li-ao-Javis/javis-text2sql/src/javis_text2sql/eval/runner.py)
+
+Fix `COUNT(*)` → `COUNT(1)` trong `TEXT2SQL_PIPELINE_GOLDEN` (dòng 50, 65). Đây là blocker đang khiến `test_eval_runner.py` fail (`expected_behavior_accuracy = 0.5`).
+
+```diff
+- "generated_sql": "SELECT COUNT(*) AS commitment_count FROM v_commitments WHERE status = 'pending';",
++ "generated_sql": "SELECT COUNT(1) AS commitment_count FROM v_commitments WHERE status = 'pending';",
+```
+
+```diff
+- "refined_sql": "SELECT COUNT(*) AS commitment_count FROM v_commitments;",
++ "refined_sql": "SELECT COUNT(1) AS commitment_count FROM v_commitments;",
+```
+
+---
+
+### Component 1 — Core Module
+
+#### [NEW] [numeric_sql.py](file:///d:/VJ/Tro-li-ao-Javis/javis-text2sql/src/javis_text2sql/query/numeric_sql.py)
+
+**1a. Pydantic Models**
+
+```python
+class NumericIntent(BaseModel):
+    operator: Literal["sum", "avg", "max", "min", "count", "skip"] = "sum"
+    target: Literal["duration_seconds", "meeting_count", "none"] = "meeting_count"
+    group_by: Literal["none", "day", "speaker"] = "none"  # KHÔNG có user_id
+    date_start: date | None = None
+    date_end: date | None = None
+
+class NumericRow(BaseModel):
+    group_key: str | None = None
+    value: float
+    metadata: dict = {}
+
+class NumericResult(BaseModel):
+    operator: str
+    target: str
+    rows: list[NumericRow] = []
+    source_meeting_ids: list[str] = []
+    sql_used: str = ""
+    metadata: dict = {}
+```
+
+> [!WARNING]
+> **`group_by = "user_id"` ĐÃ BỊ LOẠI BỎ** (so với plan v2). Lý do: repo có RLS theo `user_id` (`migrations/001_init.sql:210`), aggregate cross-user là behavior nhạy cảm. Không implement cho đến khi có authorization middleware rõ ràng.
+
+**1b. Meeting-Context Guard — ĐIỂM MỚI QUAN TRỌNG NHẤT**
+
+> [!CAUTION]
+> **Lỗi nghiêm trọng plan v2:** Regex `何件` sẽ intercept sai câu `未完了のタスクは何件ありますか？` (golden case 2 trong `runner.py:49`). Câu này đáng ra phải đi qua LLM pipeline để query `v_commitments`, nhưng bị numeric interceptor bắt thành `meeting_count`.
+
+**Fix: Two-stage guard**
+
+```python
+# Keywords BẮT BUỘC phải có ÍT NHẤT MỘT cái để được intercept:
+_MEETING_CONTEXT_SIGNALS = re.compile(
+    r"会議|ミーティング|打ち合わせ|会議時間|所要時間|mtg"
+)
+
+# Keywords mà khi có thì TUYỆT ĐỐI KHÔNG intercept (thuộc về views khác):
+_NON_MEETING_SIGNALS = re.compile(
+    r"コミットメント|タスク|アクションアイテム|質問|金額|予算|"
+    r"トピック|エンティティ|発言|感情|日付|担当|期限|budget|amount"
+)
+
+def heuristic_numeric_intent(query: str, ref_date: date) -> NumericIntent:
+    # Gate 1: Skip nếu có non-meeting signal
+    if _NON_MEETING_SIGNALS.search(query):
+        return NumericIntent(operator="skip", target="none")
+
+    # Gate 2: Skip nếu KHÔNG có meeting context signal
+    if not _MEETING_CONTEXT_SIGNALS.search(query):
+        return NumericIntent(operator="skip", target="none")
+
+    # Gate 3: Skip nếu là timestamp query
+    if _TIMESTAMP_RE.search(query):
+        return NumericIntent(operator="skip", target="none")
+
+    # ... sau đó mới detect operator/target/group_by/dates
+```
+
+**Tại sao thiết kế này an toàn?**
+- `未完了のタスクは何件ありますか？` → có `タスク` → `_NON_MEETING_SIGNALS` match → skip → đi LLM pipeline → query `v_commitments` ✓
+- `先週、何件の会議がありましたか？` → không có non-meeting signal, có `会議` → intercept → numeric count ✓
+- `今月の合計時間は？` → không có meeting context (`会議` absent) → skip → **CẦN XEM LẠI**
+
+Hmm, `今月の合計時間は？` không có `会議` nhưng `合計時間` rất rõ ràng là meeting duration. Giải pháp: thêm `合計時間`, `所要時間`, `会議時間` vào `_MEETING_CONTEXT_SIGNALS`:
+
+```python
+_MEETING_CONTEXT_SIGNALS = re.compile(
+    r"会議|ミーティング|打ち合わせ|合計時間|所要時間|会議時間|mtg|"
+    r"最も長かった|一番長い|最長の|最も短かった|一番短い|最短の"
+)
+```
+
+**1c. Date Resolver** — giữ nguyên từ plan v2:
+- `昨日/今日/明日/今週/先週/今月/先月/X月` → `date_start`, `date_end`
+
+**1d. SQL Execution — RLS-SAFE**
+
+> [!CAUTION]
+> **Lỗi nghiêm trọng plan v2:** Plan v2 viết "không dùng `execute_readonly()`" và không nêu rõ SET TRANSACTION READ ONLY, statement_timeout, set_config. Với RLS ở `migrations/001_init.sql:210`, thiếu `set_config('app.current_user_id', ...)` sẽ trả 0 rows hoặc bypass security.
+
+**Fix:** Viết `_execute_numeric_readonly` wrap đầy đủ security context, tương tự `execute_readonly` trong `pipeline.py:299`:
+
+```python
+async def _execute_numeric_readonly(
+    conn: Any,
+    sql: str,
+    params: tuple,
+    user_id: str,
+    statement_timeout_ms: int = 5000,
+) -> list[dict[str, Any]]:
+    async with conn.transaction():
+        await conn.execute("SET TRANSACTION READ ONLY")
+        await conn.execute(f"SET LOCAL statement_timeout = {int(statement_timeout_ms)}")
+        await conn.execute(
+            "SELECT set_config('app.current_user_id', $1, true)", str(user_id)
+        )
+        rows = await conn.fetch(sql, *params)
+    return [dict(row) for row in rows]
+```
+
+**Điểm khác so với `execute_readonly`:** truyền được `*params` (positional args cho `$1, $2, $3` trong SQL template). `execute_readonly` hiện tại chỉ gọi `conn.fetch(sql)` không params.
+
+**SQL Templates** — dùng `meetings m`, positional params:
+
+| Case | SQL |
+|------|-----|
+| meeting_count | `SELECT COUNT(DISTINCT m.id) AS value FROM meetings m WHERE m.user_id = $1::uuid AND ($2::date IS NULL OR m.meeting_date >= $2) AND ($3::date IS NULL OR m.meeting_date <= $3)` |
+| duration sum/avg | `SELECT COALESCE(SUM/AVG(m.duration_seconds), 0) AS value FROM meetings m WHERE ...` |
+| duration max/min | `_run_duration_extreme` (SELECT m.*, sub-query participants) |
+| group_by=day | `GROUP BY m.meeting_date ORDER BY group_key LIMIT 31` |
+| group_by=speaker | `JOIN (SELECT DISTINCT meeting_id, speaker FROM turns) x ON x.meeting_id = m.id GROUP BY x.speaker` |
+
+**`_run_duration_extreme`:**
+```sql
+SELECT
+    m.id::text AS meeting_id, m.title, m.meeting_date::text,
+    m.duration_seconds AS value, m.summary,
+    (SELECT ARRAY_AGG(DISTINCT t.speaker) FROM turns t WHERE t.meeting_id = m.id) AS participants
+FROM meetings m
+WHERE m.user_id = $1::uuid
+  AND ($2::date IS NULL OR m.meeting_date >= $2)
+  AND ($3::date IS NULL OR m.meeting_date <= $3)
+  AND m.duration_seconds IS NOT NULL
+ORDER BY m.duration_seconds DESC  -- ASC cho min
+LIMIT 1
+```
+
+---
+
+### Component 2 — Pipeline Integration
+
+#### [MODIFY] [pipeline.py](file:///d:/VJ/Tro-li-ao-Javis/javis-text2sql/src/javis_text2sql/query/pipeline.py)
+
+Thêm numeric interceptor **sau cache lookup, trước entity mapping**:
+
+```python
+from .numeric_sql import heuristic_numeric_intent, run_numeric_sql
+
+intent = heuristic_numeric_intent(question, reference_date)
+if intent.operator != "skip" and intent.target != "none":
+    logger.info("Numeric interceptor activated: %s", intent)
+    async with db_pool.acquire() as conn:
+        numeric_result = await run_numeric_sql(conn, intent, user_id)
+    result = Text2SQLResult(
+        success=True,
+        sql=numeric_result.sql_used,
+        data=[row.model_dump() for row in numeric_result.rows],
+    )
+    cache.set(question, user_id, reference_date, result)
+    return result
+```
+
+**Tại sao safe với existing tests:**
+- `コミットメントを数えてください` → có `コミットメント` → `_NON_MEETING_SIGNALS` match → skip
+- `bad` → không match gì → skip
+- `総予算はいくらですか？` → có `予算` → `_NON_MEETING_SIGNALS` match → skip
+
+---
+
+### Component 3 — Tests
+
+#### [NEW] [test_numeric_sql.py](file:///d:/VJ/Tro-li-ao-Javis/javis-text2sql/tests/test_numeric_sql.py)
+
+**3a. Positive cases — NÊN intercept:**
+
+| # | Input | Expected |
+|---|-------|----------|
+| 1 | `今月の会議の合計時間は？` | op=sum, target=duration, date=this month |
+| 2 | `先週、何件の会議がありましたか？` | op=count, target=meeting_count, date=last week |
+| 3 | `最も長かった会議は？` | op=max, target=duration |
+| 4 | `一番短い会議は？` | op=min, target=duration |
+| 5 | `会議の平均所要時間は？` | op=avg, target=duration |
+| 6 | `今月、日ごとに何件の会議がありましたか？` | op=count, group_by=day |
+| 7 | `話者ごとの会議数は？` | op=count, group_by=speaker |
+| 8 | `昨日、何か会議はありましたか？` | op=count, date=yesterday |
+| 9 | `5月の会議は合計何時間？` | op=sum, target=duration, date=May |
+| 10 | `ミーティングは何件ありましたか？` | op=count, target=meeting_count |
+
+**3b. Negative cases — KHÔNG ĐƯỢC intercept (CRITICAL):**
+
+| # | Input | Expected | Lý do |
+|---|-------|----------|-------|
+| 11 | `未完了のタスクは何件ありますか？` | op=skip | `タスク` → non-meeting |
+| 12 | `コミットメントはいくつ？` | op=skip | `コミットメント` → non-meeting |
+| 13 | `アクションアイテムの件数は？` | op=skip | `アクションアイテム` → non-meeting |
+| 14 | `質問はいくつ未解決ですか？` | op=skip | `質問` → non-meeting |
+| 15 | `予算の合計はいくら？` | op=skip | `予算` → non-meeting |
+| 16 | `トピックはいくつありますか？` | op=skip | `トピック` → non-meeting |
+| 17 | `佐藤さんは何分頃に発言しましたか？` | op=skip | timestamp query |
+| 18 | `AJ Technologiesとは？` | op=skip | No meeting signal |
+
+**3c. SQL execution tests** — mock asyncpg conn, verify:
+- SQL contains `FROM meetings m` (not `FROM transcripts`)
+- SQL contains `FROM turns` for speaker group (not `chunks_turn`)
+- `_execute_numeric_readonly` sets `SET TRANSACTION READ ONLY` + `statement_timeout` + `set_config`
+- `_run_duration_extreme` returns participants from sub-query
+
+**3d. Pipeline integration test:**
+- Numeric question → `llm_client.generate_calls` stays empty
+- Non-meeting question → goes through LLM pipeline normally
+
+---
+
+### Component 4 — Eval Benchmark Integration
+
+#### [MODIFY] [runner.py](file:///d:/VJ/Tro-li-ao-Javis/javis-text2sql/src/javis_text2sql/eval/runner.py) — `TEXT2SQL_PIPELINE_GOLDEN`
+
+Thêm golden cases mới cho numeric SQL:
+
+```python
+# Case 5: Numeric SQL intercept — meeting count
+{
+    "question": "今月、会議は何件ありましたか？",
+    "generated_sql": "",  # numeric bypass, no LLM SQL
+    "expected_success": True,
+    "expected_data": [{"value": 3}],  # mock data
+    "expect_retry": False,
+    "numeric_intercept": True,  # new flag
+},
+# Case 6: Numeric SQL should NOT intercept commitment queries
+{
+    "question": "未完了のタスクは何件ありますか？",
+    "generated_sql": "SELECT COUNT(1) AS commitment_count FROM v_commitments WHERE status = 'pending';",
+    "expected_success": True,
+    "expected_data": [{"commitment_count": 7}],
+    "expect_retry": False,
+    "numeric_intercept": False,  # must NOT be intercepted
+},
+```
+
+> [!NOTE]
+> `_pipeline_metrics` runner cần cập nhật để handle `numeric_intercept` flag — khi True, verify rằng pipeline dùng numeric path; khi False, verify rằng pipeline KHÔNG dùng numeric path.
+
+---
+
+## Thứ Tự Thực Hiện
+
+```mermaid
+graph TD
+    A["0. Fix COUNT(*) → COUNT(1)<br/>trong runner.py"] --> B["1. Chạy pytest verify<br/>baseline xanh"]
+    B --> C["2. Tạo numeric_sql.py<br/>Models + Guard + Heuristic<br/>+ RLS-safe execution"]
+    C --> D["3. Viết test_numeric_sql.py<br/>18+ cases (positive + negative)"]
+    D --> E["4. Chạy pytest verify<br/>new tests pass"]
+    E --> F["5. Modify pipeline.py<br/>Thêm interceptor"]
+    F --> G["6. Thêm golden cases<br/>vào runner.py"]
+    G --> H["7. Chạy toàn bộ pytest<br/>ALL GREEN"]
+```
+
+---
+
+## Các Quyết Định Thiết Kế
+
+| Câu hỏi | Quyết định | Lý do |
+|---------|-----------|-------|
+| `group_by=user_id` | **LOẠI BỎ** | RLS policy → cross-user aggregate nguy hiểm. Cần authz middleware trước. |
+| `extract_numeric_intent` (LLM) | **Defer Phase 2** | Pipeline chỉ dùng `heuristic_numeric_intent`. LLM extraction thêm complexity nhưng chưa cần thiết khi regex + guard đủ tốt. |
+| Interceptor routing safety | **Two-stage guard** | Gate 1: block non-meeting signals. Gate 2: require meeting context. Tránh false-positive hijack. |
+| SQL execution | **Wrap đầy đủ RLS context** | `SET TRANSACTION READ ONLY` + `statement_timeout` + `set_config('app.current_user_id')`. Tương tự `pipeline.py:299`. |
+| Thay thế hay fallback? | **Thay thế hoàn toàn** khi intent match | Docs chỉ rõ: numeric → deterministic SQL. Nếu guard pass thì kết quả chính xác hơn LLM. |
+| Benchmark integration | **Thêm vào cả runner golden + CSV** | Chỉ unit test chưa chứng minh cải tiến trên benchmark thật. |
+
+---
+
+## Verification Plan
+
+### Automated Tests
+```bash
+# Step 0: Baseline fix
+pytest tests/test_eval_runner.py -v   # must pass after COUNT(*) fix
+
+# Step 1-4: New module
+pytest tests/test_numeric_sql.py -v   # 18+ cases
+
+# Step 5-7: Integration
+pytest tests/test_pipeline.py -v      # existing tests must not break
+pytest tests/ -v                      # all green
+```
+
+### Smoke Test
+```bash
+python -c "
+from javis_text2sql.query.numeric_sql import heuristic_numeric_intent
+from datetime import date
+ref = date(2026, 5, 29)
+
+# Should intercept
+print(heuristic_numeric_intent('今月の会議は何件？', ref))
+
+# Should NOT intercept
+print(heuristic_numeric_intent('未完了のタスクは何件ありますか？', ref))
+print(heuristic_numeric_intent('コミットメントはいくつ？', ref))
+"
+```

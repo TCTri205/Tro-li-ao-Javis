@@ -44,13 +44,15 @@ TEXT2SQL_PIPELINE_GOLDEN = [
         "expected_success": True,
         "expected_data": [{"total_amount": 4500}],
         "expect_retry": False,
+        "numeric_intercept": False,
     },
     {
         "question": "未完了のタスクは何件ありますか？",
-        "generated_sql": "SELECT COUNT(*) AS commitment_count FROM v_commitments WHERE status = 'pending';",
+        "generated_sql": "SELECT COUNT(1) AS commitment_count FROM v_commitments WHERE status = 'pending';",
         "expected_success": True,
         "expected_data": [{"commitment_count": 7}],
         "expect_retry": False,
+        "numeric_intercept": False,
     },
     {
         "question": "unsafe",
@@ -58,15 +60,25 @@ TEXT2SQL_PIPELINE_GOLDEN = [
         "expected_success": False,
         "expected_data": None,
         "expect_retry": False,
+        "numeric_intercept": False,
     },
     {
         "question": "Retry counting commitments",
         "generated_sql": "SELECT missing_column FROM v_commitments;",
-        "refined_sql": "SELECT COUNT(*) AS commitment_count FROM v_commitments;",
+        "refined_sql": "SELECT COUNT(1) AS commitment_count FROM v_commitments;",
         "expected_success": True,
         "expected_data": [{"commitment_count": 7}],
         "expect_retry": True,
         "fail_first_execution": True,
+        "numeric_intercept": False,
+    },
+    {
+        "question": "今月、会議は何件ありましたか？",
+        "generated_sql": "",
+        "expected_success": True,
+        "expected_data": [{"group_key": None, "value": 3.0, "metadata": {}}],
+        "expect_retry": False,
+        "numeric_intercept": True,
     },
 ]
 
@@ -237,6 +249,10 @@ class _EvalConn:
                 {"alias": "総予算", "canonical_name": "budget"},
                 {"alias": "タスク", "canonical_name": "commitment"},
             ]
+        if "meetings" in query:
+            if "meeting_id" in query:
+                return [{"meeting_id": "mock-meeting-uuid"}]
+            return [{"value": 3}]
         self.execution_count += 1
         if self.fail_first_execution and self.execution_count == 1:
             raise RuntimeError("column does not exist")
@@ -293,6 +309,17 @@ async def _pipeline_metrics() -> dict[str, Any]:
         success_ok = result.success == expected_success
         exact_ok = result.data == case["expected_data"] if expected_success else not result.success
         retry_ok = result.retry_used == bool(case["expect_retry"])
+        
+        # Verify if numeric intercept was used correctly
+        expect_intercept = bool(case.get("numeric_intercept", False))
+        if expect_intercept:
+            intercept_ok = len(client.generate_calls) == 0
+        else:
+            if expected_success:
+                intercept_ok = len(client.generate_calls) > 0
+            else:
+                intercept_ok = True
+
         success_count += int(result.success)
         exact_match_count += int(exact_ok)
         if case["expect_retry"]:
@@ -310,7 +337,7 @@ async def _pipeline_metrics() -> dict[str, Any]:
                 "sql": result.sql,
                 "error": result.error,
                 "latency_ms": round(latency_ms, 3),
-                "ok": success_ok and exact_ok and retry_ok,
+                "ok": success_ok and exact_ok and retry_ok and intercept_ok,
             }
         )
 

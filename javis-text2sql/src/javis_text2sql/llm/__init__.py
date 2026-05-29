@@ -5,6 +5,7 @@ from javis_text2sql.llm.client import LLMClient
 from javis_text2sql.llm.fixture import FixtureLLMClient
 from javis_text2sql.llm.groq import GroqClient
 from javis_text2sql.llm.gemini import GeminiClient
+from javis_text2sql.llm.openrouter import OpenRouterClient
 from javis_text2sql.llm.embeddings import EmbeddingClient, get_embedding_client
 
 if TYPE_CHECKING:
@@ -41,6 +42,16 @@ def get_llm_client(settings: Settings) -> LLMClient:
         return GeminiClient(
             api_keys=settings.gemini_api_keys,
             model=settings.gemini_model,
+        )
+    elif provider == "openrouter":
+        if not settings.openrouter_api_keys:
+            raise ValueError(
+                "OpenRouter API keys are not configured. Please set OPENROUTER_API_KEYS (comma-separated), "
+                "OPENROUTER_API_KEY, or OPENROUTER_API_KEY_1, OPENROUTER_API_KEY_2 in your environment."
+            )
+        return OpenRouterClient(
+            api_keys=settings.openrouter_api_keys,
+            model=settings.openrouter_model,
         )
     else:
         raise ValueError(f"Unknown LLM provider: {settings.llm_provider}")

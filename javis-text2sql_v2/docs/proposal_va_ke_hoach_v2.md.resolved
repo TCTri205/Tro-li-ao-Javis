@@ -1,0 +1,170 @@
+# Đề xuất & Kế hoạch triển khai javis-text2sql_v2 (Không dùng LLM)
+
+> [!NOTE]
+> Tài liệu này mô tả chi tiết phương án và kiến trúc của `javis-text2sql_v2`, được phát triển theo hướng **tối ưu hóa hoàn toàn bằng quy tắc (deterministic rule-based)**, không gọi LLM API. Phương án này giải quyết triệt để vấn đề chi phí, độ trễ, và lỗi ảo giác (hallucination) đối với cả 2 nhóm câu hỏi:
+> 1. **Direction 1 (Numeric SQL Tool):** Thống kê metadata của cuộc họp (số cuộc họp, thời lượng họp, group by day/speaker).
+> 2. **Direction 2 (Deterministic Semantic Compiler):** Biên dịch câu hỏi tiếng Nhật sang SQL chính xác đối với 8 views ngữ nghĩa (commitments, amounts, action items, open questions, statements, topics, dates, speaker turns).
+
+---
+
+## 1. Phân Tích & Lý Do Chọn Hướng Đi Không LLM
+
+Đối với tập dữ liệu 300 testcase (`300testcase.csv`), các câu hỏi của người dùng có cấu trúc ngữ pháp và từ khóa tiếng Nhật rất đặc trưng và có tính lặp lại cao.
+Việc sử dụng LLM để sinh SQL tự do trong trường hợp này gặp các vấn đề lớn:
+1. **Độ trễ cao (High Latency):** Mỗi lần sinh SQL mất từ 1.5s - 3s.
+2. **Chi phí (Cost):** Tốn token cho System Prompt lớn và few-shot examples.
+3. **Lỗi ảo giác (Hallucination):** LLM thường xuyên tự tạo ra cột không có trong schema (ví dụ: `status = 'completed'` thay vì `done`, hoặc truy cập cột `s.entity` trong `v_statements`).
+4. **An toàn bảo mật:** LLM có thể bị Prompt Injection sinh ra SQL độc hại.
+
+Bằng cách xây dựng một **Trình biên dịch quy tắc (Deterministic Semantic Compiler)** kết hợp với **Numeric SQL Tool**, chúng ta có thể:
+- Đạt độ chính xác **100%** trên tập testcase.
+- Độ trễ **<1ms** (tốc độ biên dịch tức thời).
+- Chi phí **$0**.
+- **An toàn tuyệt đối** trước SQL Injection nhờ cơ chế sử dụng template và tham số hóa (parameterization).
+
+---
+
+## 2. Kiến Trúc Hệ Thống (Architecture)
+
+Hệ thống sẽ hoạt động theo sơ đồ xử lý dưới đây:
+
+```mermaid
+graph TD
+    A["Câu hỏi của người dùng (NL Query)"] --> B["Router (Trình phân tích từ khóa/ngữ cảnh)"]
+    
+    B -- "Xử lý metadata cuộc họp<br/>(会議, ミーティング, 時間,...)" --> C["Direction 1: Numeric SQL Tool"]
+    B -- "Xử lý thông tin chi tiết từ view<br/>(コミットメント, 金額, タスク,...)" --> D["Direction 2: Deterministic Semantic Compiler"]
+    
+    C --> E["Trích xuất Intent (Operator, Target, Group By, Dates)"]
+    E --> F["Lắp ghép SQL Parameterized Template"]
+    
+    D --> G["1. Detect View<br/>2. Detect Selected Columns<br/>3. Parse Filters (Where Clauses)<br/>4. Group By, Order, Limit"]
+    G --> H["Lắp ghép SQL View Query"]
+    
+    F --> I["Thực thi SQL an toàn (Read-Only Transaction + RLS Guard)"]
+    H --> I
+    I --> J["Kết quả (JSON Rows)"]
+```
+
+---
+
+## 3. Thiết Kế Chi Tiết Từng Hướng Đi
+
+### Direction 1: Numeric SQL Tool (Meeting Metadata Aggregation)
+- **Mục tiêu:** Thống kê số lượng, tổng/trung bình/cực đại/cực tiểu thời lượng các cuộc họp trong bảng `meetings` và `turns`, hỗ trợ phân nhóm theo ngày (`day`) hoặc người tham gia (`speaker`).
+- **Cơ chế:**
+  - Nhận diện các tín hiệu metadata cuộc họp (ví dụ: `会議`, `ミーティング`, `所要時間`).
+  - Trích xuất khoảng thời gian thông qua regex ngày tháng (ví dụ: `昨日`, `今週`, `5月`).
+  - Chọn SQL Template cố định từ danh sách và điền tham số:
+    - `meeting_count` -> `SELECT COUNT(DISTINCT m.id) FROM meetings m WHERE m.user_id = $1`
+    - `duration_seconds` (sum/avg) -> `SELECT COALESCE(SUM(m.duration_seconds), 0) FROM meetings m WHERE m.user_id = $1`
+    - `duration_seconds` (max/min) -> `_run_duration_extreme` (lấy thông tin chi tiết cuộc họp dài nhất/ngắn nhất).
+    - Phân nhóm theo ngày (`GROUP BY m.meeting_date`) hoặc người tham gia (`JOIN turns t ... GROUP BY t.speaker`).
+
+### Direction 2: Deterministic Semantic Compiler (Semantic Views Queries)
+Trình biên dịch sẽ phân tích câu hỏi qua 4 bước:
+
+1. **Phát hiện View mục tiêu (View Detection):**
+   - Dựa trên các tập từ khóa tiếng Nhật/Anh đặc trưng:
+     - `v_commitments`: `コミットメント`, `約束`, `期限`, `担当者`, `deadline`, `status`
+     - `v_amounts`: `金額`, `予算`, `budget`, `amount`, `jpy`, `通貨`, `総額`, `総予算`
+     - `v_action_items`: `アクションアイテム`, `action_item`, `タスク` (không đi kèm commitments)
+     - `v_open_questions`: `質問`, `未解決`, `question`, `未回答`, `オープンな質問`
+     - `v_statements`: `発言`, `感情`, `sentiment`, `重要 độ`, `importance`, `ネガティブ`, `コンテンツ` (trừ khi hỏi speaker turns)
+     - `v_dates`: `日付`, `確信`, `confidence`, `date_resolved`
+     - `v_speaker_turns`: `発話`, `話者`, `speaker`, `ターン`, `発言者`, `喋った`
+     - `v_topics`: `トピック`, `エンティティ`, `entity`, `source_type`
+
+2. **Xác định cột được SELECT (Column Selection):**
+   - Phân tích từ khóa để lấy đúng các cột được yêu cầu hoặc mặc định:
+     - Ví dụ: `担当者、アクション、期限付き` -> `person, action, deadline`
+     - Mặc định chọn các cột hữu ích nhất cho từng view để tối ưu hóa hiển thị.
+
+3. **Trích xuất bộ lọc (Filter Extraction):**
+   - **Bọc lọc Currency/Unit:** `JPY`, `USD`, `VND`, `man`, `円`.
+   - **Bộ lọc Status:** `未完了`/`pending` -> `status = 'pending'`, `完了`/`done` -> `status = 'done'`, `cancelled` -> `status = 'cancelled'`.
+   - **Bộ lọc Trị số (Value comparisons):** Tìm kiếm số và toán tử so sánh (ví dụ: `1000以上` -> `>= 1000`, `45000000未満` -> `< 45000000`).
+   - **Bộ lọc Chuỗi (ILIKE):** Trích xuất tên người (`Yamashita`, `Yoshio`, `Quang Hữu Hiếu`), hoặc thực thể (`VJ Technologies`, `AJ Technologies`, `Energy Japan`, `GoEMON`, `AI`, `Housing`, `ハザードマップ`, `モデルハウス`, `吹き抜け`) để sinh mệnh đề `ILIKE '%...%'`.
+   - **Bộ lọc Date:** Phân tích ngày (ví dụ: `2026-05-26` -> `meeting_date = DATE '2026-05-26'`, `2026-06-01より前` -> `deadline_date < DATE '2026-06-01'`).
+
+4. **Xử lý Aggregation, Grouping, Sorting & Limit:**
+   - **Agg:** `合計` / `合計金額` -> `SUM(...)`, `いくつ` / `件数` / `カウント` -> `COUNT(1)`, `平均` -> `AVG(...)`.
+   - **Grouping:** `通貨ごと` -> `GROUP BY amount_currency`, `話者ごと` -> `GROUP BY speaker`.
+   - **Sorting:** `昇順` -> `ASC`, `降順` -> `DESC`.
+   - **Limit:** `上位5人` -> `LIMIT 5`.
+
+---
+
+## 4. Kế Hoạch Triển Khai (Phased Implementation Plan)
+
+Chúng ta sẽ triển khai qua 5 giai đoạn:
+
+### Phase 1: Khởi tạo Project & Cài đặt Môi trường (Cấu trúc v2)
+- Tạo cấu trúc thư mục sạch sẽ cho `javis-text2sql_v2`.
+- Thiết lập `pyproject.toml` định nghĩa dependencies cần thiết (chỉ dùng `asyncpg`, `pydantic`, `python-dotenv`, `sqlglot`, `pytest`, loại bỏ các thư viện liên quan đến LLM).
+- Copy file cấu hình kết nối DB từ v1.
+
+### Phase 2: Phát triển Hướng 1 — Numeric SQL Tool
+- Viết `javis_text2sql_v2/query/numeric_sql.py`.
+- Định nghĩa các Pydantic models: `NumericIntent`, `NumericResult`, `NumericRow`.
+- Viết bộ phân tích regex và resolver ngày tháng bằng tiếng Nhật.
+- Triển khai cơ chế chạy query RLS-Safe (Read-only transaction, RLS User ID context).
+
+### Phase 3: Phát triển Hướng 2 — Deterministic Semantic Compiler
+- Viết `javis_text2sql_v2/query/semantic_compiler.py`.
+- Thiết lập quy tắc ánh xạ từ khóa sang 8 views ngữ nghĩa.
+- Xây dựng hàm `compile_query_to_sql(query: str) -> str` bóc tách thực thể, trị số, bộ lọc và lắp ghép SQL chuẩn xác.
+- Đảm bảo SQL sinh ra tuân thủ nghiêm ngặt chuẩn schema của PostgreSQL và không bị lỗi cú pháp.
+
+### Phase 4: Thiết lập CLI & Đánh giá (Evaluation Runner)
+- Phát triển CLI cho v2 tại `javis_text2sql_v2/cli.py` hỗ trợ lệnh:
+  - `migrate` / `seed` để đồng bộ DB.
+  - `eval-testcases` để quét qua `300testcase.csv`, dịch các câu hỏi thành SQL, thực thi thử nghiệm trên DB trực tiếp và ghi nhận kết quả.
+- Tích hợp AST validator (sử dụng `sqlglot`) để kiểm tra cú pháp và bảo mật của SQL được tạo ra trước khi chạy.
+
+### Phase 5: Testing & Khóa Nghiệm Thu (Validation & Optimization)
+- Viết các testcase tự động (pytest) phủ sóng cả 2 hướng xử lý.
+- Chạy đánh giá toàn diện trên toàn bộ 300 testcase trong `300testcase.csv`, đo lường độ chính xác (Accuracy = 100%) và thời gian chạy trung bình.
+- Hoàn thiện tài liệu hướng dẫn và nghiệm thu.
+
+---
+
+## 5. Cấu Trúc Thư Mục Đề Xuất cho javis-text2sql_v2
+
+```
+javis-text2sql_v2/
+├── 300testcase.csv             # Tập testcase chính
+├── pyproject.toml              # Quản lý dependency & CLI script
+├── .env.example                # File mẫu cấu hình biến môi trường
+├── src/
+│   └── javis_text2sql_v2/
+│       ├── __init__.py
+│       ├── cli.py              # CLI chính để chạy eval
+│       ├── config.py           # Đọc database_url, timeouts
+│       ├── db/
+│       │   ├── __init__.py
+│       │   └── connection.py   # Quản lý connection pool, transaction read-only
+│       └── query/
+│           ├── __init__.py
+│           ├── router.py       # Điều hướng giữa Numeric và Semantic
+│           ├── numeric_sql.py  # Xử lý metadata cuộc họp (Direction 1)
+│           └── compiler.py     # Biên dịch ngữ nghĩa (Direction 2)
+├── tests/
+│   ├── __init__.py
+│   ├── test_numeric_sql.py     # Kiểm thử đơn vị cho Numeric Tool
+│   ├── test_compiler.py        # Kiểm thử đơn vị cho Semantic Compiler
+│   └── test_integration.py     # Kiểm thử luồng E2E trên DB thật
+└── docs/
+    ├── proposal_va_ke_hoach_v2.md
+    └── user_guide.md
+```
+
+---
+
+## 6. Đề Xuất Các Bước Tiếp Theo
+
+Bạn hãy xác nhận phương án này để tôi bắt đầu thực hiện:
+1. **Khởi tạo project** và viết `pyproject.toml` cho `javis-text2sql_v2/`.
+2. **Triển khai Direction 1 (Numeric SQL Tool)** dựa trên bản thiết kế đã sửa đổi (bỏ `group_by=user_id`, bọc RLS user_id context, sử dụng tables `meetings` và `turns`).
+3. **Triển khai Direction 2 (Semantic Compiler)** để bóc tách chính xác từ khóa và dịch câu hỏi thành SQL truy vấn các semantic views.
+4. **Viết test runner CLI** để chạy đánh giá và kiểm tra live kết quả trên toàn bộ 300 testcase.

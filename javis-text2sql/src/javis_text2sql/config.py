@@ -30,6 +30,8 @@ class Settings:
     groq_model: str = "llama-3.3-70b-versatile"
     gemini_api_keys: list[str] = field(default_factory=list)
     gemini_model: str = "gemini-2.5-flash"
+    openrouter_api_keys: list[str] = field(default_factory=list)
+    openrouter_model: str = "deepseek/deepseek-chat"
     redis_url: str | None = None
 
     @classmethod
@@ -74,6 +76,25 @@ class Settings:
                 i += 1
 
         gemini_model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+
+        openrouter_keys = []
+        raw_openrouter_keys = os.getenv("OPENROUTER_API_KEYS")
+        if raw_openrouter_keys:
+            openrouter_keys.extend([k.strip() for k in raw_openrouter_keys.split(",") if k.strip()])
+        else:
+            single_openrouter_key = os.getenv("OPENROUTER_API_KEY")
+            if single_openrouter_key:
+                openrouter_keys.append(single_openrouter_key.strip())
+            
+            # Also check for individual keys like OPENROUTER_API_KEY_1, OPENROUTER_API_KEY_2
+            i = 1
+            while i <= 20:  # check up to 20 keys
+                key_i = os.getenv(f"OPENROUTER_API_KEY_{i}")
+                if key_i:
+                    openrouter_keys.append(key_i.strip())
+                i += 1
+
+        openrouter_model = os.getenv("OPENROUTER_MODEL", "deepseek/deepseek-chat")
                 
         return cls(
             database_url=os.getenv("TEXT2SQL_DATABASE_URL"),
@@ -84,6 +105,8 @@ class Settings:
             groq_model=model,
             gemini_api_keys=gemini_keys,
             gemini_model=gemini_model,
+            openrouter_api_keys=openrouter_keys,
+            openrouter_model=openrouter_model,
             redis_url=os.getenv("TEXT2SQL_REDIS_URL", "redis://localhost:6379/0"),
         )
 

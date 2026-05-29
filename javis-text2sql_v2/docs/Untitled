@@ -1,0 +1,264 @@
+"""Numeric SQL tool: aggregate meeting metadata, role-gated and parameterized."""
+
+from __future__ import annotations
+
+import logging
+import re
+from datetime import date
+
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
+from app.chat.enums.user_role import UserRole
+from app.chat.schemas.retrieval_schema import NumericIntent, NumericResult, NumericRow
+from app.chat.services.authz import AuthzScope
+from app.chat.services.llm.client import LLMClient, LLMError
+from app.chat.services.llm.prompts import render_prompt
+from app.common.exceptions.http_exceptions import ForbiddenException
+from app.common.logging import trace_step
+
+logger = logging.getLogger(__name__)
+
+_SYSTEM = "出力はJSONのみ。説明文を一切含めないこと。"
+_AGG_SQL = {"sum": "SUM", "avg": "AVG", "max": "MAX", "min": "MIN", "count": "COUNT"}
+_EXISTENCE_RE = re.compile(r"(会議).*(ありましたか|ありますか|あった|あります|ありました)|何か会議")
+_TIMESTAMP_RE = re.compile(r"何分頃|何秒頃|いつ.*(発言|言)|何時.*(発言|言)")
+_DURATION_MAX_RE = re.compile(r"最も長|一番長|最長|最大.*会議時間")
+_DURATION_MIN_RE = re.compile(r"最も短|一番短|最短|最小.*会議時間")
+
+
+def heuristic_numeric_intent(query: str) -> NumericIntent:
+    """Deterministic fallback for common Japanese numeric queries."""
+    if _TIMESTAMP_RE.search(query):
+        return NumericIntent(operator="skip", target="none", group_by="none")
+
+    operator = "sum"
+    if _DURATION_MAX_RE.search(query):
+        operator = "max"
+    elif _DURATION_MIN_RE.search(query):
+        operator = "min"
+    elif re.search(r"平均", query):
+        operator = "avg"
+    elif re.search(r"最大|一番多", query):
+        operator = "max"
+    elif re.search(r"最小|一番少", query):
+        operator = "min"
+    elif re.search(r"何件|何回|件数|会議数", query):
+        operator = "count"
+
+    target = "meeting_count"
+    if _DURATION_MAX_RE.search(query) or _DURATION_MIN_RE.search(query):
+        target = "duration_seconds"
+    elif re.search(r"何時間|所要時間|会議時間|合計時間", query):
+        target = "duration_seconds"
+    elif re.search(r"何件|会議数|会議件数", query) or _EXISTENCE_RE.search(query):
+        target = "meeting_count"
+        operator = "count"
+
+    group_by = "none"
+    if re.search(r"ユーザーごと|ユーザー別", query):
+        group_by = "user_id"
+    elif re.search(r"日ごと|日別", query):
+        group_by = "day"
+    elif re.search(r"話者ごと|話者別", query):
+        group_by = "speaker"
+
+    return NumericIntent(operator=operator, target=target, group_by=group_by)
+
+
+async def extract_numeric_intent(query: str, *, llm: LLMClient | None = None) -> NumericIntent:
+    """Parse a query into a NumericIntent via LLM, repaired by deterministic hints."""
+    trace_step(
+        "retrieval.numeric_intent.input",
+        input={"query": query, "llm_enabled": llm is not None},
+    )
+    fallback = heuristic_numeric_intent(query)
+    trace_step("retrieval.numeric_intent.fallback", output=fallback)
+    if llm is None:
+        trace_step("retrieval.numeric_intent.output", output=fallback)
+        return fallback
+    try:
+        result, _ = await llm.complete_json(
+            system=_SYSTEM,
+            user=render_prompt("numeric_intent.j2", query=query),
+            schema=NumericIntent,
+            thinking="disabled",
+            max_tokens=300,
+        )
+        if result.operator == "none":
+            result.operator = "skip"
+        if result == NumericIntent():
+            trace_step("retrieval.numeric_intent.output", output=fallback)
+            return fallback
+        if result.operator == "skip" or result.target in {"none", "time_start_sec"}:
+            trace_step("retrieval.numeric_intent.output", output=result)
+            return result
+        if fallback.operator != "sum" and result.operator == "sum":
+            result.operator = fallback.operator
+        if fallback.target != "meeting_count" and result.target == "meeting_count":
+            result.target = fallback.target
+        if fallback.group_by != "none" and result.group_by == "none":
+            result.group_by = fallback.group_by
+        if result.context_filter is None:
+            result.context_filter = fallback.context_filter
+        trace_step("retrieval.numeric_intent.output", output=result)
+        return result
+    except LLMError as e:
+        logger.warning("numeric intent extraction failed: %s", e)
+        trace_step("retrieval.numeric_intent.error", error=e)
+        trace_step("retrieval.numeric_intent.output", output=fallback)
+        return fallback
+
+
+def _agg(operator: str) -> str:
+    return _AGG_SQL.get(operator, "SUM")
+
+
+def _validate_scope(scope: AuthzScope, intent: NumericIntent) -> None:
+    if scope.role == UserRole.USER and scope.effective_user_filter is None:
+        raise ForbiddenException(detail="user role requires an effective user filter")
+    if intent.group_by == "user_id" and not scope.allow_cross_user_aggregate:
+        raise ForbiddenException(detail="cross-user aggregate requires admin role")
+
+
+def run_numeric_sql(
+    db: Session,
+    intent: NumericIntent,
+    scope: AuthzScope,
+    *,
+    date_start: date | None = None,
+    date_end: date | None = None,
+) -> NumericResult:
+    """Build + run a parameterized aggregate query for the given intent and scope."""
+    trace_step(
+        "retrieval.numeric_sql.input",
+        input={"intent": intent, "scope": scope, "date_start": date_start, "date_end": date_end},
+    )
+    if intent.operator in {"skip", "none"} or intent.target in {"none", "time_start_sec"}:
+        result = NumericResult(operator="skip", target="none", metadata={"skipped": True})
+        trace_step("retrieval.numeric_sql.skipped", output=result)
+        return result
+
+    _validate_scope(scope, intent)
+    uid = str(scope.effective_user_filter) if scope.effective_user_filter else None
+    params: dict = {"uid": uid, "ds": date_start, "de": date_end}
+
+    result = _run_meeting(db, intent, params)
+    result.metadata.update(
+        {
+            "date_start": date_start.isoformat() if date_start else None,
+            "date_end": date_end.isoformat() if date_end else None,
+        }
+    )
+    trace_step("retrieval.numeric_sql.output", output=result)
+    return result
+
+
+def _run_meeting(db: Session, intent: NumericIntent, params: dict) -> NumericResult:
+    where = (
+        "(:uid IS NULL OR t.user_id = CAST(:uid AS uuid)) "
+        "AND (:ds IS NULL OR t.meeting_date >= :ds) "
+        "AND (:de IS NULL OR t.meeting_date <= :de)"
+    )
+
+    result_operator = "count" if intent.target == "meeting_count" else intent.operator
+
+    if intent.target == "meeting_count":
+        value_expr = "COUNT(DISTINCT t.id)"
+    elif intent.target == "duration_seconds" and intent.operator in {"max", "min"}:
+        return _run_duration_extreme(db, intent, params, where)
+    else:
+        agg = _agg(intent.operator)
+        value_expr = f"COALESCE({agg}(t.duration_seconds), 0)"
+
+    if intent.group_by == "user_id":
+        sql = text(
+            f"""
+            SELECT t.user_id::text AS group_key, {value_expr} AS value
+            FROM transcripts t WHERE {where}
+            GROUP BY t.user_id ORDER BY value DESC LIMIT 20
+            """
+        )
+        rows = [
+            NumericRow(group_key=r.group_key, value=float(r.value)) for r in db.execute(sql, params)
+        ]
+    elif intent.group_by == "day":
+        sql = text(
+            f"""
+            SELECT t.meeting_date::text AS group_key, {value_expr} AS value
+            FROM transcripts t WHERE {where}
+            GROUP BY t.meeting_date ORDER BY group_key LIMIT 31
+            """
+        )
+        rows = [
+            NumericRow(group_key=r.group_key, value=float(r.value)) for r in db.execute(sql, params)
+        ]
+    elif intent.group_by == "speaker":
+        sql = text(
+            f"""
+            SELECT x.speaker AS group_key, {value_expr} AS value
+            FROM transcripts t
+            JOIN (SELECT DISTINCT transcript_id, speaker FROM chunks_turn) x ON x.transcript_id = t.id
+            WHERE {where}
+            GROUP BY x.speaker ORDER BY value DESC LIMIT 20
+            """
+        )
+        rows = [
+            NumericRow(group_key=r.group_key, value=float(r.value)) for r in db.execute(sql, params)
+        ]
+    else:
+        sql = text(f"SELECT {value_expr} AS value FROM transcripts t WHERE {where}")
+        value = db.execute(sql, params).scalar() or 0
+        rows = [NumericRow(value=float(value))]
+
+    if intent.group_by != "none" and not rows:
+        rows = [NumericRow(group_key="該当なし", value=0.0)]
+
+    return NumericResult(operator=result_operator, target=intent.target, rows=rows)
+
+
+def _run_duration_extreme(
+    db: Session,
+    intent: NumericIntent,
+    params: dict,
+    where: str,
+) -> NumericResult:
+    """Return the meeting row behind a min/max duration result."""
+    direction = "DESC" if intent.operator == "max" else "ASC"
+    sql = text(
+        f"""
+        SELECT
+            t.id::text AS transcript_id,
+            t.session_id AS session_id,
+            t.meeting_date::text AS meeting_date,
+            t.participants AS participants,
+            t.duration_seconds AS value,
+            t.summary AS summary
+        FROM transcripts t
+        WHERE {where} AND t.duration_seconds IS NOT NULL
+        ORDER BY t.duration_seconds {direction}, t.meeting_date {direction}
+        LIMIT 1
+        """
+    )
+    row = db.execute(sql, params).first()
+    if row is None:
+        return NumericResult(
+            operator=intent.operator,
+            target=intent.target,
+            rows=[NumericRow(value=0.0, metadata={"no_data": True})],
+        )
+
+    transcript_id = row.transcript_id
+    metadata = {
+        "transcript_id": transcript_id,
+        "session_id": row.session_id,
+        "meeting_date": row.meeting_date,
+        "participants": row.participants or [],
+        "summary": row.summary,
+    }
+    return NumericResult(
+        operator=intent.operator,
+        target=intent.target,
+        rows=[NumericRow(value=float(row.value or 0), metadata=metadata)],
+        source_chunk_ids=[transcript_id],
+    )

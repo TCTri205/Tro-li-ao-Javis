@@ -1,5 +1,5 @@
 # BÁO CÁO ĐÁNH GIÁ CHI TIẾT TEXT2SQL (99 TESTCASES)
-*Thời gian thực hiện: 2026-05-29 14:57:01*
+*Thời gian thực hiện: 2026-05-29 16:53:32*
 *Môi trường kết nối cơ sở dữ liệu: Live PostgreSQL*
 
 ## 1. TỔNG QUAN KẾT QUẢ ĐÁNH GIÁ
