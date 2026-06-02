@@ -1,115 +1,177 @@
 import sys
+import argparse
+import asyncio
 from pathlib import Path
 import pandas as pd
 from datetime import date
+from typing import Any
 
-ROOT = Path(".").resolve()
+try:
+    sys.stdout.reconfigure(encoding='utf-8')
+    sys.stderr.reconfigure(encoding='utf-8')
+except AttributeError:
+    pass
+
+ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from numeric_sql_tool.heuristics import heuristic_numeric_intent
-from numeric_sql_tool.pipeline import build_numeric_sql
+from eval_utils import is_semantically_match
+from numeric_sql_tool.config import Settings, require_database_url
+from numeric_sql_tool.db_utils import create_pool
+from numeric_sql_tool.pipeline import run_numeric_pipeline
 
-csv_path = ROOT / "db" / "numeric_sql_testcases_ja.csv"
-df = pd.read_csv(csv_path)
+DEFAULT_REFERENCE_DATE = date(2026, 5, 28)
+DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000"
 
-results = []
-ref_date = date(2026, 5, 28)
+def _sql_from_result(result) -> str:
+    sql = result.metadata.get("sql")
+    if sql:
+        return str(sql)
+    if result.metadata.get("skipped"):
+        err = result.metadata.get("error", "")
+        return f"SKIP (operator={result.operator}, target={result.target}) {err}".strip()
+    return "SKIP (no SQL)"
 
-for idx, row in df.iterrows():
-    row_num = idx + 2
-    q = str(row['question']).strip()
-    csv_sql = str(row['sql']).strip() # Generating CSV used lowercase 'sql'
+def format_query_result(result) -> str:
+    if result.metadata.get("skipped"):
+        return "-"
+    if not result.rows:
+        return "No data (0.0)"
     
-    # Run the heuristic parser
-    intent = heuristic_numeric_intent(q)
-    expected_sql = build_numeric_sql(intent)
+    # If there is only 1 row and no group_key, format the value
+    if len(result.rows) == 1 and (result.rows[0].group_key is None or result.rows[0].group_key == "none"):
+        val = result.rows[0].value
+        # Check if it has metadata like meeting_date
+        meta = result.rows[0].metadata
+        if meta and "meeting_date" in meta:
+            return f"{val} ({meta['meeting_date']})"
+        return f"{val}"
     
-    # Determine actual correct behavior based on rules
-    q_lower = q.lower()
-    should_be_skip = False
-    skip_reason = ""
-    
-    # Logic copied from original eval_cases.py
-    if any(k in q_lower for k in ["何について", "議題", "要約", "合意された内容", "発言したのは誰", "詳しく説明", "ローンチについて話した", "ローンチについて話す"]):
-        should_be_skip = True
-        skip_reason = "Qualitative/semantic"
-    elif "いくらでしたか" in q_lower or "予算はいくら" in q_lower:
-        should_be_skip = True
-        skip_reason = "Detailed figure"
-    elif any(k in q_lower for k in ["何分頃", "何秒頃", "何時頃", "何秒目", "いつ発言"]):
-        should_be_skip = True
-        skip_reason = "Detailed timestamp"
-    elif "いつですか" in q_lower and not any(k in q_lower for k in ["最も", "一番"]):
-        should_be_skip = True
-        skip_reason = "Time based on topic"
-            
-    is_skip = should_be_skip or intent.operator in {"skip", "none"} or intent.target in {"none", "time_start_sec"}
-    
-    if is_skip:
-        actual_expected = "SKIP (operator=skip, target=none)"
-    else:
-        actual_expected = expected_sql
-        
-    def normalize(s):
-        if not s or pd.isna(s):
-            return ""
-        s = str(s).replace("\n", " ").replace("\r", "")
-        s = " ".join(s.split())
-        return s.lower()
-        
-    norm_csv = normalize(csv_sql)
-    norm_expected = normalize(actual_expected)
-    
-    is_wrong = False
-    reason = ""
-    
-    if is_skip:
-        if "skip" not in csv_sql.lower():
-            is_wrong = True
-            reason = f"Phải là SKIP. Lý do: {skip_reason}."
-    else:
-        if "skip" in csv_sql.lower():
-            is_wrong = True
-            reason = "Phải sinh SQL (đây là câu hỏi định lượng/đếm số cuộc họp)."
-        elif norm_csv != norm_expected:
-            is_wrong = True
-            if "group by" in csv_sql.lower() and "group_by" not in str(actual_expected).lower() and "group by" not in str(actual_expected).lower():
-                reason = "SQL không khớp. CSV sử dụng GROUP BY dư thừa cho câu hỏi truy vấn 1 ngày duy nhất."
-            else:
-                reason = "SQL không khớp về cấu trúc truy vấn hoặc điều kiện lọc."
+    # If it's grouped, format as group_key: value
+    formatted_groups = []
+    for row in result.rows:
+        key = row.group_key or "unknown"
+        val = row.value
+        formatted_groups.append(f"{key}: {val}")
+    return ", ".join(formatted_groups)
 
-    results.append({
-        "row": row_num,
-        "question": q,
-        "csv_sql": csv_sql,
-        "expected_sql": actual_expected,
-        "is_wrong": is_wrong,
-        "reason": reason
-    })
-
-report_path = ROOT / "eval" / "evaluation_report_ja_new.md"
-
-with open(report_path, "w", encoding="utf-8") as f:
-    f.write("# Báo cáo Đánh giá Test Case Tiếng Nhật Mới\n\n")
-    f.write("| Dòng | Câu hỏi | SQL thực tế | Cú pháp mong muốn | Kết quả |\n")
-    f.write("|---|---|---|---|---|\n")
+async def evaluate_async(actual_path: Path, gt_path: Path, report_path: Path):
+    print(f"Evaluating Actual: {actual_path}")
+    print(f"Against Ground Truth: {gt_path}")
     
-    incorrect_count = 0
+    # Load ground truth file
+    df_gt = pd.read_csv(gt_path)
+    df_gt.columns = [c.lower() for c in df_gt.columns]
+    
+    # Connect to PostgreSQL
+    settings = Settings.from_env()
+    db_url = require_database_url(settings.database_url)
+    pool = await create_pool(db_url)
+    
+    results = []
     correct_count = 0
+    incorrect_count = 0
     
-    for r in results:
-        question_escaped = r["question"].replace("\n", " <br> ")
-        csv_sql_escaped = str(r["csv_sql"]).replace("\n", " <br> ").replace("|", "\\|")
-        expected_sql_escaped = str(r["expected_sql"]).replace("\n", " <br> ").replace("|", "\\|")
+    sem = asyncio.Semaphore(10)  # limit concurrency
+    
+    async def process_one(idx: int, row_gt: Any) -> dict[str, Any]:
+        nonlocal correct_count, incorrect_count
+        q = row_gt['question']
+        gt_sql = str(row_gt['sql'])
         
-        if r["is_wrong"]:
-            incorrect_count += 1
-            status = f"🔴 **Sai**<br>{r['reason']}"
-        else:
-            correct_count += 1
+        async with sem:
+            try:
+                result = await run_numeric_pipeline(
+                    question=q,
+                    db_pool=pool,
+                    llm_client=None, # regex-only
+                    user_id=DEFAULT_USER_ID,
+                    reference_date=DEFAULT_REFERENCE_DATE,
+                )
+                actual_sql = _sql_from_result(result)
+                query_result_str = format_query_result(result)
+            except Exception as exc:
+                actual_sql = f"ERROR: {exc}"
+                query_result_str = "ERROR"
+        
+        is_match = is_semantically_match(gt_sql, actual_sql)
+        
+        reason = ""
+        if is_match:
             status = "🟢 **Đúng**"
-            
-        f.write(f"| {r['row']} | {question_escaped} | `{csv_sql_escaped}` | `{expected_sql_escaped}` | {status} |\n")
+        else:
+            status = "🔴 **Sai**"
+            if "skip" in gt_sql.lower() and "skip" not in actual_sql.lower():
+                reason = "Ground Truth yêu cầu SKIP, nhưng Pipeline sinh SQL."
+            elif "skip" not in gt_sql.lower() and "skip" in actual_sql.lower():
+                reason = "Ground Truth yêu cầu SQL, nhưng Pipeline sinh SKIP."
+            else:
+                reason = "SQL không khớp về cấu trúc hoặc điều kiện lọc."
+                
+        return {
+            "row": idx + 2,
+            "question": q,
+            "gt_sql": gt_sql,
+            "actual_sql": actual_sql,
+            "query_result": query_result_str,
+            "status": status,
+            "reason": reason,
+            "is_match": is_match
+        }
 
-print(f"Báo cáo mới đã được tạo tại: {report_path}")
-print(f"Tổng số case Đúng: {correct_count}, Sai: {incorrect_count}")
+    # Run pipeline for all questions
+    tasks = [process_one(idx, df_gt.iloc[idx]) for idx in range(len(df_gt))]
+    results_raw = await asyncio.gather(*tasks)
+    
+    # Sort results by row index to match CSV order
+    results_raw.sort(key=lambda x: x["row"])
+    
+    # Count results
+    for r in results_raw:
+        if r["is_match"]:
+            correct_count += 1
+        else:
+            incorrect_count += 1
+            
+    await pool.close()
+    
+    # Write report
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(report_path, "w", encoding="utf-8") as f:
+        f.write(f"# Báo cáo Đánh giá Trung thực (Honest Evaluation Report)\n\n")
+        f.write(f"- **Ngày đánh giá**: {date.today().isoformat()}\n")
+        f.write(f"- **Tổng số case**: {len(df_gt)}\n")
+        f.write(f"- **Số lượng ĐÚNG**: {correct_count}\n")
+        f.write(f"- **Số lượng SAI**: {incorrect_count}\n")
+        f.write(f"- **Độ chính xác**: {(correct_count/len(df_gt))*100:.2f}%\n\n")
+        
+        f.write("## Chi tiết kết quả\n\n")
+        f.write("| Dòng | Câu hỏi | SQL thực tế | Kết quả truy vấn | Cú pháp mong muốn | Kết quả |\n")
+        f.write("|---|---|---|---|---|---|\n")
+        
+        for r in results_raw:
+            q_esc = r["question"].replace("\n", " <br> ")
+            act_esc = str(r["actual_sql"]).replace("\n", " <br> ").replace("|", "\\|")
+            gt_esc = str(r["gt_sql"]).replace("\n", " <br> ").replace("|", "\\|")
+            res_esc = str(r["query_result"]).replace("\n", " <br> ").replace("|", "\\|")
+            
+            status_str = r["status"]
+            if r["reason"]:
+                status_str += f"<br>*{r['reason']}*"
+                
+            f.write(f"| {r['row']} | {q_esc} | `{act_esc}` | {res_esc} | `{gt_esc}` | {status_str} |\n")
+
+    print(f"Báo cáo đã được tạo tại: {report_path}")
+    print(f"Tổng số case Đúng: {correct_count}, Sai: {incorrect_count}")
+
+def main():
+    parser = argparse.ArgumentParser(description="Honest evaluation of Pipeline results vs Ground Truth with DB execution")
+    parser.add_argument("--actual", type=Path, default=ROOT / "db" / "numeric_sql_testcases_200_ja.xlsx", help="Pipeline output file")
+    parser.add_argument("--gt", type=Path, default=ROOT / "eval" / "combined_200_testcases_ja.csv", help="Ground Truth CSV file")
+    parser.add_argument("--out", type=Path, default=ROOT / "eval" / "evaluation_report_200_honest.md", help="Output report file")
+    args = parser.parse_args()
+    
+    asyncio.run(evaluate_async(args.actual, args.gt, args.out))
+
+if __name__ == "__main__":
+    main()

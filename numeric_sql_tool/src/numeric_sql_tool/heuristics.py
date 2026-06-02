@@ -185,3 +185,14 @@ def resolve_date_range(question: str, reference_date: date) -> tuple[date | None
         return start, end
 
     return None, None
+
+
+def enforce_intent_invariants(intent: NumericIntent, query: str) -> NumericIntent:
+    """Apply strict invariants that must hold true regardless of LLM output.
+    
+    Invariant 1: Single-day queries never need GROUP BY day.
+    """
+    if is_single_day_query(query) and intent.group_by == "day":
+        intent.group_by = "none"
+    return intent
+

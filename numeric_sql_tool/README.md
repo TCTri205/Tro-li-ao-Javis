@@ -77,12 +77,67 @@ Hỗ trợ: `meeting_count`, `duration_seconds` (sum/avg/max/min), `group_by` da
 
 | File / Thư mục | Mô tả |
 |------|--------|
-| `eval/numeric_sql_testcases_ja.csv` | 200 test cases tiếng Nhật chuẩn với kỳ vọng (SQL hoặc SKIP). |
-| `scripts/eval_cases.py` | Script kiểm thử tĩnh (Heuristics vs CSV). Đạt độ chính xác **100.00%** (200/200). |
-| `scripts/eval_hybrid.py` | Script kiểm thử thực tế (Hybrid Pipeline vs CSV + PostgreSQL). Đạt độ chính xác **100.00%** (200/200). |
-| `eval/evaluation_report.md` | Báo cáo chi tiết của kiểm thử tĩnh. |
-| `eval/evaluation_report_hybrid.md` | Báo cáo chi tiết của kiểm thử động thực tế (LLM Groq Llama 3 + Heuristic fallback). |
-| `db/reset_meeting_data.sql` | `TRUNCATE` 3 bảng meeting trước khi load lại. |
+| `eval/numeric_sql_testcases_ja.csv` | 100 test cases cơ bản (template-based). |
+| `eval/new_100_advanced_testcases.csv` | 100 test cases nâng cao (phức tạp hơn). |
+| `eval/combined_200_testcases_ja.csv` | **Bộ 200 test cases tổng hợp** (Cơ bản + Nâng cao). |
+| `scripts/temp_eval.py` | Script đánh giá Heuristics vs Kết quả thực tế (CSV). Hỗ trợ `--input` và `--out`. |
+| `eval/evaluation_report_ja_200.md` | Báo cáo chi tiết cho bộ 200 test cases. |
+
+---
+
+## Quy trình Kiểm thử mở rộng (200 Test Cases)
+
+Để đảm bảo độ bao phủ, chúng ta sử dụng bộ 200 test cases (100 cơ bản + 100 nâng cao).
+
+### Bước 1: Chuẩn bị file câu hỏi
+Nếu chưa có file `db/questions_200_ja.txt`, trích xuất từ file CSV tổng hợp:
+```powershell
+python -c "import pandas as pd; df = pd.read_csv('eval/combined_200_testcases_ja.csv'); df['question'].to_csv('db/questions_200_ja.txt', index=False, header=False, encoding='utf-8')"
+```
+
+### Bước 2: Chạy Pipeline để sinh kết quả (Test Run)
+
+#### Cách A: Chạy chế độ Hybrid (Có LLM + Regex Fallback)
+*(Cần cấu hình `GROQ_API_KEYS` trong file `.env` và có delay để tránh Rate Limit 429)*
+```powershell
+python scripts/ja_testcases.py run `
+  --questions db/questions_200_ja.txt `
+  --excel-out db/numeric_sql_testcases_200_ja.xlsx `
+  --reference-date 2026-05-28 `
+  --concurrency 1 `
+  --delay-ms 1200
+```
+
+#### Cách B: Chạy chế độ Regex-Only (Không dùng LLM)
+*(Chạy cực nhanh ~4 giây, không lo Rate Limit)*
+```powershell
+python scripts/ja_testcases.py run `
+  --questions db/questions_200_ja.txt `
+  --excel-out db/numeric_sql_testcases_200_ja.xlsx `
+  --reference-date 2026-05-28 `
+  --regex-only `
+  --concurrency 10 `
+  --delay-ms 0
+```
+
+### Bước 3: Chạy Đánh giá và Đối soát (Evaluation & Audit)
+
+Sau khi sinh ra kết quả tại `db/numeric_sql_testcases_200_ja.xlsx`, chạy các script đánh giá sau:
+
+#### 1. Tạo Báo cáo Đánh giá Trung thực:
+```powershell
+python scripts/temp_eval.py `
+  --actual db/numeric_sql_testcases_200_ja.xlsx `
+  --gt eval/combined_200_testcases_ja.csv `
+  --out eval/evaluation_report_200_honest.md
+```
+Báo cáo chi tiết sẽ được ghi nhận tại `eval/evaluation_report_200_honest.md`.
+
+#### 2. Tạo Báo cáo Đối soát Trung thực:
+```powershell
+python scripts/audit_test_results.py
+```
+Báo cáo đối soát (tập trung vào các trường hợp sai lệch/Discrepancies) sẽ được tạo tại `eval/audit_report_200.md`.
 
 ---
 

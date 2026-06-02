@@ -4,7 +4,7 @@ import logging
 from datetime import date
 from typing import Any
 
-from .heuristics import heuristic_numeric_intent, resolve_date_range
+from .heuristics import enforce_intent_invariants, heuristic_numeric_intent, resolve_date_range
 from .llm_client import LLMClient
 from .models import NumericIntent, NumericResult, NumericRow
 from .prompt import build_numeric_intent_prompt
@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 async def extract_numeric_intent(question: str, llm_client: LLMClient | None = None) -> NumericIntent:
     fallback = heuristic_numeric_intent(question)
+    fallback = enforce_intent_invariants(fallback, question)
     if llm_client is None:
         return fallback
 
@@ -29,7 +30,7 @@ async def extract_numeric_intent(question: str, llm_client: LLMClient | None = N
             result.target = fallback.target
             result.group_by = fallback.group_by
         if result.operator == "skip" or result.target in {"none", "time_start_sec"}:
-            return result
+            return enforce_intent_invariants(result, question)
         if fallback.operator != "sum" and result.operator == "sum":
             result.operator = fallback.operator
         if fallback.target != "meeting_count" and result.target == "meeting_count":
@@ -38,13 +39,13 @@ async def extract_numeric_intent(question: str, llm_client: LLMClient | None = N
             result.group_by = fallback.group_by
         if result.context_filter is None:
             result.context_filter = fallback.context_filter
-        from .heuristics import is_single_day_query
-        if is_single_day_query(question) and result.group_by == "day":
-            result.group_by = "none"
+        
+        result = enforce_intent_invariants(result, question)
         return result
     except Exception as exc:
         logger.warning("numeric intent extraction failed: %s", exc)
         return fallback
+
 
 
 async def run_numeric_pipeline(
