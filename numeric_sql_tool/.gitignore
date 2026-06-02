@@ -160,3 +160,4 @@ db/data/
 db/*.txt
 eval/*.txt
 # *.txt  <-- removed this broad ignore
+report/
