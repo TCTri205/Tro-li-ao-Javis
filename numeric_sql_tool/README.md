@@ -73,15 +73,16 @@ Hỗ trợ: `meeting_count`, `duration_seconds` (sum/avg/max/min), `group_by` da
 | `numeric` | Một câu hỏi → chạy pipeline, in JSON |
 | `batch` | Đọc file `.txt` nhiều câu → Excel (`question`, `sql`) |
 
-### 6. Test case tiếng Nhật
+### 6. Test case tiếng Nhật và Báo cáo Đánh giá (Evaluation Results)
 
-| File | Mô tả |
+| File / Thư mục | Mô tả |
 |------|--------|
-| `db/numeric_sql_questions_ja.txt` | 100 câu hỏi JA (1 dòng / câu) |
-| `db/numeric_sql_testcases_ja.xlsx` | Kết quả chạy pipeline (cột `question`, `sql`) |
-| `scripts/ja_testcases.py` | `generate` / `run` / `all` |
-| `scripts/export_numeric_sql_testcases.py` | Export SQL chỉ regex (không gọi Groq/DB) |
-| `db/reset_meeting_data.sql` | `TRUNCATE` 3 bảng meeting trước khi load lại |
+| `eval/numeric_sql_testcases_ja.csv` | 200 test cases tiếng Nhật chuẩn với kỳ vọng (SQL hoặc SKIP). |
+| `scripts/eval_cases.py` | Script kiểm thử tĩnh (Heuristics vs CSV). Đạt độ chính xác **100.00%** (200/200). |
+| `scripts/eval_hybrid.py` | Script kiểm thử thực tế (Hybrid Pipeline vs CSV + PostgreSQL). Đạt độ chính xác **100.00%** (200/200). |
+| `eval/evaluation_report.md` | Báo cáo chi tiết của kiểm thử tĩnh. |
+| `eval/evaluation_report_hybrid.md` | Báo cáo chi tiết của kiểm thử động thực tế (LLM Groq Llama 3 + Heuristic fallback). |
+| `db/reset_meeting_data.sql` | `TRUNCATE` 3 bảng meeting trước khi load lại. |
 
 ---
 

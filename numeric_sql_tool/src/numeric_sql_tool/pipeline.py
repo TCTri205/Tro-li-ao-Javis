@@ -24,6 +24,10 @@ async def extract_numeric_intent(question: str, llm_client: LLMClient | None = N
             result.operator = "skip"
         if result == NumericIntent():
             return fallback
+        if fallback.operator != "skip" and (result.operator == "skip" or result.target in {"none", "time_start_sec"}):
+            result.operator = fallback.operator
+            result.target = fallback.target
+            result.group_by = fallback.group_by
         if result.operator == "skip" or result.target in {"none", "time_start_sec"}:
             return result
         if fallback.operator != "sum" and result.operator == "sum":
@@ -34,6 +38,9 @@ async def extract_numeric_intent(question: str, llm_client: LLMClient | None = N
             result.group_by = fallback.group_by
         if result.context_filter is None:
             result.context_filter = fallback.context_filter
+        from .heuristics import is_single_day_query
+        if is_single_day_query(question) and result.group_by == "day":
+            result.group_by = "none"
         return result
     except Exception as exc:
         logger.warning("numeric intent extraction failed: %s", exc)

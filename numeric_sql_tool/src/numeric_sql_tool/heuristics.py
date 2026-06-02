@@ -11,19 +11,60 @@ _EXISTENCE_RE = re.compile(r"(会議).*(ありましたか|ありますか|あ�
 _TIMESTAMP_RE = re.compile(r"何分頃|何秒頃|いつ.*(発言|言)|何時.*(発言|言)")
 _QUALITATIVE_RE = re.compile(
     r"何について|議題|要約|合意された内容|発言したのは誰|詳しく説明|"
-    r"ローンチについて話した|ローンチについて話す|いくらでしたか|予算はいくら"
+    r"ローンチについて話した|ローンチについて話す|いくらでしたか|予算はいくら|"
+    r"いくらですか|パーセント|原因|対策|対応策|アクション|曜日|天気|差は|比べ|対比|"
+    r"どっち|どこですか|こんにちは|削除|できますか|おすすめ|"
+    r"市場|内訳|募集|削減|消化率|多すぎる|指示しましたか|決まりましたか|"
+    r"何億円|何社|何名|発言回数|何回発言|誰|何が決まり|リリース日|"
+    r"取得予定|締め切り|ローンチ日|理由は何|参加者|参加企業"
 )
 _DURATION_MAX_RE = re.compile(r"最も長|一番長|最長|最大.*会議時間")
 _DURATION_MIN_RE = re.compile(r"最も短|一番短|最短|最小.*会議時間")
 
 
+def is_single_day_query(query: str) -> bool:
+    if any(k in query for k in ["今日", "本日", "昨日", "明日"]):
+        return True
+    if re.search(r"\d{1,2}月\d{1,2}日", query):
+        return True
+    matches = re.findall(r"\d{4}[-/]\d{1,2}[-/]\d{1,2}", query)
+    if len(matches) == 1 and not any(k in query for k in ["から", "〜", "まで"]):
+        return True
+    return False
+
+
 def heuristic_numeric_intent(query: str) -> NumericIntent:
+    q_lower = query.lower().strip()
+    if q_lower in {"会議", "こんにちは"}:
+        return NumericIntent(operator="skip", target="none", group_by="none")
+
     # Skip qualitative/semantic questions or detailed timestamps
     if _TIMESTAMP_RE.search(query) or _QUALITATIVE_RE.search(query):
         return NumericIntent(operator="skip", target="none", group_by="none")
 
     # Skip general "When" questions that aren't about min/max duration
     if "いつですか" in query and not re.search(r"最も|一番", query):
+        return NumericIntent(operator="skip", target="none", group_by="none")
+
+    # Skip 2 periods comparison questions
+    periods = ["今月", "先月", "来月", "今週", "先週", "来週", "今日", "昨日", "明日"]
+    period_count = sum(1 for p in periods if p in query)
+    if period_count > 1:
+        return NumericIntent(operator="skip", target="none", group_by="none")
+
+    # Skip multiple metrics questions
+    has_count = any(k in query for k in ["件数", "何件", "何回", "回数", "会議数"])
+    has_duration = any(k in query for k in ["時間", "所要時間", "合計時間", "平均時間"])
+    if has_count and has_duration:
+        return NumericIntent(operator="skip", target="none", group_by="none")
+
+    # Skip "which meeting" questions unless they ask about duration/extremes
+    if ("どれ" in query and "どれくらい" not in query) or "どの" in query:
+        if not any(k in query for k in ["長", "短", "時間", "期間"]):
+            return NumericIntent(operator="skip", target="none", group_by="none")
+
+    # Skip scheduling intents
+    if any(k in query for k in ["ミーティングをしたい", "会議をしたい", "予約したい"]):
         return NumericIntent(operator="skip", target="none", group_by="none")
 
     operator = "sum"
@@ -43,7 +84,7 @@ def heuristic_numeric_intent(query: str) -> NumericIntent:
     target = "meeting_count"
     if _DURATION_MAX_RE.search(query) or _DURATION_MIN_RE.search(query):
         target = "duration_seconds"
-    elif re.search(r"何時間|所要時間|会議時間|合計時間", query):
+    elif re.search(r"何時間|所要時間|会議時間|合計時間|長さ", query):
         target = "duration_seconds"
     elif re.search(r"何件|会議数|会議件数", query) or _EXISTENCE_RE.search(query):
         target = "meeting_count"
@@ -56,16 +97,46 @@ def heuristic_numeric_intent(query: str) -> NumericIntent:
         group_by = "day"
     elif re.search(r"話者ごと|話者別", query):
         group_by = "speaker"
+
+    if is_single_day_query(query) and group_by == "day":
+        group_by = "none"
+
     return NumericIntent(operator=operator, target=target, group_by=group_by)
 
 
 def resolve_date_range(question: str, reference_date: date) -> tuple[date | None, date | None]:
+    # 1. Try standard YYYY-MM-DD
     matches = re.findall(r"(\d{4})[-/](\d{1,2})[-/](\d{1,2})", question)
     if matches:
         dates = [date(int(y), int(m), int(d)) for y, m, d in matches]
         if len(dates) == 1:
             return dates[0], dates[0]
         return min(dates), max(dates)
+
+    # 2. Try YYYY年MM月DD日
+    matches_ja_full = re.findall(r"(\d{4})年(\d{1,2})月(\d{1,2})日", question)
+    if matches_ja_full:
+        dates = [date(int(y), int(m), int(d)) for y, m, d in matches_ja_full]
+        if len(dates) == 1:
+            return dates[0], dates[0]
+        return min(dates), max(dates)
+
+    # 3. Try MM月DD日 (use reference_date.year)
+    matches_ja_md = re.findall(r"(\d{1,2})月(\d{1,2})日", question)
+    if matches_ja_md:
+        dates = [date(reference_date.year, int(m), int(d)) for m, d in matches_ja_md]
+        if len(dates) == 1:
+            return dates[0], dates[0]
+        return min(dates), max(dates)
+
+    # 4. Try MM月 (without Day, e.g. 5月)
+    matches_m = re.findall(r"(\d{1,2})月(?!日)", question)
+    if matches_m:
+        m = int(matches_m[0])
+        start = date(reference_date.year, m, 1)
+        _, last_day = calendar.monthrange(reference_date.year, m)
+        end = date(reference_date.year, m, last_day)
+        return start, end
 
     if any(key in question for key in ["今日", "本日"]):
         return reference_date, reference_date
