@@ -19,7 +19,7 @@ _QUALITATIVE_RE = re.compile(
     r"取得予定|締め切り|ローンチ日|理由|分析|問題|どんな|どのような|テーマ|冒頭|提案|反対|名前|社名|会社名|解決|アジェンダ|進捗|レポート|最適化|計画|決定事項|"
     r"参加者|参加企業|"
     r"効率的|トレンド|改善提案|根拠|推移|懸念|締めくくり|"
-    r"フォローアップ|スキルセット|技術的な課題|承認されなかった|ペースについて|生産的|適切"
+    r"フォローアップ|スキルセット|技術的な課題|承認されなかった|ペースについて|生産的|適切|課題|言及"
 )
 _UNSUPPORTED_OPS_RE = re.compile(
     r"割合|パーセント|比率|中央値|メジアン|パーセンタイル|週ごと|週別|曜日|土日|平日|営業日|"
@@ -35,12 +35,17 @@ _DURATION_MIN_RE = re.compile(r"最も短|一番短|最短|最小.*会議時間"
 
 
 def is_single_day_query(query: str) -> bool:
+    if any(k in query for k in ["から", "〜", "まで"]):
+        return False
+    ja_dates = re.findall(r"\d{1,2}月\d{1,2}日", query)
+    iso_dates = re.findall(r"\d{4}[-/]\d{1,2}[-/]\d{1,2}", query)
+    if len(ja_dates) + len(iso_dates) > 1:
+        return False
     if any(k in query for k in ["今日", "本日", "昨日", "明日"]):
         return True
-    if re.search(r"\d{1,2}月\d{1,2}日", query):
+    if len(ja_dates) == 1:
         return True
-    matches = re.findall(r"\d{4}[-/]\d{1,2}[-/]\d{1,2}", query)
-    if len(matches) == 1 and not any(k in query for k in ["から", "〜", "まで"]):
+    if len(iso_dates) == 1:
         return True
     return False
 
