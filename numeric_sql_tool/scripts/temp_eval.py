@@ -166,9 +166,9 @@ async def evaluate_async(actual_path: Path, gt_path: Path, report_path: Path):
 
 def main():
     parser = argparse.ArgumentParser(description="Honest evaluation of Pipeline results vs Ground Truth with DB execution")
-    parser.add_argument("--actual", type=Path, default=ROOT / "db" / "numeric_sql_testcases_200_ja.xlsx", help="Pipeline output file")
-    parser.add_argument("--gt", type=Path, default=ROOT / "eval" / "combined_200_testcases_ja.csv", help="Ground Truth CSV file")
-    parser.add_argument("--out", type=Path, default=ROOT / "eval" / "evaluation_report_200_honest.md", help="Output report file")
+    parser.add_argument("--actual", type=Path, default=ROOT / "db" / "numeric_sql_testcases_300_ja.xlsx", help="Pipeline output file")
+    parser.add_argument("--gt", type=Path, default=ROOT / "eval" / "combined_300_testcases_ja.csv", help="Ground Truth CSV file")
+    parser.add_argument("--out", type=Path, default=ROOT / "eval" / "evaluation_report_300_honest.md", help="Output report file")
     args = parser.parse_args()
     
     asyncio.run(evaluate_async(args.actual, args.gt, args.out))

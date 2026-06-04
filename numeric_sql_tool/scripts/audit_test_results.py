@@ -9,24 +9,21 @@ try:
 except AttributeError:
     pass
 
-# Paths
-GROUND_TRUTH_PATH = Path("eval/combined_200_testcases_ja.csv")
-ACTUAL_RESULTS_XLSX = Path("db/numeric_sql_testcases_200_ja.xlsx")
-ACTUAL_RESULTS_CSV = Path("db/numeric_sql_testcases_200_ja.csv")
+import argparse
 
 from eval_utils import is_semantically_match
 
-def audit():
+def audit(gt_path: Path, actual_path: Path, report_path: Path):
     print("--- Bắt đầu đối soát trung thực ---")
     
     # 1. Load Ground Truth
-    print(f"Loading Ground Truth from {GROUND_TRUTH_PATH}...")
-    df_gt = pd.read_csv(GROUND_TRUTH_PATH)
+    print(f"Loading Ground Truth from {gt_path}...")
+    df_gt = pd.read_csv(gt_path)
     df_gt.columns = [c.lower() for c in df_gt.columns]
     
     # 2. Load Actual Results
-    print(f"Loading Actual Results from {ACTUAL_RESULTS_XLSX}...")
-    df_actual = pd.read_excel(ACTUAL_RESULTS_XLSX)
+    print(f"Loading Actual Results from {actual_path}...")
+    df_actual = pd.read_excel(actual_path)
     df_actual.columns = [c.lower() for c in df_actual.columns]
     
     results = []
@@ -71,11 +68,10 @@ def audit():
     print(f"Độ chính xác thực tế: {(correct/len(df_gt))*100:.2f}%")
     
     # 5. Write Honest Report
-    report_path = Path("eval/audit_report_200.md")
     with open(report_path, "w", encoding="utf-8") as f:
         f.write("# BÁO CÁO ĐỐI SOÁT TRUNG THỰC (Audit Report)\n\n")
-        f.write(f"- **File Ground Truth**: `{GROUND_TRUTH_PATH}`\n")
-        f.write(f"- **File Kết quả Pipeline**: `{ACTUAL_RESULTS_XLSX}`\n")
+        f.write(f"- **File Ground Truth**: `{gt_path}`\n")
+        f.write(f"- **File Kết quả Pipeline**: `{actual_path}`\n")
         f.write(f"- **Tổng số case đối chiếu**: {len(df_gt)}\n")
         f.write(f"- **Số lượng ĐÚNG**: {correct}\n")
         f.write(f"- **Số lượng SAI**: {wrong}\n")
@@ -91,5 +87,14 @@ def audit():
 
     print(f"Báo cáo đối soát đã được ghi vào: {report_path}")
 
+def main():
+    parser = argparse.ArgumentParser(description="Audit pipeline results against Ground Truth")
+    parser.add_argument("--gt", type=Path, default=Path("eval/combined_300_testcases_ja.csv"), help="Ground Truth CSV file")
+    parser.add_argument("--actual", type=Path, default=Path("db/numeric_sql_testcases_300_ja.xlsx"), help="Pipeline output Excel file")
+    parser.add_argument("--out", type=Path, default=Path("eval/audit_report_300.md"), help="Output report file")
+    args = parser.parse_args()
+    
+    audit(args.gt, args.actual, args.out)
+
 if __name__ == "__main__":
-    audit()
+    main()

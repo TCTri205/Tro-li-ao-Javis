@@ -2,9 +2,7 @@ import sys
 import pandas as pd
 from pathlib import Path
 
-def main():
-    sys.stdout.reconfigure(encoding='utf-8')
-    csv_path = Path("eval/combined_200_testcases_ja.csv")
+def update_file(csv_path: Path):
     if not csv_path.exists():
         print(f"Error: {csv_path} does not exist.")
         return
@@ -20,35 +18,38 @@ def main():
         "AND ($3::date IS NULL OR t.meeting_date <= $3::date) "
         "AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')"
     )
-    mask1 = df['question'] == '先月の平均的な会議 of length'
-    # Wait, the exact question is '先月の平均的な会議の長さは？'
     mask1 = df['question'] == '先月の平均的な会議の長さは？'
     if mask1.any():
         df.loc[mask1, 'sql'] = avg_sql
-        print("Updated '先月の平均的な会議の長さは？' to AVG duration SQL.")
+        print(f"Updated '先月の平均的な会議の長さは？' in {csv_path.name}")
     else:
-        print("Warning: '先月の平均的な会議の長さは？' not found.")
+        print(f"Warning: '先月の平均的な会議の長さは？' not found in {csv_path.name}")
         
     # 2. Update '先週の会議件数と合計時間は？'
     # Change to SKIP
     mask2 = df['question'] == '先週の会議件数と合計時間は？'
     if mask2.any():
         df.loc[mask2, 'sql'] = 'SKIP (operator=skip, target=none)'
-        print("Updated '先週の会議件数と合計時間は？' to SKIP.")
+        print(f"Updated '先週の会議件数と合計時間は？' to SKIP in {csv_path.name}")
     else:
-        print("Warning: '先週の会議件数と合計時間は？' not found.")
+        print(f"Warning: '先週の会議件数と合計時間は？' not found in {csv_path.name}")
         
     # 3. Update '今月の会議は何件ですか？それとも先月？'
     # Change to SKIP
     mask3 = df['question'] == '今月の会議は何件ですか？それとも先月？'
     if mask3.any():
         df.loc[mask3, 'sql'] = 'SKIP (operator=skip, target=none)'
-        print("Updated '今月の会議は何件ですか？それとも先月？' to SKIP.")
+        print(f"Updated '今月の会議は何件ですか？それとも先月？' to SKIP in {csv_path.name}")
     else:
-        print("Warning: '今月の会議は何件ですか？それとも先月？' not found.")
+        print(f"Warning: '今月の会議は何件ですか？それとも先月？' not found in {csv_path.name}")
         
     df.to_csv(csv_path, index=False, encoding='utf-8')
-    print(f"Saved changes to {csv_path}")
+    print(f"Saved changes to {csv_path}\n")
+
+def main():
+    sys.stdout.reconfigure(encoding='utf-8')
+    update_file(Path("eval/combined_200_testcases_ja.csv"))
+    update_file(Path("eval/combined_300_testcases_ja.csv"))
 
 if __name__ == "__main__":
     main()

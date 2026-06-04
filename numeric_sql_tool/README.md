@@ -79,20 +79,22 @@ Hỗ trợ: `meeting_count`, `duration_seconds` (sum/avg/max/min), `group_by` da
 |------|--------|
 | `eval/numeric_sql_testcases_ja.csv` | 100 test cases cơ bản (template-based). |
 | `eval/new_100_advanced_testcases.csv` | 100 test cases nâng cao (phức tạp hơn). |
+| `eval/stress_100_testcases_ja.csv` | 100 test cases stress test (kiểm tra độ bền, bẫy từ khóa). |
 | `eval/combined_200_testcases_ja.csv` | **Bộ 200 test cases tổng hợp** (Cơ bản + Nâng cao). |
-| `scripts/temp_eval.py` | Script đánh giá Heuristics vs Kết quả thực tế (CSV). Hỗ trợ `--input` và `--out`. |
-| `eval/evaluation_report_ja_200.md` | Báo cáo chi tiết cho bộ 200 test cases. |
+| `eval/combined_300_testcases_ja.csv` | **Bộ 300 test cases tổng hợp** (Cơ bản + Nâng cao + Stress test). |
+| `scripts/temp_eval.py` | Script đánh giá Heuristics vs Kết quả thực tế (CSV). Hỗ trợ `--gt`, `--actual` và `--out`. |
+| `eval/evaluation_report_300_honest.md` | Báo cáo chi tiết cho bộ 300 test cases. |
 
 ---
 
-## Quy trình Kiểm thử mở rộng (200 Test Cases)
+## Quy trình Kiểm thử mở rộng (300 Test Cases)
 
-Để đảm bảo độ bao phủ, chúng ta sử dụng bộ 200 test cases (100 cơ bản + 100 nâng cao).
+Để đảm bảo độ bao phủ, chúng ta sử dụng bộ 300 test cases (100 cơ bản + 100 nâng cao + 100 stress test, loại trừ 100 random test cases).
 
 ### Bước 1: Chuẩn bị file câu hỏi
-Nếu chưa có file `db/questions_200_ja.txt`, trích xuất từ file CSV tổng hợp:
+Nếu chưa có file `db/questions_300_ja.txt`, trích xuất từ file CSV tổng hợp:
 ```powershell
-python -c "import pandas as pd; df = pd.read_csv('eval/combined_200_testcases_ja.csv'); df['question'].to_csv('db/questions_200_ja.txt', index=False, header=False, encoding='utf-8')"
+python -c "import pandas as pd; df = pd.read_csv('eval/combined_300_testcases_ja.csv'); df['question'].to_csv('db/questions_300_ja.txt', index=False, header=False, encoding='utf-8')"
 ```
 
 ### Bước 2: Chạy Pipeline để sinh kết quả (Test Run)
@@ -101,19 +103,19 @@ python -c "import pandas as pd; df = pd.read_csv('eval/combined_200_testcases_ja
 *(Cần cấu hình `GROQ_API_KEYS` trong file `.env` và có delay để tránh Rate Limit 429)*
 ```powershell
 python scripts/ja_testcases.py run `
-  --questions db/questions_200_ja.txt `
-  --excel-out db/numeric_sql_testcases_200_ja.xlsx `
+  --questions db/questions_300_ja.txt `
+  --excel-out db/numeric_sql_testcases_300_ja.xlsx `
   --reference-date 2026-05-28 `
   --concurrency 1 `
   --delay-ms 1200
 ```
 
 #### Cách B: Chạy chế độ Regex-Only (Không dùng LLM)
-*(Chạy cực nhanh ~4 giây, không lo Rate Limit)*
+*(Chạy cực nhanh, không lo Rate Limit)*
 ```powershell
 python scripts/ja_testcases.py run `
-  --questions db/questions_200_ja.txt `
-  --excel-out db/numeric_sql_testcases_200_ja.xlsx `
+  --questions db/questions_300_ja.txt `
+  --excel-out db/numeric_sql_testcases_300_ja.xlsx `
   --reference-date 2026-05-28 `
   --regex-only `
   --concurrency 10 `
@@ -122,22 +124,25 @@ python scripts/ja_testcases.py run `
 
 ### Bước 3: Chạy Đánh giá và Đối soát (Evaluation & Audit)
 
-Sau khi sinh ra kết quả tại `db/numeric_sql_testcases_200_ja.xlsx`, chạy các script đánh giá sau:
+Sau khi sinh ra kết quả tại `db/numeric_sql_testcases_300_ja.xlsx`, chạy các script đánh giá sau:
 
 #### 1. Tạo Báo cáo Đánh giá Trung thực:
 ```powershell
 python scripts/temp_eval.py `
-  --actual db/numeric_sql_testcases_200_ja.xlsx `
-  --gt eval/combined_200_testcases_ja.csv `
-  --out eval/evaluation_report_200_honest.md
+  --actual db/numeric_sql_testcases_300_ja.xlsx `
+  --gt eval/combined_300_testcases_ja.csv `
+  --out eval/evaluation_report_300_honest.md
 ```
-Báo cáo chi tiết sẽ được ghi nhận tại `eval/evaluation_report_200_honest.md`.
+Báo cáo chi tiết sẽ được ghi nhận tại `eval/evaluation_report_300_honest.md`.
 
 #### 2. Tạo Báo cáo Đối soát Trung thực:
 ```powershell
-python scripts/audit_test_results.py
+python scripts/audit_test_results.py `
+  --actual db/numeric_sql_testcases_300_ja.xlsx `
+  --gt eval/combined_300_testcases_ja.csv `
+  --out eval/audit_report_300.md
 ```
-Báo cáo đối soát (tập trung vào các trường hợp sai lệch/Discrepancies) sẽ được tạo tại `eval/audit_report_200.md`.
+Báo cáo đối soát (tập trung vào các trường hợp sai lệch/Discrepancies) sẽ được tạo tại `eval/audit_report_300.md`.
 
 ---
 

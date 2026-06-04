@@ -1,13 +1,12 @@
 import pandas as pd
-import io
+import os
 
 def load_csv_safely(path, has_header=True):
     try:
         if has_header:
             return pd.read_csv(path)
         else:
-            # For the advanced file which seemed to have issues and maybe no header
-            # We'll read it manually to handle potential quoting/delimiter issues
+            # For the advanced file which may not have a header
             with open(path, 'r', encoding='utf-8', errors='ignore') as f:
                 lines = f.readlines()
             
@@ -31,21 +30,33 @@ def load_csv_safely(path, has_header=True):
         print(f"Error loading {path}: {e}")
         return pd.DataFrame()
 
-# File paths
-file1 = "eval/numeric_sql_testcases_ja.csv"
-file2 = "eval/new_100_advanced_testcases.csv"
-output_file = "eval/combined_200_testcases_ja.csv"
+def main():
+    # File paths
+    file_basic = "eval/numeric_sql_testcases_ja.csv"
+    file_advanced = "eval/new_100_advanced_testcases.csv"
+    file_stress = "eval/stress_100_testcases_ja.csv"
+    
+    output_200 = "eval/combined_200_testcases_ja.csv"
+    output_300 = "eval/combined_300_testcases_ja.csv"
 
-# Load files
-df1 = load_csv_safely(file1, has_header=True)
-# Rename columns to lowercase if needed
-df1.columns = [c.lower() for c in df1.columns]
+    print("Step 1: Merging basic (100) and advanced (100) test cases...")
+    df_basic = load_csv_safely(file_basic, has_header=True)
+    df_basic.columns = [c.lower() for c in df_basic.columns]
+    
+    df_advanced = load_csv_safely(file_advanced, has_header=False)
+    df_advanced.columns = [c.lower() for c in df_advanced.columns]
+    
+    combined_200_df = pd.concat([df_basic[['question', 'sql']], df_advanced[['question', 'sql']]], ignore_index=True)
+    combined_200_df.to_csv(output_200, index=False, encoding='utf-8')
+    print(f"Successfully merged {len(combined_200_df)} test cases into {output_200}")
 
-df2 = load_csv_safely(file2, has_header=False)
+    print("\nStep 2: Merging 200 combined with 100 stress test cases...")
+    df_stress = load_csv_safely(file_stress, has_header=True)
+    df_stress.columns = [c.lower() for c in df_stress.columns]
+    
+    combined_300_df = pd.concat([combined_200_df[['question', 'sql']], df_stress[['question', 'sql']]], ignore_index=True)
+    combined_300_df.to_csv(output_300, index=False, encoding='utf-8')
+    print(f"Successfully merged {len(combined_300_df)} test cases into {output_300}")
 
-# Combine
-combined_df = pd.concat([df1[['question', 'sql']], df2[['question', 'sql']]], ignore_index=True)
-
-# Save
-combined_df.to_csv(output_file, index=False, encoding='utf-8')
-print(f"Successfully merged {len(combined_df)} test cases into {output_file}")
+if __name__ == "__main__":
+    main()

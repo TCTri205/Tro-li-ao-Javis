@@ -25,10 +25,6 @@ async def extract_numeric_intent(question: str, llm_client: LLMClient | None = N
             result.operator = "skip"
         if result == NumericIntent():
             return fallback
-        if fallback.operator != "skip" and (result.operator == "skip" or result.target in {"none", "time_start_sec"}):
-            result.operator = fallback.operator
-            result.target = fallback.target
-            result.group_by = fallback.group_by
         if result.operator == "skip" or result.target in {"none", "time_start_sec"}:
             return enforce_intent_invariants(result, question)
         if fallback.operator != "sum" and result.operator == "sum":

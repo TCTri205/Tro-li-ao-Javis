@@ -10,13 +10,25 @@ from .models import NumericIntent
 _EXISTENCE_RE = re.compile(r"(会議).*(ありましたか|ありますか|あった|あります|ありました)|何か会議")
 _TIMESTAMP_RE = re.compile(r"何分頃|何秒頃|いつ.*(発言|言)|何時.*(発言|言)")
 _QUALITATIVE_RE = re.compile(
-    r"何について|議題|要約|合意された内容|発言したのは誰|詳しく説明|"
+    r"何について|議題|要約|合意|アプローチ|発言したのは誰|詳しく説明|説明|"
     r"ローンチについて話した|ローンチについて話す|いくらでしたか|予算はいくら|"
     r"いくらですか|パーセント|原因|対策|対応策|アクション|曜日|天気|差は|比べ|対比|"
-    r"どっち|どこですか|こんにちは|削除|できますか|おすすめ|"
+    r"どっち|どちら|どこですか|こんにちは|削除|できますか|おすすめ|"
     r"市場|内訳|募集|削減|消化率|多すぎる|指示しましたか|決まりましたか|"
-    r"何億円|何社|何名|発言回数|何回発言|誰|何が決まり|リリース日|"
-    r"取得予定|締め切り|ローンチ日|理由は何|参加者|参加企業"
+    r"何億円|何社|何名|発言回数|何回発言|誰|何が決まり|リリース|予定日|"
+    r"取得予定|締め切り|ローンチ日|理由|分析|問題|どんな|どのような|テーマ|冒頭|提案|反対|名前|社名|会社名|解決|アジェンダ|進捗|レポート|最適化|計画|決定事項|"
+    r"参加者|参加企業|"
+    r"効率的|トレンド|改善提案|根拠|推移|懸念|締めくくり|"
+    r"フォローアップ|スキルセット|技術的な課題|承認されなかった|ペースについて|生産的|適切"
+)
+_UNSUPPORTED_OPS_RE = re.compile(
+    r"割合|パーセント|比率|中央値|メジアン|パーセンタイル|週ごと|週別|曜日|土日|平日|営業日|"
+    r"両方参加|より何件多|より何回多|前半|後半|"
+    r"発言した合計時間|発言した平均|発言.*(分|秒|時間)|"
+    r"先々月|第\d週|\d+週目|週目|上旬|中旬|下旬|年累計|直近\d+ヶ月|Q[1-4]|四半期|最終|最初|(?:今年|去年)(?!の?\d+月)|"
+    r"\d+(分|時間|秒|日)(?:[をが])?(?:以上|超|以下|未満|より|ごと)|"
+    r"\d+(回目|番目)に|\d+(回目|番目)の|二番目|2番目|"
+    r"1日当たり|一日当たり|間隔|最も.*(週|月)|多かった週|の比"
 )
 _DURATION_MAX_RE = re.compile(r"最も長|一番長|最長|最大.*会議時間")
 _DURATION_MIN_RE = re.compile(r"最も短|一番短|最短|最小.*会議時間")
@@ -42,6 +54,10 @@ def heuristic_numeric_intent(query: str) -> NumericIntent:
     if _TIMESTAMP_RE.search(query) or _QUALITATIVE_RE.search(query):
         return NumericIntent(operator="skip", target="none", group_by="none")
 
+    # Skip unsupported operations and complex temporal expressions
+    if _UNSUPPORTED_OPS_RE.search(query):
+        return NumericIntent(operator="skip", target="none", group_by="none")
+
     # Skip general "When" questions that aren't about min/max duration
     if "いつですか" in query and not re.search(r"最も|一番", query):
         return NumericIntent(operator="skip", target="none", group_by="none")
@@ -54,7 +70,7 @@ def heuristic_numeric_intent(query: str) -> NumericIntent:
 
     # Skip multiple metrics questions
     has_count = any(k in query for k in ["件数", "何件", "何回", "回数", "会議数"])
-    has_duration = any(k in query for k in ["時間", "所要時間", "合計時間", "平均時間"])
+    has_duration = any(k in query for k in ["時間", "所要時間", "合計時間", "平均時間", "総時間", "何分", "何秒"])
     if has_count and has_duration:
         return NumericIntent(operator="skip", target="none", group_by="none")
 
@@ -84,7 +100,7 @@ def heuristic_numeric_intent(query: str) -> NumericIntent:
     target = "meeting_count"
     if _DURATION_MAX_RE.search(query) or _DURATION_MIN_RE.search(query):
         target = "duration_seconds"
-    elif re.search(r"何時間|所要時間|会議時間|合計時間|長さ", query):
+    elif re.search(r"何時間|所要時間|会議時間|合計時間|長さ|総時間|平均時間|何秒|何分", query):
         target = "duration_seconds"
     elif re.search(r"何件|会議数|会議件数", query) or _EXISTENCE_RE.search(query):
         target = "meeting_count"
