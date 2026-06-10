@@ -1,14 +1,10 @@
-import random
 import pandas as pd
 from pathlib import Path
 import sys
 
-# Setup seed for reproducibility
-random.seed(12345)
-
 ROOT = Path(__file__).resolve().parents[1]
 
-# Predefined SQL templates
+# Ground Truth SQL templates matching the tool's output structure
 SQL_COUNT = (
     "SELECT COUNT(DISTINCT t.id) AS value FROM transcripts t WHERE "
     "($1::uuid IS NULL OR t.user_id = $1::uuid) AND "
@@ -85,254 +81,128 @@ SQL_GROUP_DAY_SUM = (
 
 SQL_SKIP = "SKIP (operator=skip, target=none)"
 
-# Pools of data docs components
-speakers = ['田中', '鈴木', '佐藤', '山田', '伊藤', '中村', '小林', '松本']
+# 100 carefully selected difficult testcases based on data_docs meeting context
+testcases = [
+    # --- 50 Valid Aggregate Queries ---
+    ("2026/05/26に行われた定例会議の合計会議時間は何秒ですか？", SQL_SUM),
+    ("2026/05/15のAiVoice Proの打ち合わせの所要時間は何秒ですか？", SQL_SUM),
+    ("2026-05-20の営業レビューの打ち合わせの合計所要時間は何秒ですか？", SQL_SUM),
+    ("2026/05/20の会議は何回カウントされますか？", SQL_COUNT),
+    ("2026/05/15に何か会議はありましたか？", SQL_COUNT),
+    ("2026-05-26の期間に会議は何回開催されましたか？", SQL_COUNT),
+    ("2026/05/26日に行われた定例会議の平均会議時間は何秒ですか？", SQL_AVG),
+    ("2026/05/15のAiVoice Proの打ち合わせの平均時間は何秒ですか？", SQL_AVG),
+    ("2026年05月20日の営業レビューの打ち合わせの平均所要時間は何秒ですか？", SQL_AVG),
+    ("2026/05/26の定例会議の中で最も長い会議時間は何秒ですか？", SQL_MAX),
+    ("2026-05-15の打ち合わせの中で最長の所要時間は何秒ですか？", SQL_MAX),
+    ("2026/05/20に行われた打ち合わせで一番長い所要時間は？", SQL_MAX),
+    ("2026/05/26の定例会議の中で最も短い会議時間は何秒ですか？", SQL_MIN),
+    ("2026-05-15 of 打ち合わせの中で最短の会議時間は何秒ですか？", SQL_MIN),
+    ("2026/05/20に行われた打ち合わせで一番短い会議時間は？", SQL_MIN),
+    ("5月15日から5月26日の会議時間を日別に集計してください。", SQL_GROUP_DAY_SUM),
+    ("2026/05/15から2026/05/26までの合計時間を日別で教えてください。", SQL_GROUP_DAY_SUM),
+    ("2026-05-15から2026-05-26までの所要時間を日ごとに集計してください。", SQL_GROUP_DAY_SUM),
+    ("5月15日から5月26日の会議件数の日別の集計を教えてください。", SQL_GROUP_DAY_COUNT),
+    ("2026/05/15から2026/05/26までの会議を日ごとに集計してください。", SQL_GROUP_DAY_COUNT),
+    ("2026-05-15から2026-05-26の期間の会議件数を日別で教えてください。", SQL_GROUP_DAY_COUNT),
+    ("5月15日から5月26日の会議数を話者ごとに教えてください。", SQL_GROUP_SPEAKER),
+    ("2026/05/15から2026/05/26までの話者別の会議件数は何件ですか？", SQL_GROUP_SPEAKER),
+    ("2026-05-15から2026-05-26の期間の会議数を話者別で集計してください。", SQL_GROUP_SPEAKER),
+    ("今月の定例会議やAiVoice Proの打ち合わせの合計時間は何秒になりますか？", SQL_SUM),
+    ("今月に開催されたすべての会議の総時間は何秒ですか？", SQL_SUM),
+    ("今月の所要時間の合計は何秒ですか？", SQL_SUM),
+    ("今週の会議の長さの合計は何秒ですか？", SQL_SUM),
+    ("先週の合計会議時間は何秒ですか？", SQL_SUM),
+    ("今月は会議が何回開催されましたか？", SQL_COUNT),
+    ("今月の会議件数は何件でしたか？", SQL_COUNT),
+    ("今週に会議は何回ありましたか？", SQL_COUNT),
+    ("先週の会議件数は何件でしたか？", SQL_COUNT),
+    ("今月の平均会議時間は何秒ですか？", SQL_AVG),
+    ("今月に行われた会議の平均時間は？", SQL_AVG),
+    ("今週の会議の平均所要時間は何秒ですか？", SQL_AVG),
+    ("先週の平均時間は何秒ですか？", SQL_AVG),
+    ("今月で最も長い会議時間は何秒ですか？", SQL_MAX),
+    ("今月で一番長い所要時間は？", SQL_MAX),
+    ("今月で最長の所要時間は何秒ですか？", SQL_MAX),
+    ("今週で最も長い会議時間は何秒ですか？", SQL_MAX),
+    ("今月で最も短い会議時間は何秒ですか？", SQL_MIN),
+    ("今月で一番短い会議時間は？", SQL_MIN),
+    ("今月で最短の会議時間は何秒ですか？", SQL_MIN),
+    ("今週で最も短い会議時間は何秒ですか？", SQL_MIN),
+    ("今月の会議件数を日別で集計してください。", SQL_GROUP_DAY_COUNT),
+    ("今月の会議時間を日別に集計してください。", SQL_GROUP_DAY_SUM),
+    ("今月の会議数を話者別で教えてください。", SQL_GROUP_SPEAKER),
+    ("先週の会議数を話者ごとに教えてください。", SQL_GROUP_SPEAKER),
+    ("今週の会議件数の日別の集計を教えてください。", SQL_GROUP_DAY_COUNT),
 
-topics = [
-    ('音声認識システム', '進捗状況'),
-    ('ノイズキャンセリング', 'タイミング問題'),
-    ('クラウドコスト', '予算超過'),
-    ('採用凍結', '事業計画への影響'),
-    ('太陽光パネル', '初期費用と補助金'),
-    ('サーバー更新', '電力消費の削減'),
-    ('研修プログラム', '省エネ意識の向上'),
-    ('営業レビュー', '売上目標の達成率'),
-    ('マーケティング戦略', 'SNS広告の予算'),
-    ('展示会', 'デモブースの設置'),
-    ('AiVoice Pro', '処理速度と認識精度'),
-    ('ニューラルネットワーク', '日本語特化の調整'),
-    ('セキュリティ基盤', 'ISO27001の認定'),
-    ('価格戦略', 'プロフェッショナルプラン')
+    # --- 50 Skip/Qualitative/Unsupported Queries ---
+    ("2026年5月26日の定例会議で田中さんが発表したアジェンダの3つの項目は何でしたか？", SQL_SKIP),
+    ("5月15日の打ち合わせで鈴木さんが説明したAiVoice Proの処理速度は従来比何倍ですか？", SQL_SKIP),
+    ("2026-05-20のレビューで伊藤さんが報告した製品別内訳で、音声認識ライセンスの売上割合は何パーセントですか？", SQL_SKIP),
+    ("営業レビュー会議において、新規顧客として製造業から何社獲得できたと報告されましたか？", SQL_SKIP),
+    ("5月20日の会議で中村さんが説明したQ2のマーケティング予算五千万円の内訳はどうなっていますか？", SQL_SKIP),
+    ("マーケティング費用のうち、Q2中に確約されている支出の合計額一千万円の具体的な使途を教えてください。", SQL_SKIP),
+    ("下半期の採用計画で、エンジニア、営業担当、カスタマーサポートのそれぞれの募集人数は何名ですか？", SQL_SKIP),
+    ("小林さんが提案したリファラルボーナスの金額を30万円から50万円に引き上げる件について、田中さんは承認しましたか？", SQL_SKIP),
+    ("5月15日の会議で佐藤さんが質問したセキュリティ基盤の実装コストに関する懸念点の内容は何ですか？", SQL_SKIP),
+    ("鈴木さんが説明したAiVoice Proの主要技術である新型ニューラルネットワークエンジンのファインチューニングの詳細を教えてください。", SQL_SKIP),
+    ("プレビューセッションに参加した15社の既存顧客のうち、乗り換えを検討したいと回答した割合は何パーセントでしたか？", SQL_SKIP),
+    ("プロフェッショナルプランの月額一万九千八百円に含まれる機能とサポート範囲を詳しく説明してください。", SQL_SKIP),
+    ("佐藤さんが試算したAiVoice Proの初年度売上目標十二億円の計算根拠は何ですか？", SQL_SKIP),
+    ("山田さんが説明したオープンベータテスト（最大200社）の品質目標について教えてください。", SQL_SKIP),
+    ("3つの展示会の出展計画の詳細は何ですか？", SQL_SKIP),
+    ("2026年5月26日の会議で山田さんが補足した大口顧客のA社との契約締結が遅れた原因は何ですか？", SQL_SKIP),
+    ("ノイズキャンセリング機能のアルゴリズムで見つかった予期しない問題について、鈴木さんが提案した解決方針は何ですか？", SQL_SKIP),
+    ("クラウドサービスの利用料が予算の120%に達してしまった問題の対策として、鈴木さんは来月から何を行うと言いましたか？", SQL_SKIP),
+    ("採用計画において、エンジニア3名の採用目標時期はいつですか？", SQL_SKIP),
+    ("ユーザーごとの今日の会議件数は何件ですか？", SQL_SKIP),
+    ("先週の第3週のスケジュールはどうなっていますか？", SQL_SKIP),
+    ("先月の会議は何回あり、その合計時間は何秒でしたか？", SQL_SKIP),
+    ("5月15日から5月20日の上旬に開催された会議の件数は？", SQL_SKIP),
+    ("ユーザー別で5月20日から5月26日の合計会議時間を集計してください。", SQL_SKIP),
+    ("先月の会議件数と平均会議時間を教えてください。", SQL_SKIP),
+    ("5月15日から5月20日の会議数の週ごとの推移を教えてください。", SQL_SKIP),
+    ("2026年5月15日から2026年5月26日の会議は何回あり、その合計時間は何秒でしたか？", SQL_SKIP),
+    ("今日で2番目に長かった会議の時間は？", SQL_SKIP),
+    ("今週の会議数の週ごとの推移を教えてください。", SQL_SKIP),
+    ("山田さんと佐藤さんが両方参加した会議で、決まったネクストアクションは何ですか？", SQL_SKIP),
+    ("今年のQ2における開発部門の追加費用は合計で何億円ですか？", SQL_SKIP),
+    ("5月の勤務日（平日のみ）の合計会議時間は何秒ですか？", SQL_SKIP),
+    ("先月と比較して、クラウドコストの増加トレンドに変化はありましたか？", SQL_SKIP),
+    ("5月15日の会議の後、鈴木さんがフォローアップとして提出した品質レポートの提出期限はいつですか？", SQL_SKIP),
+    ("鈴木さんはタイミング問題を何週間以内に解決できると保証しましたか？", SQL_SKIP),
+    ("5月の最初の2週間に開催された予算関連 of 打ち合わせの決定事項を要約してください。", SQL_SKIP),
+    ("5月の会議の間隔は平均して何日おきでしたか？", SQL_SKIP),
+    ("エネルギー対策として太陽光パネルの導入が却下された理由を分析してください。", SQL_SKIP),
+    ("ASR開発ロードマップに関して、承認されなかった計画があればその理由を教えてください。", SQL_SKIP),
+    ("5月15日のアジェンダ作成を担当した司会者の名前は誰と説明されていますか？", SQL_SKIP),
+    ("音声処理テストデータのうち、ベータ版の基準に達しなかった割合は？", SQL_SKIP),
+    ("来月十五日にリリース予定の音声認識システムに関する技術的な課題として何が挙げられましたか？", SQL_SKIP),
+    ("5月中旬に行われた予算に関する緊急会議の要約をお願いします。", SQL_SKIP),
+    ("先月末（最終5営業日）に議論された新エネルギー政策の詳細は何ですか？", SQL_SKIP),
+    ("5月の月曜日だけに開催された進捗確認ミーティングの件数は何件ですか？", SQL_SKIP),
+    ("予算超過額が合計360万円に達した場合の具体的な改善提案を説明してください。", SQL_SKIP),
+    ("5月20日と5月26日の会議、どちらがより生産的でしたか？", SQL_SKIP),
+    ("今年に入ってから今日までの開発テストの合計時間を集計してください。", SQL_SKIP),
+    ("5月の会議数のうち、予算に関する会議の割合は何％を占めていますか？", SQL_SKIP),
+    ("ユーザーごとの5月20日の会議件数は何件ですか？", SQL_SKIP)
 ]
-
-single_days = [
-    '5月15日', '5月20日', '5月26日',
-    '2026年5月15日', '2026年5月20日', '2026年5月26日',
-    '今日', '本日', '昨日', '明日'
-]
-
-multi_days = [
-    '今月', '先月', '今週', '先週',
-    '5月15日から5月20日', '5月15日から5月26日', '5月20日から5月26日',
-    '2026年5月15日から2026年5月26日', '2026年5月20日から2026年5月26日'
-]
-
-all_periods = single_days + multi_days
-
-def generate_pools():
-    valid_pool = []
-    
-    # 1. COUNT
-    count_tpls = [
-        "{period}に会議は何回開催されましたか？",
-        "{period}の会議件数は何件でしたか？",
-        "{period}の期間に会議は何回ありましたか？",
-        "{period}の会議は何回カウントされますか？",
-        "{period}に開催された会議数を教えてください。"
-    ]
-    for period in all_periods:
-        for tpl in count_tpls:
-            valid_pool.append((tpl.format(period=period), SQL_COUNT))
-            
-    # 2. SUM
-    sum_tpls = [
-        "{period}の合計会議時間は何秒ですか？",
-        "{period}の所要時間は何秒ですか？",
-        "{period}の会議の合計時間は何秒になりますか？",
-        "{period}の総会議時間は何秒ですか？",
-        "{period}の会議の長さの合計は何秒ですか？"
-    ]
-    for period in all_periods:
-        for tpl in sum_tpls:
-            valid_pool.append((tpl.format(period=period), SQL_SUM))
-
-    # 3. AVG
-    avg_tpls = [
-        "{period}の平均会議時間は何秒ですか？",
-        "{period}に行われた会議の平均時間は？",
-        "{period}の会議の平均所要時間は何秒ですか？",
-        "{period}の平均時間は何秒ですか？"
-    ]
-    for period in all_periods:
-        for tpl in avg_tpls:
-            valid_pool.append((tpl.format(period=period), SQL_AVG))
-
-    # 4. MAX
-    max_tpls = [
-        "{period}で最も長い会議時間は何秒ですか？",
-        "{period}で一番長い所要時間は？",
-        "{period}で最長の所要時間は何秒ですか？",
-        "{period}の最大会議時間は何秒ですか？"
-    ]
-    for period in all_periods:
-        for tpl in max_tpls:
-            valid_pool.append((tpl.format(period=period), SQL_MAX))
-
-    # 5. MIN
-    min_tpls = [
-        "{period}で最も短い会議時間は何秒ですか？",
-        "{period}で一番短い会議時間は？",
-        "{period}で最短の会議時間は何秒ですか？",
-        "{period}の最小会議時間は何秒ですか？"
-    ]
-    for period in all_periods:
-        for tpl in min_tpls:
-            valid_pool.append((tpl.format(period=period), SQL_MIN))
-
-    # 6. GROUP_SPEAKER
-    speaker_tpls = [
-        "{period}の会議数を話者ごとに教えてください。",
-        "{period}の話者別の会議件数は何件ですか？",
-        "話者別の会議件数は何件ですか？{period}で集計してください。",
-        "{period}の会議数を話者別で教えてください。"
-    ]
-    for period in all_periods:
-        for tpl in speaker_tpls:
-            valid_pool.append((tpl.format(period=period), SQL_GROUP_SPEAKER))
-
-    # 7. GROUP_DAY_COUNT
-    day_count_tpls = [
-        "{period}の会議件数の日別の集計を教えてください。",
-        "{period}の会議を日ごとに集計してください。",
-        "{period}の会議件数を日別で教えてください。",
-        "{period}の会議数を日別で集計してください。"
-    ]
-    for period in multi_days:
-        for tpl in day_count_tpls:
-            valid_pool.append((tpl.format(period=period), SQL_GROUP_DAY_COUNT))
-
-    # 8. GROUP_DAY_SUM
-    day_sum_tpls = [
-        "{period}の会議時間を日別に集計してください。",
-        "{period}の合計時間を日別で教えてください。",
-        "{period}の所要時間を日別に集計してください。",
-        "{period}の日ごとの合計会議時間を教えてください。"
-    ]
-    for period in multi_days:
-        for tpl in day_sum_tpls:
-            valid_pool.append((tpl.format(period=period), SQL_GROUP_DAY_SUM))
-
-    skip_pool = []
-    
-    # 1. Semantic/Qualitative questions
-    qual_tpls = [
-        "{period}の会議で{speaker}さんが発言した{topic}の進捗について詳細を教えてください。",
-        "{speaker}さんが説明した{topic}に関する{detail}の内容は何ですか？",
-        "{period}の会議で{speaker}さんが言及した{topic}の課題は何ですか？",
-        "{topic}の{detail}が決定した理由について分析したレポートを共有してください。",
-        "{speaker}さんと{speaker2}さん、どちらが{topic}について詳しく説明しましたか？",
-        "{period}の会議の議題として何がアジェンダに入っていましたか？",
-        "{topic}の{detail}に関する実施計画書をまとめて提案してください。",
-        "{speaker}さんが会議の最後に行った挨拶のテーマは何でしたか？",
-        "{period}の会議で{speaker}さんが懸念を示した具体的な問題は何ですか？",
-        "{topic}の導入により期待されるコスト削減効果の根拠は何ですか？",
-        "{speaker}さんが提出した{topic}のフォローアップについて教えてください。",
-        "{topic}のリリース予定日はいつですか？",
-        "{topic}の件について、どのような対応策が合意されましたか？"
-    ]
-    
-    for period in all_periods:
-        for tpl in qual_tpls:
-            sp = random.choice(speakers)
-            sp2 = random.choice([s for s in speakers if s != sp])
-            topic, detail = random.choice(topics)
-            skip_pool.append((tpl.format(period=period, speaker=sp, speaker2=sp2, topic=topic, detail=detail), SQL_SKIP))
-
-    # 2. Unsupported operations
-    unsupported_tpls = [
-        "{period}の全会議における{topic}関連の割合は何パーセントですか？",
-        "{period}の会議時間の中央値はどれくらいですか？",
-        "{period}の会議数の週ごとの推移を教えてください。",
-        "{period}の平日のみの合計所要時間は何秒ですか？",
-        "{period}で2番目に長かった会議の時間は？",
-        "{period}の上旬に開催された会議の件数は？",
-        "{period}のQ1の売上目標達成率は？",
-        "{period}の第3週のスケジュールはどうなっていますか？"
-    ]
-    for period in all_periods:
-        for tpl in unsupported_tpls:
-            topic, _ = random.choice(topics)
-            skip_pool.append((tpl.format(period=period, topic=topic), SQL_SKIP))
-
-    # 3. Cross-user queries
-    cross_user_tpls = [
-        "ユーザーごとの{period}の会議件数は何件ですか？",
-        "ユーザー別で{period}の合計会議時間を集計してください。",
-        "{period}の会議時間をユーザー別で教えてください。"
-    ]
-    for period in all_periods:
-        for tpl in cross_user_tpls:
-            skip_pool.append((tpl.format(period=period), SQL_SKIP))
-
-    # 4. Multiple metrics queries
-    multi_metrics_tpls = [
-        "{period}の会議は何回あり、その合計時間は何秒でしたか？",
-        "{period}の会議件数と平均会議時間を教えてください。"
-    ]
-    for period in all_periods:
-        for tpl in multi_metrics_tpls:
-            skip_pool.append((tpl.format(period=period), SQL_SKIP))
-            
-    return valid_pool, skip_pool
 
 def main():
-    # Load existing questions to prevent duplicates
-    existing_questions = set()
-    csv_path = ROOT / 'eval' / 'random_100_testcases_ja.csv'
-    if csv_path.exists():
-        try:
-            df_old = pd.read_csv(csv_path)
-            existing_questions = set(df_old['question'].tolist())
-            print(f"Loaded {len(existing_questions)} existing questions to avoid duplication.")
-        except Exception as e:
-            print(f"Could not load existing CSV: {e}")
-            
-    valid_pool, skip_pool = generate_pools()
-    
-    # Shuffle pools
-    random.shuffle(valid_pool)
-    random.shuffle(skip_pool)
-    
-    final_valid = []
-    final_skip = []
-    
-    # Filter valid
-    for q, sql in valid_pool:
-        if q not in existing_questions and q not in [x[0] for x in final_valid]:
-            final_valid.append((q, sql))
-        if len(final_valid) == 50:
-            break
-            
-    # Filter skip
-    for q, sql in skip_pool:
-        if q not in existing_questions and q not in [x[0] for x in final_skip]:
-            final_skip.append((q, sql))
-        if len(final_skip) == 50:
-            break
-            
-    print(f"Generated {len(final_valid)} unique Valid cases and {len(final_skip)} unique Skip cases.")
-    
-    if len(final_valid) < 50 or len(final_skip) < 50:
-        print("Error: Could not generate enough unique test cases. Try expanding the templates or pools.")
-        sys.exit(1)
-        
-    # Combine and shuffle
-    testcases = final_valid + final_skip
-    random.shuffle(testcases)
-    
     # Export to CSV
-    df = pd.DataFrame(testcases, columns=['question', 'sql'])
+    csv_path = ROOT / 'eval' / 'random_100_testcases_ja.csv'
     csv_path.parent.mkdir(parents=True, exist_ok=True)
+    df = pd.DataFrame(testcases, columns=['question', 'sql'])
     df.to_csv(csv_path, index=False, encoding='utf-8')
-    print(f"Successfully exported new random 100 test cases to {csv_path}")
-    
-    # Export to questions list txt
+    print(f"Exported Ground Truth CSV to {csv_path}")
+
+    # Export questions list txt
     txt_path = ROOT / 'db' / 'questions_random_100_ja.txt'
     txt_path.parent.mkdir(parents=True, exist_ok=True)
     with open(txt_path, 'w', encoding='utf-8') as f:
         for q, _ in testcases:
             f.write(q + '\n')
-    print(f"Successfully exported new questions list to {txt_path}")
+    print(f"Exported questions list to {txt_path}")
 
 if __name__ == '__main__':
     main()

@@ -203,6 +203,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
+    import sys
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
     parser = build_parser()
     args = parser.parse_args()
     asyncio.run(args.handler(args))

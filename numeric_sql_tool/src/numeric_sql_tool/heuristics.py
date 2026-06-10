@@ -7,7 +7,10 @@ from datetime import date, timedelta
 from .models import NumericIntent
 
 
-_EXISTENCE_RE = re.compile(r"(会議).*(ありましたか|ありますか|あった|あります|ありました)|何か会議")
+_EXISTENCE_RE = re.compile(
+    r"(会議|会話|電話|連絡|やり取り|話題|発言).*(ありましたか|ありますか|あった|あります|ありました|出ましたか|記録されていますか|記録されていませんか|存在しますか|存在するか|ないですか|なかったですか|なかったのですか|ありませんでしたか|ありませんか)|"
+    r"何か(会議|会話|電話|連絡|話題)"
+)
 _TIMESTAMP_RE = re.compile(r"何分頃|何秒頃|いつ.*(発言|言)|何時.*(発言|言)")
 _QUALITATIVE_RE = re.compile(
     r"何について|議題|要約|合意|アプローチ|発言したのは誰|詳しく説明|説明|"
@@ -15,23 +18,28 @@ _QUALITATIVE_RE = re.compile(
     r"いくらですか|パーセント|原因|対策|対応策|アクション|曜日|天気|差は|比べ|対比|"
     r"どっち|どちら|どこですか|こんにちは|削除|できますか|おすすめ|"
     r"市場|内訳|募集|削減|消化率|多すぎる|指示しましたか|決まりましたか|"
-    r"何億円|何社|何名|発言回数|何回発言|誰|何が決まり|リリース|予定日|"
+    r"何億円|何社|何名|発言.*回|回.*発言|誰|何が決まり|リリース|予定日|"
     r"取得予定|締め切り|ローンチ日|理由|分析|問題|どんな|どのような|テーマ|冒頭|提案|反対|名前|社名|会社名|解決|アジェンダ|進捗|レポート|最適化|計画|決定事項|"
     r"参加者|参加企業|"
     r"効率的|トレンド|改善提案|根拠|推移|懸念|締めくくり|"
-    r"フォローアップ|スキルセット|技術的な課題|承認されなかった|ペースについて|生産的|適切|課題|言及"
+    r"フォローアップ|スキルセット|技術的な課題|承認されなかった|ペースについて|生産的|適切|課題|言及|"
+    r"まとめて|一覧|目的|結果|要旨|内容|やり取り|時系列|フロー|マニュアル|規程|ルール|規則|基準|定義|指示|確認内容|確認事項"
 )
 _UNSUPPORTED_OPS_RE = re.compile(
     r"割合|パーセント|比率|中央値|メジアン|パーセンタイル|週ごと|週別|曜日|土日|平日|営業日|"
     r"両方参加|より何件多|より何回多|前半|後半|"
-    r"発言した合計時間|発言した平均|発言.*(分|秒|時間)|"
+    r"発言した合計時間|発言した平均|発言.*(分|秒|時間)|発話.*(分|秒|時間)|発話時間|発言時間|平均発話時間|平均発言時間|"
     r"先々月|第\d週|\d+週目|週目|上旬|中旬|下旬|年累計|直近\d+ヶ月|Q[1-4]|四半期|最終|最初|(?:今年|去年)(?!の?\d+月)|"
     r"\d+(分|時間|秒|日)(?:[をが])?(?:以上|超|以下|未満|より|ごと)|"
     r"\d+(回目|番目)に|\d+(回目|番目)の|二番目|2番目|"
     r"1日当たり|一日当たり|間隔|最も.*(週|月)|多かった週|の比"
 )
-_DURATION_MAX_RE = re.compile(r"最も長|一番長|最長|最大.*会議時間")
-_DURATION_MIN_RE = re.compile(r"最も短|一番短|最短|最小.*会議時間")
+_DURATION_MAX_RE = re.compile(r"最も長|一番長|最長|最大.*(会議|通話|会話)時間")
+_DURATION_MIN_RE = re.compile(r"最も短|一番短|最短|最小.*(会議|通話|会話)時間")
+
+_DURATION_TARGET_RE = re.compile(
+    r"何時間|所要時間|通話時間|発話時間|会話時間|会議時間|合計時間|総時間|平均時間|発言時間|長さ|何秒|何分"
+)
 
 
 def is_single_day_query(query: str) -> bool:
@@ -74,7 +82,7 @@ def heuristic_numeric_intent(query: str) -> NumericIntent:
         return NumericIntent(operator="skip", target="none", group_by="none")
 
     # Skip multiple metrics questions
-    has_count = any(k in query for k in ["件数", "何件", "何回", "回数", "会議数"])
+    has_count = any(k in query for k in ["件数", "何件", "何回", "回数", "会議数", "総数", "の数"])
     has_duration = any(k in query for k in ["時間", "所要時間", "合計時間", "平均時間", "総時間", "何分", "何秒"])
     if has_count and has_duration:
         return NumericIntent(operator="skip", target="none", group_by="none")
@@ -88,6 +96,32 @@ def heuristic_numeric_intent(query: str) -> NumericIntent:
     if any(k in query for k in ["ミーティングをしたい", "会議をしたい", "予約したい"]):
         return NumericIntent(operator="skip", target="none", group_by="none")
 
+    # Strict numeric check
+    is_numeric = False
+    if _DURATION_MAX_RE.search(query) or _DURATION_MIN_RE.search(query):
+        is_numeric = True
+    elif re.search(r"何件|何回|件数|回数|会議数|総数|の数", query):
+        is_numeric = True
+    elif _DURATION_TARGET_RE.search(query):
+        is_numeric = True
+    elif "どのくらい" in query and any(k in query for k in ["時間", "長", "短"]):
+        is_numeric = True
+    elif _EXISTENCE_RE.search(query):
+        is_qualitative_existence = False
+        if any(w in query for w in ["様", "さん", "話題", "伝言", "連絡", "用件", "内容", "物件"]):
+            is_qualitative_existence = True
+        if not is_qualitative_existence:
+            if is_single_day_query(query):
+                meeting_words = ["会議", "電話", "会話", "通話", "打ち合わせ"]
+                if any(w + "はあり" in query or w + "があり" in query or w + "の履歴" in query or w + "記録" in query or w + "存在" in query or w + "は記録" in query or w + "がな" in query or w + "が一" in query for w in meeting_words):
+                    if not any(w in query for w in ["質問", "発言", "確認", "合意", "否定", "断", "説明", "用件", "要望"]):
+                        is_numeric = True
+            else:
+                is_numeric = True
+
+    if not is_numeric:
+        return NumericIntent(operator="skip", target="none", group_by="none")
+
     operator = "sum"
     if _DURATION_MAX_RE.search(query):
         operator = "max"
@@ -99,15 +133,17 @@ def heuristic_numeric_intent(query: str) -> NumericIntent:
         operator = "max"
     elif re.search(r"最小|一番少", query):
         operator = "min"
-    elif re.search(r"何件|何回|件数|会議数", query):
+    elif re.search(r"何件|何回|件数|回数|会議数|総数|の数", query):
         operator = "count"
 
     target = "meeting_count"
     if _DURATION_MAX_RE.search(query) or _DURATION_MIN_RE.search(query):
         target = "duration_seconds"
-    elif re.search(r"何時間|所要時間|会議時間|合計時間|長さ|総時間|平均時間|何秒|何分", query):
+    elif _DURATION_TARGET_RE.search(query):
         target = "duration_seconds"
-    elif re.search(r"何件|会議数|会議件数", query) or _EXISTENCE_RE.search(query):
+    elif "どのくらい" in query and "時間" in query:
+        target = "duration_seconds"
+    elif re.search(r"何件|何回|件数|回数|会議数|総数|の数", query) or _EXISTENCE_RE.search(query):
         target = "meeting_count"
         operator = "count"
 

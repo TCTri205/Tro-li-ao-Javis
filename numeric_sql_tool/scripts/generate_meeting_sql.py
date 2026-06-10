@@ -1,4 +1,9 @@
-"""Generate transcripts / chunks SQL from Test javis chatbot.xlsx meeting sheets."""
+"""Generate transcripts / chunks SQL from data-test/timestamp transcript files.
+
+Reads from data-test/timestamp/GT_*.txt which use the format:
+    [HH:MM:SS-HH:MM:SS][Speaker] text content
+Produces accurate timestamps and durations instead of the old fake 10s-per-line approach.
+"""
 
 from __future__ import annotations
 
@@ -6,229 +11,148 @@ import hashlib
 import json
 import re
 import uuid
+import glob
 from pathlib import Path
 
-import pandas as pd
-
 ROOT = Path(__file__).resolve().parents[1]
-XLSX = ROOT / "db" / "Test javis chatbot.xlsx"
+# Now reads from the timestamp sub-folder which has real timing data
+DATA_TEST_DIR = ROOT / "data-test" / "timestamp"
 OUT_DIR = ROOT / "db" / "data"
 
 USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000000")
 PROJECT_ID = uuid.uuid5(uuid.NAMESPACE_DNS, "javis-chatbot-test")
 
-MEETINGS = (
-    ("meeting_01_20260526", "2026-05-26"),
-    ("meeting_02_20260520", "2026-05-20"),
-    ("meeting_03_20260515", "2026-05-15"),
+# Matches: [HH:MM:SS-HH:MM:SS][Speaker] text
+TIMESTAMPED_TURN_RE = re.compile(
+    r"^\[(\d{1,2}:\d{2}:\d{2})-(\d{1,2}:\d{2}:\d{2})\]\[([^\]]+)\]\s*(.+)$"
 )
-
-SUMMARIES = {
-    "meeting_01_20260526": (
-        "定例会議。音声認識システムバージョン2.3の開発進捗とノイズキャンセリング問題、"
-        "第二四半期予算（一億五千万円）の執行状況とクラウドコスト超過、"
-        "新エネルギー政策への対応（計測システム・太陽光パネル・省エネ研修）を議論。"
-    ),
-    "meeting_02_20260520": (
-        "第一四半期営業レビュー。Q1売上四億二千万円（達成率百八パーセント）、"
-        "Q2マーケティング予算五千万円、下半期採用計画（七名・三千五百万円）を審議。"
-    ),
-    "meeting_03_20260515": (
-        "新製品「AiVoice Pro」ローンチ計画会議。技術仕様・価格戦略・"
-        "九月一日正式ローンチ、初年度売上目標十二億円、ベータプログラムとリスク分析を議論。"
-    ),
-}
-
-# (topic label, substring markers) — new passage starts at first turn containing any marker.
-# First segment always starts at turn 0.
-# Transition phrases only (avoid agenda mentions in the opening turn).
-PASSAGE_SEGMENTS: dict[str, list[tuple[str, tuple[str, ...]]]] = {
-    "meeting_01_20260526": [
-        ("opening", ()),
-        ("project_progress", ("プロジェクト進捗に移りましょう",)),
-        ("budget_q2", ("予算の話に移りましょう",)),
-        ("energy_policy", ("エネルギー政策への対応についてです",)),
-        ("action_items", ("アクションアイテムを確認しましょう",)),
-    ],
-    "meeting_02_20260520": [
-        ("opening", ()),
-        ("q1_sales", ("まず全体的な数字を共有",)),
-        ("q2_marketing", ("Q2のマーケティング戦略を説明してください",)),
-        ("hiring_plan", ("採用計画に移りましょう",)),
-        ("action_items", ("アクションアイテムを確認しましょう",)),
-    ],
-    "meeting_03_20260515": [
-        ("opening", ()),
-        ("product_overview", ("ポジショニングから確認しましょう",)),
-        ("technical_specs", ("技術仕様について詳しく説明してください",)),
-        ("pricing", ("価格戦略を説明してください",)),
-        ("go_to_market", ("市場投入計画に移りましょう",)),
-        ("risk_analysis", ("リスク分析をお願いします",)),
-        ("action_items", ("アクションアイテムをまとめましょう",)),
-    ],
-}
-
-LINE_RE = re.compile(
-    r"^\[(?P<start>\d{2}:\d{2}:\d{2})-(?P<end>\d{2}:\d{2}:\d{2})\]\[(?P<speaker>[^\]]+)\]\s*(?P<text>.*)$",
-    re.DOTALL,
-)
-
 
 def _uuid(name: str) -> uuid.UUID:
     return uuid.uuid5(uuid.NAMESPACE_DNS, f"javis-chatbot/{name}")
 
-
-def _ts_to_sec(ts: str) -> int:
-    h, m, s = (int(x) for x in ts.split(":"))
-    return h * 3600 + m * 60 + s
-
-
 def _sql_str(value: str) -> str:
     return "'" + value.replace("'", "''") + "'"
-
 
 def _sql_json(value: object) -> str:
     return _sql_str(json.dumps(value, ensure_ascii=False))
 
+def _ts_to_sec(ts: str) -> int:
+    """Convert HH:MM:SS to total seconds (integer)."""
+    parts = ts.split(":")
+    h, m, s = int(parts[0]), int(parts[1]), int(parts[2])
+    return h * 3600 + m * 60 + s
 
-def _parse_turn(ja_cell: str) -> dict[str, object]:
-    m = LINE_RE.match(ja_cell.strip())
-    if not m:
-        raise ValueError(f"Unrecognized turn format: {ja_cell[:80]!r}")
-    return {
-        "speaker": m.group("speaker"),
-        "time_start_sec": _ts_to_sec(m.group("start")),
-        "time_end_sec": _ts_to_sec(m.group("end")),
-        "text": m.group("text"),
-    }
-
-
-def _load_meeting(sheet: str) -> list[dict[str, object]]:
-    df = pd.read_excel(XLSX, sheet_name=sheet, header=None)
+def _parse_file(filepath: Path) -> list[dict[str, object]]:
+    """Parse a timestamped transcript file into a list of turn dicts."""
+    lines = filepath.read_text(encoding="utf-8").splitlines()
     turns: list[dict[str, object]] = []
-    for row in df.itertuples(index=False):
-        ja = row[0]
-        if pd.isna(ja):
+    alternating_speaker = "A"
+
+    for line in lines:
+        line = line.strip()
+        if not line:
             continue
-        turns.append(_parse_turn(str(ja)))
+
+        m = TIMESTAMPED_TURN_RE.match(line)
+        if m:
+            ts_start, ts_end, speaker, text = m.group(1), m.group(2), m.group(3).strip(), m.group(4).strip()
+            start_sec = _ts_to_sec(ts_start)
+            end_sec = _ts_to_sec(ts_end)
+            # Guard against typo inversions (end < start) — clamp to start+1
+            if end_sec < start_sec:
+                end_sec = start_sec + 1
+        else:
+            # Fallback for plain lines without timestamps — assign synthetic timing
+            start_sec = len(turns) * 10
+            end_sec = start_sec + 10
+            # Try to detect speaker from "Speaker: text" pattern
+            plain_m = re.match(r"^([A-Za-z0-9Nữam１２\s]+)[:：]\s*(.+)$", line)
+            if plain_m and plain_m.group(1).strip() not in ("", "---"):
+                speaker = plain_m.group(1).strip()
+                text = plain_m.group(2).strip()
+            else:
+                speaker = alternating_speaker
+                text = line
+                alternating_speaker = "B" if alternating_speaker == "A" else "A"
+
+        turns.append({
+            "speaker": speaker,
+            "time_start_sec": start_sec,
+            "time_end_sec": end_sec,
+            "text": text,
+        })
     return turns
 
 
-def _passage_boundaries(sheet: str, turns: list[dict[str, object]]) -> list[int]:
-    """Return start turn indices for each passage segment."""
-    segments = PASSAGE_SEGMENTS[sheet]
-    boundaries = [0]
-    for _topic, markers in segments[1:]:
-        start_at = boundaries[-1] + 1
-        found = None
-        for i in range(start_at, len(turns)):
-            text = str(turns[i]["text"])
-            if any(marker in text for marker in markers):
-                found = i
-                break
-        if found is None:
-            raise RuntimeError(
-                f"{sheet}: passage marker not found: {markers!r} (after turn {start_at - 1})"
-            )
-        boundaries.append(found)
-    return boundaries
+def _build_meeting(filepath: Path, index: int) -> dict[str, object]:
+    session_id = filepath.stem  # e.g. GT_01
+    # Auto-generate dates in May 2026: May 01, May 02, etc.
+    meeting_date = f"2026-05-{index:02d}"
 
-
-def _group_passages(
-    sheet: str, turns: list[dict[str, object]]
-) -> list[dict[str, object]]:
-    segments = PASSAGE_SEGMENTS[sheet]
-    boundaries = _passage_boundaries(sheet, turns)
-    groups: list[dict[str, object]] = []
-    for seg_idx, start in enumerate(boundaries):
-        end = boundaries[seg_idx + 1] if seg_idx + 1 < len(boundaries) else len(turns)
-        topic = segments[seg_idx][0]
-        seg_turns = turns[start:end]
-        groups.append({"topic": topic, "turns": seg_turns, "start_index": start})
-    return groups
-
-
-def _unique_speakers(turns: list[dict[str, object]]) -> list[str]:
-    speakers: list[str] = []
-    seen: set[str] = set()
-    for t in turns:
-        sp = str(t["speaker"])
-        if sp not in seen:
-            seen.add(sp)
-            speakers.append(sp)
-    return speakers
-
-
-def _build_meeting(sheet: str, meeting_date: str) -> dict[str, object]:
-    turns = _load_meeting(sheet)
+    turns = _parse_file(filepath)
     if not turns:
-        raise RuntimeError(f"No turns in sheet {sheet}")
+        raise RuntimeError(f"No turns in file {filepath.name}")
 
-    transcript_id = _uuid(f"transcript/{sheet}")
-    session_id = sheet
-    all_speakers = _unique_speakers(turns)
+    transcript_id = _uuid(f"transcript/{session_id}")
+    all_speakers = sorted(list(set(str(t["speaker"]) for t in turns)))
 
     raw_parts = [f"[{t['speaker']}]:{t['text']}" for t in turns]
     raw_text = "".join(raw_parts)
-    duration_seconds = int(turns[-1]["time_end_sec"]) - int(turns[0]["time_start_sec"])
+
+    # Derive real duration from the maximum turn end time
+    duration_seconds = max(int(t["time_end_sec"]) for t in turns)
+
     content_hash = hashlib.sha256(raw_text.encode("utf-8")).hexdigest()
     created = f"{meeting_date} 10:00:00+07"
 
-    passage_groups = _group_passages(sheet, turns)
-    passages: list[dict[str, object]] = []
-    turn_rows: list[dict[str, object]] = []
-
-    for passage_index, group in enumerate(passage_groups):
-        seg_turns: list[dict[str, object]] = group["turns"]
-        topic = str(group["topic"])
-        passage_id = _uuid(f"passage/{sheet}/{passage_index}")
-        seg_speakers = _unique_speakers(seg_turns)
-        passage_lines = [f"[{t['speaker']}] {t['text']}" for t in seg_turns]
-
-        passages.append(
-            {
-                "id": passage_id,
-                "transcript_id": transcript_id,
-                "passage_index": passage_index,
-                "time_start_sec": int(seg_turns[0]["time_start_sec"]),
-                "time_end_sec": int(seg_turns[-1]["time_end_sec"]),
-                "speaker_list": seg_speakers,
-                "text": "\n".join(passage_lines),
-                "chunk_metadata": {
-                    "topics": [topic],
-                    "entities": seg_speakers,
-                    "turn_types": ["update"],
-                    "importance_score": 4,
-                },
+    # We place the entire transcript into a single passage
+    passage_id = _uuid(f"passage/{session_id}/0")
+    passage_lines = [f"[{t['speaker']}] {t['text']}" for t in turns]
+    passages = [
+        {
+            "id": passage_id,
+            "transcript_id": transcript_id,
+            "passage_index": 0,
+            "time_start_sec": int(turns[0]["time_start_sec"]),
+            "time_end_sec": duration_seconds,
+            "speaker_list": all_speakers,
+            "text": "\n".join(passage_lines),
+            "chunk_metadata": {
+                "topics": ["general"],
+                "entities": all_speakers,
+                "turn_types": ["update"],
                 "importance_score": 4,
+            },
+            "importance_score": 4,
+            "created_at": created,
+        }
+    ]
+
+    turn_rows = []
+    for global_idx, t in enumerate(turns):
+        turn_rows.append(
+            {
+                "id": _uuid(f"turn/{session_id}/{global_idx}"),
+                "transcript_id": transcript_id,
+                "passage_id": passage_id,
+                "turn_index": global_idx,
+                "speaker": t["speaker"],
+                "time_start_sec": int(t["time_start_sec"]),
+                "time_end_sec": int(t["time_end_sec"]),
+                "text": t["text"],
+                "sub_chunk_index": 0,
+                "chunk_metadata": {
+                    "topics": ["general"],
+                    "entities": [t["speaker"]],
+                    "turn_types": ["update"],
+                    "importance_score": 3,
+                },
+                "importance_score": 3,
                 "created_at": created,
             }
         )
 
-        for local_idx, t in enumerate(seg_turns):
-            global_idx = int(group["start_index"]) + local_idx
-            turn_rows.append(
-                {
-                    "id": _uuid(f"turn/{sheet}/{global_idx}"),
-                    "transcript_id": transcript_id,
-                    "passage_id": passage_id,
-                    "turn_index": global_idx,
-                    "speaker": t["speaker"],
-                    "time_start_sec": t["time_start_sec"],
-                    "time_end_sec": t["time_end_sec"],
-                    "text": t["text"],
-                    "sub_chunk_index": 0,
-                    "chunk_metadata": {
-                        "topics": [topic],
-                        "entities": [t["speaker"]],
-                        "turn_types": ["update"],
-                        "importance_score": 3,
-                    },
-                    "importance_score": 3,
-                    "created_at": created,
-                }
-            )
-
+    summary = f"Transcript of meeting {session_id}."
     return {
         "transcript": {
             "id": transcript_id,
@@ -240,9 +164,9 @@ def _build_meeting(sheet: str, meeting_date: str) -> dict[str, object]:
             "duration_seconds": duration_seconds,
             "content_hash": content_hash,
             "raw_text": raw_text,
-            "summary": SUMMARIES[sheet],
+            "summary": summary,
             "summary_metadata": {
-                "topics": [seg[0] for seg in PASSAGE_SEGMENTS[sheet]],
+                "topics": ["general"],
                 "entities": all_speakers,
             },
             "status": "ready",
@@ -256,7 +180,6 @@ def _build_meeting(sheet: str, meeting_date: str) -> dict[str, object]:
         "passages": passages,
         "turns": turn_rows,
     }
-
 
 def _emit_transcripts(meetings: list[dict[str, object]]) -> str:
     cols = (
@@ -293,7 +216,6 @@ def _emit_transcripts(meetings: list[dict[str, object]]) -> str:
     lines.append(",\n".join(values) + ";")
     return "\n".join(lines) + "\n"
 
-
 def _emit_passages(meetings: list[dict[str, object]]) -> str:
     cols = (
         "id,transcript_id,passage_index,time_start_sec,time_end_sec,speaker_list,text,"
@@ -320,7 +242,6 @@ def _emit_passages(meetings: list[dict[str, object]]) -> str:
             )
     lines.append(",\n".join(values) + ";")
     return "\n".join(lines) + "\n"
-
 
 def _emit_turns(meetings: list[dict[str, object]]) -> str:
     cols = (
@@ -351,26 +272,30 @@ def _emit_turns(meetings: list[dict[str, object]]) -> str:
     lines.append(",\n".join(values) + ";")
     return "\n".join(lines) + "\n"
 
-
 def main() -> None:
-    meetings = [_build_meeting(sheet, date) for sheet, date in MEETINGS]
+    import sys
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
+    txt_files = sorted(list(DATA_TEST_DIR.glob("GT_*.txt")))
+    if not txt_files:
+        raise RuntimeError(f"No GT_*.txt files found in {DATA_TEST_DIR}")
+
+    meetings = []
+    for idx, filepath in enumerate(txt_files, start=1):
+        meetings.append(_build_meeting(filepath, idx))
+
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     (OUT_DIR / "transcripts.sql").write_text(_emit_transcripts(meetings), encoding="utf-8")
     (OUT_DIR / "chunks_passage.sql").write_text(_emit_passages(meetings), encoding="utf-8")
     (OUT_DIR / "chunks_turn.sql").write_text(_emit_turns(meetings), encoding="utf-8")
 
-    print("Wrote SQL files to", OUT_DIR)
-    for sheet, _date in MEETINGS:
-        m = next(x for x in meetings if x["transcript"]["session_id"] == sheet)
-        passage_topics = [
-            f"p{p['passage_index']}:{p['chunk_metadata']['topics'][0]}"
-            for p in m["passages"]
-        ]
-        print(
-            f"  {sheet}: {len(m['turns'])} turns, {len(m['passages'])} passages "
-            f"({', '.join(passage_topics)}), duration={m['transcript']['duration_seconds']}s"
-        )
-
+    print(f"Wrote SQL files for {len(meetings)} meetings from {DATA_TEST_DIR} to {OUT_DIR}")
+    for m in meetings:
+        t = m["transcript"]
+        print(f"  {t['session_id']}: date={t['meeting_date']}, duration={t['duration_seconds']}s, {len(m['turns'])} turns, speakers={t['participants']}")
 
 if __name__ == "__main__":
     main()
