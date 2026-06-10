@@ -1,0 +1,193 @@
+Total differences found: 32
+
+Row 18 | Q: 2026年5月1日の電話で、梅田様については何回言及されましたか？
+  Old SQL:   SKIP (operator=skip, target=none)
+  New SQL:   SELECT COALESCE(SUM(CASE WHEN $6::text IS NULL OR $6::text = '' THEN 0 ELSE (LENGTH(ct.text) - LENGTH(REPLACE(ct.text, $6::text, ''))) / LENGTH($6::text) END), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: -
+  New Value: 3.0
+
+Row 19 | Q: 2026年5月1日の電話の総通話時間はどのくらいでしたか？
+  Old SQL:   SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+  New SQL:   SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: 102.0
+  New Value: 102.0
+
+Row 20 | Q: 2026年5月1日の電話で、SPEAKER 1の平均発話時間はどのくらいでしたか？
+  Old SQL:   SKIP (operator=skip, target=none)
+  New SQL:   SELECT COALESCE(AVG(ct.time_end_sec - ct.time_start_sec), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE (ct.speaker = $5::text OR ct.speaker = (SELECT speaker FROM chunks_turn ct2 JOIN transcripts t2 ON ct2.transcript_id = t2.id WHERE ct2.text ILIKE '%' || $5::text || '%' AND ($1::uuid IS NULL OR t2.user_id = $1::uuid) AND ($2::date IS NULL OR t2.meeting_date >= $2::date) AND ($3::date IS NULL OR t2.meeting_date <= $3::date) LIMIT 1)) AND ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: -
+  New Value: 2.1538461538461537
+
+Row 23 | Q: 2026年5月1日の電話で、SPEAKER 1は何回発言しましたか？
+  Old SQL:   SKIP (operator=skip, target=none)
+  New SQL:   SELECT COUNT(*)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE (ct.speaker = $5::text OR ct.speaker = (SELECT speaker FROM chunks_turn ct2 JOIN transcripts t2 ON ct2.transcript_id = t2.id WHERE ct2.text ILIKE '%' || $5::text || '%' AND ($1::uuid IS NULL OR t2.user_id = $1::uuid) AND ($2::date IS NULL OR t2.meeting_date >= $2::date) AND ($3::date IS NULL OR t2.meeting_date <= $3::date) LIMIT 1)) AND ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: -
+  New Value: 13.0
+
+Row 51 | Q: 2026年5月2日の電話で、石田様の名前は何回言及されましたか？
+  Old SQL:   SKIP (operator=skip, target=none)
+  New SQL:   SELECT COALESCE(SUM(CASE WHEN $6::text IS NULL OR $6::text = '' THEN 0 ELSE (LENGTH(ct.text) - LENGTH(REPLACE(ct.text, $6::text, ''))) / LENGTH($6::text) END), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: -
+  New Value: 0.0
+
+Row 52 | Q: 2026年5月2日の電話で、会社名の確認は何回行われましたか？
+  Old SQL:   SKIP (operator=skip, target=none)
+  New SQL:   SELECT COALESCE(SUM(CASE WHEN $6::text IS NULL OR $6::text = '' THEN 0 ELSE (LENGTH(ct.text) - LENGTH(REPLACE(ct.text, $6::text, ''))) / LENGTH($6::text) END), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: -
+  New Value: 1.0
+
+Row 53 | Q: 2026年5月2日の電話で、折り返し連絡に関する発言は何回ありましたか？
+  Old SQL:   SKIP (operator=skip, target=none)
+  New SQL:   SELECT COALESCE(SUM(CASE WHEN $6::text IS NULL OR $6::text = '' THEN 0 ELSE (LENGTH(ct.text) - LENGTH(REPLACE(ct.text, $6::text, ''))) / LENGTH($6::text) END), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: -
+  New Value: 0.0
+
+Row 80 | Q: 2026年5月3日の島田様との通話時間はどのくらいでしたか？
+  Old SQL:   SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+  New SQL:   SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: 204.0
+  New Value: 204.0
+
+Row 81 | Q: 2026年5月3日の電話で、折り返し連絡について何回言及されましたか？
+  Old SQL:   SKIP (operator=skip, target=none)
+  New SQL:   SELECT COALESCE(SUM(CASE WHEN $6::text IS NULL OR $6::text = '' THEN 0 ELSE (LENGTH(ct.text) - LENGTH(REPLACE(ct.text, $6::text, ''))) / LENGTH($6::text) END), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: -
+  New Value: 3.0
+
+Row 107 | Q: 2026年5月4日の電話で、中原様は何回言及されましたか？
+  Old SQL:   SKIP (operator=skip, target=none)
+  New SQL:   SELECT COALESCE(SUM(CASE WHEN $6::text IS NULL OR $6::text = '' THEN 0 ELSE (LENGTH(ct.text) - LENGTH(REPLACE(ct.text, $6::text, ''))) / LENGTH($6::text) END), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: -
+  New Value: 0.0
+
+Row 109 | Q: 2026年5月4日の、三菱UFJ銀行の横堀様がアセットジャパンへ中原凛花様宛ての伝言依頼を行った通話について、通話全体の時間はどのくらいでしたか？
+  Old SQL:   SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+  New SQL:   SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: 105.0
+  New Value: 105.0
+
+Row 110 | Q: 2026年5月4日の、三菱UFJ銀行の横堀様がアセットジャパンへ中原凛花様宛ての伝言依頼を行った通話について、横堀様の平均発話時間はどのくらいでしたか？
+  Old SQL:   SKIP (operator=skip, target=none)
+  New SQL:   SELECT COALESCE(AVG(ct.time_end_sec - ct.time_start_sec), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE (ct.speaker = $5::text OR ct.speaker = (SELECT speaker FROM chunks_turn ct2 JOIN transcripts t2 ON ct2.transcript_id = t2.id WHERE ct2.text ILIKE '%' || $5::text || '%' AND ($1::uuid IS NULL OR t2.user_id = $1::uuid) AND ($2::date IS NULL OR t2.meeting_date >= $2::date) AND ($3::date IS NULL OR t2.meeting_date <= $3::date) LIMIT 1)) AND ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: -
+  New Value: 8.555555555555555
+
+Row 139 | Q: 2026年5月5日の電話で、サカモト様は会話の中で何回言及されましたか？
+  Old SQL:   SKIP (operator=skip, target=none)
+  New SQL:   SELECT COALESCE(SUM(CASE WHEN $6::text IS NULL OR $6::text = '' THEN 0 ELSE (LENGTH(ct.text) - LENGTH(REPLACE(ct.text, $6::text, ''))) / LENGTH($6::text) END), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: -
+  New Value: 0.0
+
+Row 140 | Q: 2026年5月5日の打ち合わせ日程調整の通話時間はどのくらいでしたか？
+  Old SQL:   SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+  New SQL:   SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: 34.0
+  New Value: 34.0
+
+Row 141 | Q: 2026年5月5日の電話におけるサカモト様の平均発話時間はどのくらいですか？
+  Old SQL:   SKIP (operator=skip, target=none)
+  New SQL:   SELECT COALESCE(AVG(ct.time_end_sec - ct.time_start_sec), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE (ct.speaker = $5::text OR ct.speaker = (SELECT speaker FROM chunks_turn ct2 JOIN transcripts t2 ON ct2.transcript_id = t2.id WHERE ct2.text ILIKE '%' || $5::text || '%' AND ($1::uuid IS NULL OR t2.user_id = $1::uuid) AND ($2::date IS NULL OR t2.meeting_date >= $2::date) AND ($3::date IS NULL OR t2.meeting_date <= $3::date) LIMIT 1)) AND ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: -
+  New Value: 0.0
+
+Row 144 | Q: 2026年5月5日の電話でクマガイ様は何回発言しましたか？
+  Old SQL:   SKIP (operator=skip, target=none)
+  New SQL:   SELECT COUNT(*)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE (ct.speaker = $5::text OR ct.speaker = (SELECT speaker FROM chunks_turn ct2 JOIN transcripts t2 ON ct2.transcript_id = t2.id WHERE ct2.text ILIKE '%' || $5::text || '%' AND ($1::uuid IS NULL OR t2.user_id = $1::uuid) AND ($2::date IS NULL OR t2.meeting_date >= $2::date) AND ($3::date IS NULL OR t2.meeting_date <= $3::date) LIMIT 1)) AND ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: -
+  New Value: 0.0
+
+Row 172 | Q: 2026年5月6日の電話で、カセ様の名前は何回言及されましたか？
+  Old SQL:   SKIP (operator=skip, target=none)
+  New SQL:   SELECT COALESCE(SUM(CASE WHEN $6::text IS NULL OR $6::text = '' THEN 0 ELSE (LENGTH(ct.text) - LENGTH(REPLACE(ct.text, $6::text, ''))) / LENGTH($6::text) END), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: -
+  New Value: 0.0
+
+Row 173 | Q: 2026年5月6日の通話時間はどのくらいでしたか？
+  Old SQL:   SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+  New SQL:   SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: 25.0
+  New Value: 25.0
+
+Row 174 | Q: 2026年5月6日の電話における山下様の平均発話時間はどのくらいですか？
+  Old SQL:   SKIP (operator=skip, target=none)
+  New SQL:   SELECT COALESCE(AVG(ct.time_end_sec - ct.time_start_sec), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE (ct.speaker = $5::text OR ct.speaker = (SELECT speaker FROM chunks_turn ct2 JOIN transcripts t2 ON ct2.transcript_id = t2.id WHERE ct2.text ILIKE '%' || $5::text || '%' AND ($1::uuid IS NULL OR t2.user_id = $1::uuid) AND ($2::date IS NULL OR t2.meeting_date >= $2::date) AND ($3::date IS NULL OR t2.meeting_date <= $3::date) LIMIT 1)) AND ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: -
+  New Value: 0.0
+
+Row 177 | Q: 2026年5月6日の電話で山下様は何回発言しましたか？
+  Old SQL:   SKIP (operator=skip, target=none)
+  New SQL:   SELECT COUNT(*)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE (ct.speaker = $5::text OR ct.speaker = (SELECT speaker FROM chunks_turn ct2 JOIN transcripts t2 ON ct2.transcript_id = t2.id WHERE ct2.text ILIKE '%' || $5::text || '%' AND ($1::uuid IS NULL OR t2.user_id = $1::uuid) AND ($2::date IS NULL OR t2.meeting_date >= $2::date) AND ($3::date IS NULL OR t2.meeting_date <= $3::date) LIMIT 1)) AND ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: -
+  New Value: 0.0
+
+Row 205 | Q: 2026年5月7日の通話で「14日水曜日」が何回言及されましたか？
+  Old SQL:   SKIP (operator=skip, target=none)
+  New SQL:   SELECT COALESCE(SUM(CASE WHEN $6::text IS NULL OR $6::text = '' THEN 0 ELSE (LENGTH(ct.text) - LENGTH(REPLACE(ct.text, $6::text, ''))) / LENGTH($6::text) END), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: -
+  New Value: 1.0
+
+Row 206 | Q: 2026年5月7日の通話の総時間はどのくらいでしたか？
+  Old SQL:   SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+  New SQL:   SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: 28.0
+  New Value: 28.0
+
+Row 207 | Q: 2026年5月7日の通話におけるSPEAKER 2の平均発話時間はどのくらいですか？
+  Old SQL:   SKIP (operator=skip, target=none)
+  New SQL:   SELECT COALESCE(AVG(ct.time_end_sec - ct.time_start_sec), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE (ct.speaker = $5::text OR ct.speaker = (SELECT speaker FROM chunks_turn ct2 JOIN transcripts t2 ON ct2.transcript_id = t2.id WHERE ct2.text ILIKE '%' || $5::text || '%' AND ($1::uuid IS NULL OR t2.user_id = $1::uuid) AND ($2::date IS NULL OR t2.meeting_date >= $2::date) AND ($3::date IS NULL OR t2.meeting_date <= $3::date) LIMIT 1)) AND ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: -
+  New Value: 0.0
+
+Row 210 | Q: 2026年5月7日の通話でSPEAKER 1は何回発言しましたか？
+  Old SQL:   SKIP (operator=skip, target=none)
+  New SQL:   SELECT COUNT(*)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE (ct.speaker = $5::text OR ct.speaker = (SELECT speaker FROM chunks_turn ct2 JOIN transcripts t2 ON ct2.transcript_id = t2.id WHERE ct2.text ILIKE '%' || $5::text || '%' AND ($1::uuid IS NULL OR t2.user_id = $1::uuid) AND ($2::date IS NULL OR t2.meeting_date >= $2::date) AND ($3::date IS NULL OR t2.meeting_date <= $3::date) LIMIT 1)) AND ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: -
+  New Value: 7.0
+
+Row 238 | Q: 2026年5月8日の電話で、おのだ様の名前は何回言及されましたか？
+  Old SQL:   SKIP (operator=skip, target=none)
+  New SQL:   SELECT COALESCE(SUM(CASE WHEN $6::text IS NULL OR $6::text = '' THEN 0 ELSE (LENGTH(ct.text) - LENGTH(REPLACE(ct.text, $6::text, ''))) / LENGTH($6::text) END), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: -
+  New Value: 0.0
+
+Row 239 | Q: 2026年5月8日の通話時間はどのくらいでしたか？
+  Old SQL:   SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+  New SQL:   SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: 36.0
+  New Value: 36.0
+
+Row 240 | Q: 2026年5月8日の通話で、ツジ様の平均発話時間はどのくらいですか？
+  Old SQL:   SKIP (operator=skip, target=none)
+  New SQL:   SELECT COALESCE(AVG(ct.time_end_sec - ct.time_start_sec), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE (ct.speaker = $5::text OR ct.speaker = (SELECT speaker FROM chunks_turn ct2 JOIN transcripts t2 ON ct2.transcript_id = t2.id WHERE ct2.text ILIKE '%' || $5::text || '%' AND ($1::uuid IS NULL OR t2.user_id = $1::uuid) AND ($2::date IS NULL OR t2.meeting_date >= $2::date) AND ($3::date IS NULL OR t2.meeting_date <= $3::date) LIMIT 1)) AND ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: -
+  New Value: 3.5
+
+Row 243 | Q: 2026年5月8日の通話で、ツジ様は何回発言しましたか？
+  Old SQL:   SKIP (operator=skip, target=none)
+  New SQL:   SELECT COUNT(*)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE (ct.speaker = $5::text OR ct.speaker = (SELECT speaker FROM chunks_turn ct2 JOIN transcripts t2 ON ct2.transcript_id = t2.id WHERE ct2.text ILIKE '%' || $5::text || '%' AND ($1::uuid IS NULL OR t2.user_id = $1::uuid) AND ($2::date IS NULL OR t2.meeting_date >= $2::date) AND ($3::date IS NULL OR t2.meeting_date <= $3::date) LIMIT 1)) AND ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: -
+  New Value: 6.0
+
+Row 271 | Q: 2026年5月9日の電話で、山内様の名前は何回言及されましたか？
+  Old SQL:   SKIP (operator=skip, target=none)
+  New SQL:   SELECT COALESCE(SUM(CASE WHEN $6::text IS NULL OR $6::text = '' THEN 0 ELSE (LENGTH(ct.text) - LENGTH(REPLACE(ct.text, $6::text, ''))) / LENGTH($6::text) END), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: -
+  New Value: 0.0
+
+Row 272 | Q: 2026年5月9日の東浦町の物件に関する通話時間はどのくらいでしたか？
+  Old SQL:   SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+  New SQL:   SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: 46.0
+  New Value: 46.0
+
+Row 273 | Q: 2026年5月9日の電話で、アセットジャパンの伊藤様の平均発話時間はどのくらいですか？
+  Old SQL:   SKIP (operator=skip, target=none)
+  New SQL:   SELECT COALESCE(AVG(ct.time_end_sec - ct.time_start_sec), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE (ct.speaker = $5::text OR ct.speaker = (SELECT speaker FROM chunks_turn ct2 JOIN transcripts t2 ON ct2.transcript_id = t2.id WHERE ct2.text ILIKE '%' || $5::text || '%' AND ($1::uuid IS NULL OR t2.user_id = $1::uuid) AND ($2::date IS NULL OR t2.meeting_date >= $2::date) AND ($3::date IS NULL OR t2.meeting_date <= $3::date) LIMIT 1)) AND ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: -
+  New Value: 2.7142857142857144
+
+Row 276 | Q: 2026年5月9日の電話で、アセットジャパンの伊藤様は何回発言しましたか？
+  Old SQL:   SKIP (operator=skip, target=none)
+  New SQL:   SELECT COUNT(*)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE (ct.speaker = $5::text OR ct.speaker = (SELECT speaker FROM chunks_turn ct2 JOIN transcripts t2 ON ct2.transcript_id = t2.id WHERE ct2.text ILIKE '%' || $5::text || '%' AND ($1::uuid IS NULL OR t2.user_id = $1::uuid) AND ($2::date IS NULL OR t2.meeting_date >= $2::date) AND ($3::date IS NULL OR t2.meeting_date <= $3::date) LIMIT 1)) AND ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+  Old Value: -
+  New Value: 7.0

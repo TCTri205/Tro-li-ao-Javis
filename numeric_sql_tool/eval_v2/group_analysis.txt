@@ -1,0 +1,1025 @@
+
+=========================================
+GROUP: 👥 Người tham gia | TYPE: Ai đã nói điều X
+=========================================
+Q: 2026年5月1日の電話で、「スリーラスター様は購入なのでサイズ書なしです」と説明したのは誰ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月2日の電話で、「石田様は在宅になりますので、こちらからかけ直させていただきます」と発言したのは誰ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月3日の電話で、「その物件が売れてしまったのか分からない」と話したのは誰ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月4日の電話で、「私以外の者でもご案内できますので、お電話いただきたいとの伝言をお願いしてもよろしいでしょうか？」と発言したのは誰ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月5日の電話で、「じゃあ14日水曜日の10時ですね。に、お伺いさせていただきますので。」と発言したのは誰ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月6日の電話で、「じゃあまた改めてご連絡させていただきます」と発言したのは誰ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月7日の通話で、「14日水曜日の10時ですね。お伺いさせていただきますので」と発言したのは誰ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月8日の電話で、「また改めてご連絡差し上げます」と発言したのは誰ですか？また、その発言の意図は何ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月9日の電話で「東浦町の物件についてメールで問い合わせます」と伝言を依頼したのは誰ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 👥 Người tham gia | TYPE: Phát biểu của một người
+=========================================
+Q: 2026年5月1日の電話で、SPEAKER 1が説明した内容を要約してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月2日の電話で、Aが説明した石田志保様の状況と今後の対応をまとめてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月3日の島田様との電話で、Aが説明した対応内容と今後の流れを要約してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月4日の電話で、三菱UFJ銀行の横堀様はどのような説明や案内を行いましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月5日の電話で、クマガイ様は打ち合わせの日程についてどのような説明や依頼を行いましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月6日の電話で、AJテクノロジーズの山下様はどのような依頼や説明をしましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月7日の通話で、SPEAKER 1（クマガイ様）はどのような説明や依頼を行いましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月8日の電話におけるSPEAKER 1の発言だけを抽出し、おのだ様の状況説明を要約してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月9日の電話での中央清算管理課担当者（SPEAKER 1）の発言だけを抽出し、山内様の状況と対応内容を要約してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 👥 Người tham gia | TYPE: Thông tin người tham dự
+=========================================
+Q: 2026年5月1日の電話には誰が参加していましたか？名前と人数を教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月2日の電話には誰が参加しており、それぞれどの会社を名乗っていますか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月3日の島田様からの物件問い合わせ電話には誰が参加し、それぞれどのような立場でしたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月4日の三菱UFJ銀行からの電話には誰が参加しており、それぞれの所属や役割は何でしたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月5日の打ち合わせ日程調整の電話には誰が参加しており、それぞれの所属会社と役割は何でしたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月6日のAJテクノロジーズと建設のエスタとの電話には誰が参加しており、それぞれの会社名と役割は何ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月7日の打ち合わせ日程調整の電話には誰が参加しており、それぞれどの会社の担当者ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月8日の電話には誰が参加していましたか？会社名・氏名・役割ごとに整理してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月9日の東浦町の物件に関する電話に参加した人物・会社名・人数をまとめてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 👥 Người tham gia | TYPE: Trao đổi giữa hai người
+=========================================
+Q: 2026年5月1日の電話で、スリーラスター様に関するSPEAKER 1とSPEAKER 2のやり取りを時系列でまとめてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月2日の電話で、石田志保様への連絡方法についてAと中岡様はどのようなやり取りをしましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月3日の電話で、物件の内見や販売状況についてAとBはどのようなやり取りをしましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月4日の電話で、横堀様とアセットジャパン担当者は中原凛花様への連絡方法についてどのようなやり取りをしましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月5日の電話で、クマガイ様とサカモト様は14日水曜日10時の打ち合わせについてどのようなやり取りをしましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月6日の電話で、山下様と建設のエスタ担当者はカセ様の所在についてどのようなやり取りをしましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月7日の通話で、14日水曜日10時の打ち合わせについてのやり取りを時系列で要約してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月8日の電話で、おのだ様への連絡方法についてのやり取りを時系列で整理してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月9日の電話で、山内様への連絡方法についてSPEAKER 1とSPEAKER 2はどのようなやり取りをしましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 📄 Tài liệu nội bộ | TYPE: Quy trình & hướng dẫn
+=========================================
+Q: 2026年5月1日の電話では、配信有無の確認についてどのようなやり取りがありましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月2日の電話では、在宅勤務中の石田志保様への連絡対応がどのように進められましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月3日の島田様のようにお客様から物件の内見希望があった場合、社内ではどのような対応フローを実施しますか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月4日の三菱UFJ銀行からの連絡のように、休みの社員宛てに外部から伝言依頼があった場合の対応フローを教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月5日の電話のように社外担当者との打ち合わせを調整する場合、アポイント確定までの対応フローを教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月6日のAJテクノロジーズからの電話のように、取引先が後ほど連絡すると伝えた場合の対応フローを教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 取引先との打ち合わせ日程を調整し、訪問日時を確定する場合の対応フローはどうなっていますか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 代表者が不在の際、取引先から携帯電話への直接連絡の可否を尋ねられた場合の対応フローはどうなっていますか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月9日の電話のように、打ち合わせ中で不在の社員宛てに取引先から物件に関する伝言依頼があった場合、その伝言の記録・本人への取り次ぎ・対応完了確認までの社内フローを教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 📄 Tài liệu nội bộ | TYPE: Quy định & chính sách
+=========================================
+Q: 2026年5月1日の電話では、サイズ書の有無についてどのように説明されていましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月2日の電話では、在宅勤務中の担当者への連絡についてどのように説明されていましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月3日の島田様からの物件問い合わせ電話では担当者が不在でしたが、このような場合の顧客への折り返し連絡に関する社内ルールを教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月4日の中原凛花様宛ての銀行からの伝言依頼のようなケースにおいて、社員が休みの場合の外部からの伝言受付や折り返し連絡に関する社内ルールを教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月5日のような取引先との打ち合わせ日程調整において、日程提案・確定・変更に関する社内ルールを教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月6日の電話のように担当者が外出中の場合、外部からの問い合わせ対応や折り返し連絡に関する社内ルールを教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 取引先との打ち合わせ日程調整およびアポイント確定に関する社内ルールを教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 役員・代表者の携帯電話への直接連絡に関する社内ルールやセキュリティポリシーを教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月9日の電話のように、担当者が他の打ち合わせ中で不在の場合に、取引先から伝言依頼を受けた際の社内ルールや対応ポリシーを教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 📄 Tài liệu nội bộ | TYPE: Thông tin liên lạc & tổ chức
+=========================================
+Q: 2026年5月1日の電話で言及されたスリーラスター様とはどのような組織・会社として扱われていますか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月2日の電話で確認された、バルテスの中岡様の連絡先情報を教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月3日の島田様からの物件問い合わせ電話に関連して、担当部署・担当者情報および登録されている連絡先情報を教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月4日の電話に関連して、登録されている中原凛花様および三菱UFJ銀行の横堀様の連絡先情報を教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月5日の打ち合わせ調整の電話に関連して、アセットジャパンのクマガイ様およびサカモト様の登録連絡先情報を教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月6日の電話に関連して、カセ様・建設のエスタ担当者・AJテクノロジーズの山下様の登録連絡先情報を教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月7日の通話に登場したアセットジャパンのクマガイ様および相手担当者の連絡先情報を教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 保険代理店ベネフィットの代表であるおのだ様、およびAJテクノロジーズのツジ様の連絡先情報を教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月9日の電話に登場したアセットジャパンの伊藤様、山内様、および中央清算管理課の組織情報や連絡窓口について教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 📄 Tài liệu nội bộ | TYPE: Tìm trích dẫn / điều khoản
+=========================================
+Q: 2026年5月1日の電話で、「スリーラスター様は購入なのでサイズ書なしです」と判断された根拠となる発言箇所を示してください
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月2日の電話で、折り返し対応が必要と判断された根拠となる発言箇所を示してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月3日の島田様との電話で案内された折り返し連絡について、その期限や対応ルールは業務マニュアルのどの章・条項に記載されていますか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月4日のようなアルバイトスタッフ不在時の外部からの伝言依頼について、対応ルールは業務マニュアルのどの章・条項に記載されていますか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月5日のような社外取引先との打ち合わせ調整について、関連する規定は業務マニュアルのどの章・条項に記載されていますか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月6日のような担当者不在時の電話対応について、伝言受付や折り返し確認に関する規定は業務マニュアルのどの章・条項に記載されていますか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 取引先との打ち合わせ日程調整およびアポイント確定に関する規定は、業務マニュアルのどこに記載されていますか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 社外の取引先に対する役員の個人用・業務用携帯電話番号の開示可否に関する規定は、情報セキュリティ規約のどこに記載されていますか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月9日の電話のような、担当者不在時における取引先からの伝言受付・取り次ぎ・記録管理に関する規定は、業務運営規程のどこに記載されていますか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 📄 Tài liệu nội bộ | TYPE: Định nghĩa & tiêu chuẩn
+=========================================
+Q: 2026年5月1日の梅田様・スリーラスター様に関する電話で言及された「サイズ書」とは何を指していると考えられますか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月2日の電話で言及されたPMG部とはどのような部署として扱われていますか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月3日の電話で島田様が希望していた「内見」について、弊社における定義および実施基準を教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月4日の電話で言及された中原凛花様のようなアルバイトスタッフについて、弊社における定義および勤務管理基準を教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月5日の電話で調整されていた「お打ち合わせ」について、弊社における定義および実施基準を教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月6日の電話で言及されたような社員の「外出」について、定義および勤務管理上の基準を教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 弊社における「打ち合わせ」の定義および実施基準は何ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 弊社における「代表者（代表）」の緊急連絡先情報の取り扱いおよび開示基準は何ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月9日の電話で山内様が所属していた「中央清算管理課」について、業務範囲の定義および他部門との連携基準を教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 📊 Thống kê & Số liệu | TYPE: Dài nhất / ngắn nhất
+=========================================
+Q: 2026年5月1日の電話で、最も長い発言は誰の発言でしたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月1日の電話で、最も短い発言は誰の発言でしたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月4日の、三菱UFJ銀行の横堀様がアセットジャパンへ中原凛花様宛ての伝言依頼を行った通話の中で、最も長い発言を行った参加者は誰ですか？あわせて該当する発言内容とMeeting IDを教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月4日の、三菱UFJ銀行の横堀様がアセットジャパンへ中原凛花様宛ての伝言依頼を行った通話の中で、最も短い発言を行った参加者は誰ですか？あわせて該当する発言内容とMeeting IDを教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月5日の電話で最も長い発言は誰の発言でしたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月5日の電話で最も短い発言は誰の発言でしたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月6日の電話で最も長い発言は誰の発言でしたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月6日の電話で最も短い発言は誰の発言でしたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月7日の通話で最も長い発言は誰の発言でしたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月7日の通話で最も短い発言は誰の発言でしたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月8日の通話で最も長い発言は誰の発言でしたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月8日の通話で最も短い発言は誰の発言でしたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月9日の電話で最も長い発言をしたのは誰ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月9日の電話で最も短い発言をしたのは誰ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 📊 Thống kê & Số liệu | TYPE: Kết hợp nội dung + số liệu
+=========================================
+Q: 2026年5月1日の電話では何人が発言し、何について確認していましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月3日の電話で、島田様はいくつの確認事項を伝え、その内容は何でしたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月4日の、三菱UFJ銀行の横堀様がアセットジャパンへ中原凛花様宛ての伝言依頼を行った通話について、発言者は何人いましたか？また、それぞれの発話回数を集計したうえで、この通話で確認・調整された内容を要約してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月5日の電話では何人が発言し、何について確認していましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月6日の電話では何人が発言し、何について確認していましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月7日の通話では何人が発言し、何について確認していましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月8日の通話では何人が発言し、何について確認していましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月9日の東浦町の物件に関する通話では何人が発言し、何について確認していましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 📊 Thống kê & Số liệu | TYPE: Thông tin người tham dự
+=========================================
+Q: 2026年5月2日の電話で、石田様の名前は何回言及されましたか？
+SQL: SELECT COALESCE(SUM(CASE WHEN $6::text IS NULL OR $6::text = '' THEN 0 ELSE (LENGTH(ct.text) - LENGTH(REPLACE(ct.text, $6::text, ''))) / LENGTH($6::text) END), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+Q: 2026年5月2日の電話で、会社名の確認は何回行われましたか？
+SQL: SELECT COALESCE(SUM(CASE WHEN $6::text IS NULL OR $6::text = '' THEN 0 ELSE (LENGTH(ct.text) - LENGTH(REPLACE(ct.text, $6::text, ''))) / LENGTH($6::text) END), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+Q: 2026年5月2日の電話で、折り返し連絡に関する発言は何回ありましたか？
+SQL: SELECT COALESCE(SUM(CASE WHEN $6::text IS NULL OR $6::text = '' THEN 0 ELSE (LENGTH(ct.text) - LENGTH(REPLACE(ct.text, $6::text, ''))) / LENGTH($6::text) END), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+
+=========================================
+GROUP: 📊 Thống kê & Số liệu | TYPE: Thống kê theo người tham gia
+=========================================
+Q: 2026年5月1日の電話で、SPEAKER 1は何回発言しましたか？
+SQL: SELECT COUNT(*)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE (ct.speaker = $5::text OR ct.speaker = (SELECT speaker FROM chunks_turn ct2 JOIN transcripts t2 ON ct2.transcript_id = t2.id WHERE ct2.text ILIKE '%' || $5::text || '%' AND ($1::uuid IS NULL OR t2.user_id = $1::uuid) AND ($2::date IS NULL OR t2.meeting_date >= $2::date) AND ($3::date IS NULL OR t2.meeting_date <= $3::date) LIMIT 1)) AND ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+Q: 2026年5月1日の電話で、最も多く発言したのは誰ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月3日の電話では、AとBのどちらの発言回数が多かったですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月4日の電話では、銀行側と受付側のどちらが多く発言しましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月5日の電話でクマガイ様は何回発言しましたか？
+SQL: SELECT COUNT(*)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE (ct.speaker = $5::text OR ct.speaker = (SELECT speaker FROM chunks_turn ct2 JOIN transcripts t2 ON ct2.transcript_id = t2.id WHERE ct2.text ILIKE '%' || $5::text || '%' AND ($1::uuid IS NULL OR t2.user_id = $1::uuid) AND ($2::date IS NULL OR t2.meeting_date >= $2::date) AND ($3::date IS NULL OR t2.meeting_date <= $3::date) LIMIT 1)) AND ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+Q: 2026年5月5日の電話で最も多く発言したのは誰ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月6日の電話で山下様は何回発言しましたか？
+SQL: SELECT COUNT(*)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE (ct.speaker = $5::text OR ct.speaker = (SELECT speaker FROM chunks_turn ct2 JOIN transcripts t2 ON ct2.transcript_id = t2.id WHERE ct2.text ILIKE '%' || $5::text || '%' AND ($1::uuid IS NULL OR t2.user_id = $1::uuid) AND ($2::date IS NULL OR t2.meeting_date >= $2::date) AND ($3::date IS NULL OR t2.meeting_date <= $3::date) LIMIT 1)) AND ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+Q: 2026年5月6日の電話で最も多く発言したのは誰ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月7日の通話でSPEAKER 1は何回発言しましたか？
+SQL: SELECT COUNT(*)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE (ct.speaker = $5::text OR ct.speaker = (SELECT speaker FROM chunks_turn ct2 JOIN transcripts t2 ON ct2.transcript_id = t2.id WHERE ct2.text ILIKE '%' || $5::text || '%' AND ($1::uuid IS NULL OR t2.user_id = $1::uuid) AND ($2::date IS NULL OR t2.meeting_date >= $2::date) AND ($3::date IS NULL OR t2.meeting_date <= $3::date) LIMIT 1)) AND ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+Q: 2026年5月7日の通話で最も多く発言したのは誰ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月8日の通話で、ツジ様は何回発言しましたか？
+SQL: SELECT COUNT(*)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE (ct.speaker = $5::text OR ct.speaker = (SELECT speaker FROM chunks_turn ct2 JOIN transcripts t2 ON ct2.transcript_id = t2.id WHERE ct2.text ILIKE '%' || $5::text || '%' AND ($1::uuid IS NULL OR t2.user_id = $1::uuid) AND ($2::date IS NULL OR t2.meeting_date >= $2::date) AND ($3::date IS NULL OR t2.meeting_date <= $3::date) LIMIT 1)) AND ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+Q: 2026年5月8日の通話で最も多く発言したのは誰ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月9日の電話で、アセットジャパンの伊藤様は何回発言しましたか？
+SQL: SELECT COUNT(*)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE (ct.speaker = $5::text OR ct.speaker = (SELECT speaker FROM chunks_turn ct2 JOIN transcripts t2 ON ct2.transcript_id = t2.id WHERE ct2.text ILIKE '%' || $5::text || '%' AND ($1::uuid IS NULL OR t2.user_id = $1::uuid) AND ($2::date IS NULL OR t2.meeting_date >= $2::date) AND ($3::date IS NULL OR t2.meeting_date <= $3::date) LIMIT 1)) AND ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+Q: 2026年5月9日の電話で最も多く発言したのは誰ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 📊 Thống kê & Số liệu | TYPE: Tổng / trung bình
+=========================================
+Q: 2026年5月1日の電話の総通話時間はどのくらいでしたか？
+SQL: SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+Q: 2026年5月1日の電話で、SPEAKER 1の平均発話時間はどのくらいでしたか？
+SQL: SELECT COALESCE(AVG(ct.time_end_sec - ct.time_start_sec), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE (ct.speaker = $5::text OR ct.speaker = (SELECT speaker FROM chunks_turn ct2 JOIN transcripts t2 ON ct2.transcript_id = t2.id WHERE ct2.text ILIKE '%' || $5::text || '%' AND ($1::uuid IS NULL OR t2.user_id = $1::uuid) AND ($2::date IS NULL OR t2.meeting_date >= $2::date) AND ($3::date IS NULL OR t2.meeting_date <= $3::date) LIMIT 1)) AND ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+Q: 2026年5月4日の、三菱UFJ銀行の横堀様がアセットジャパンへ中原凛花様宛ての伝言依頼を行った通話について、通話全体の時間はどのくらいでしたか？
+SQL: SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+Q: 2026年5月4日の、三菱UFJ銀行の横堀様がアセットジャパンへ中原凛花様宛ての伝言依頼を行った通話について、横堀様の平均発話時間はどのくらいでしたか？
+SQL: SELECT COALESCE(AVG(ct.time_end_sec - ct.time_start_sec), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE (ct.speaker = $5::text OR ct.speaker = (SELECT speaker FROM chunks_turn ct2 JOIN transcripts t2 ON ct2.transcript_id = t2.id WHERE ct2.text ILIKE '%' || $5::text || '%' AND ($1::uuid IS NULL OR t2.user_id = $1::uuid) AND ($2::date IS NULL OR t2.meeting_date >= $2::date) AND ($3::date IS NULL OR t2.meeting_date <= $3::date) LIMIT 1)) AND ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+Q: 2026年5月5日の打ち合わせ日程調整の通話時間はどのくらいでしたか？
+SQL: SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+Q: 2026年5月5日の電話におけるサカモト様の平均発話時間はどのくらいですか？
+SQL: SELECT COALESCE(AVG(ct.time_end_sec - ct.time_start_sec), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE (ct.speaker = $5::text OR ct.speaker = (SELECT speaker FROM chunks_turn ct2 JOIN transcripts t2 ON ct2.transcript_id = t2.id WHERE ct2.text ILIKE '%' || $5::text || '%' AND ($1::uuid IS NULL OR t2.user_id = $1::uuid) AND ($2::date IS NULL OR t2.meeting_date >= $2::date) AND ($3::date IS NULL OR t2.meeting_date <= $3::date) LIMIT 1)) AND ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+Q: 2026年5月6日の通話時間はどのくらいでしたか？
+SQL: SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+Q: 2026年5月6日の電話における山下様の平均発話時間はどのくらいですか？
+SQL: SELECT COALESCE(AVG(ct.time_end_sec - ct.time_start_sec), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE (ct.speaker = $5::text OR ct.speaker = (SELECT speaker FROM chunks_turn ct2 JOIN transcripts t2 ON ct2.transcript_id = t2.id WHERE ct2.text ILIKE '%' || $5::text || '%' AND ($1::uuid IS NULL OR t2.user_id = $1::uuid) AND ($2::date IS NULL OR t2.meeting_date >= $2::date) AND ($3::date IS NULL OR t2.meeting_date <= $3::date) LIMIT 1)) AND ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+Q: 2026年5月7日の通話の総時間はどのくらいでしたか？
+SQL: SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+Q: 2026年5月7日の通話におけるSPEAKER 2の平均発話時間はどのくらいですか？
+SQL: SELECT COALESCE(AVG(ct.time_end_sec - ct.time_start_sec), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE (ct.speaker = $5::text OR ct.speaker = (SELECT speaker FROM chunks_turn ct2 JOIN transcripts t2 ON ct2.transcript_id = t2.id WHERE ct2.text ILIKE '%' || $5::text || '%' AND ($1::uuid IS NULL OR t2.user_id = $1::uuid) AND ($2::date IS NULL OR t2.meeting_date >= $2::date) AND ($3::date IS NULL OR t2.meeting_date <= $3::date) LIMIT 1)) AND ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+Q: 2026年5月8日の通話時間はどのくらいでしたか？
+SQL: SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+Q: 2026年5月8日の通話で、ツジ様の平均発話時間はどのくらいですか？
+SQL: SELECT COALESCE(AVG(ct.time_end_sec - ct.time_start_sec), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE (ct.speaker = $5::text OR ct.speaker = (SELECT speaker FROM chunks_turn ct2 JOIN transcripts t2 ON ct2.transcript_id = t2.id WHERE ct2.text ILIKE '%' || $5::text || '%' AND ($1::uuid IS NULL OR t2.user_id = $1::uuid) AND ($2::date IS NULL OR t2.meeting_date >= $2::date) AND ($3::date IS NULL OR t2.meeting_date <= $3::date) LIMIT 1)) AND ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+Q: 2026年5月9日の東浦町の物件に関する通話時間はどのくらいでしたか？
+SQL: SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+Q: 2026年5月9日の電話で、アセットジャパンの伊藤様の平均発話時間はどのくらいですか？
+SQL: SELECT COALESCE(AVG(ct.time_end_sec - ct.time_start_sec), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE (ct.speaker = $5::text OR ct.speaker = (SELECT speaker FROM chunks_turn ct2 JOIN transcripts t2 ON ct2.transcript_id = t2.id WHERE ct2.text ILIKE '%' || $5::text || '%' AND ($1::uuid IS NULL OR t2.user_id = $1::uuid) AND ($2::date IS NULL OR t2.meeting_date >= $2::date) AND ($3::date IS NULL OR t2.meeting_date <= $3::date) LIMIT 1)) AND ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+
+=========================================
+GROUP: 📊 Thống kê & Số liệu | TYPE: Tổng / trung bình thời lượng
+=========================================
+Q: 2026年5月3日の島田様との通話時間はどのくらいでしたか？
+SQL: SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+
+=========================================
+GROUP: 📊 Thống kê & Số liệu | TYPE: Đếm số lượng
+=========================================
+Q: 2026年5月1日の電話で、梅田様については何回言及されましたか？
+SQL: SELECT COALESCE(SUM(CASE WHEN $6::text IS NULL OR $6::text = '' THEN 0 ELSE (LENGTH(ct.text) - LENGTH(REPLACE(ct.text, $6::text, ''))) / LENGTH($6::text) END), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+Q: 2026年5月3日の電話で、折り返し連絡について何回言及されましたか？
+SQL: SELECT COALESCE(SUM(CASE WHEN $6::text IS NULL OR $6::text = '' THEN 0 ELSE (LENGTH(ct.text) - LENGTH(REPLACE(ct.text, $6::text, ''))) / LENGTH($6::text) END), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+Q: 2026年5月4日の電話で、中原様は何回言及されましたか？
+SQL: SELECT COALESCE(SUM(CASE WHEN $6::text IS NULL OR $6::text = '' THEN 0 ELSE (LENGTH(ct.text) - LENGTH(REPLACE(ct.text, $6::text, ''))) / LENGTH($6::text) END), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+Q: 2026年5月5日の電話で、サカモト様は会話の中で何回言及されましたか？
+SQL: SELECT COALESCE(SUM(CASE WHEN $6::text IS NULL OR $6::text = '' THEN 0 ELSE (LENGTH(ct.text) - LENGTH(REPLACE(ct.text, $6::text, ''))) / LENGTH($6::text) END), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+Q: 2026年5月6日の電話で、カセ様の名前は何回言及されましたか？
+SQL: SELECT COALESCE(SUM(CASE WHEN $6::text IS NULL OR $6::text = '' THEN 0 ELSE (LENGTH(ct.text) - LENGTH(REPLACE(ct.text, $6::text, ''))) / LENGTH($6::text) END), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+Q: 2026年5月7日の通話で「14日水曜日」が何回言及されましたか？
+SQL: SELECT COALESCE(SUM(CASE WHEN $6::text IS NULL OR $6::text = '' THEN 0 ELSE (LENGTH(ct.text) - LENGTH(REPLACE(ct.text, $6::text, ''))) / LENGTH($6::text) END), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+Q: 2026年5月8日の電話で、おのだ様の名前は何回言及されましたか？
+SQL: SELECT COALESCE(SUM(CASE WHEN $6::text IS NULL OR $6::text = '' THEN 0 ELSE (LENGTH(ct.text) - LENGTH(REPLACE(ct.text, $6::text, ''))) / LENGTH($6::text) END), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+Q: 2026年5月9日の電話で、山内様の名前は何回言及されましたか？
+SQL: SELECT COALESCE(SUM(CASE WHEN $6::text IS NULL OR $6::text = '' THEN 0 ELSE (LENGTH(ct.text) - LENGTH(REPLACE(ct.text, $6::text, ''))) / LENGTH($6::text) END), 0)::float AS value FROM chunks_turn ct JOIN transcripts t ON ct.transcript_id = t.id WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ($5::text IS NULL OR TRUE) AND ($6::text IS NULL OR TRUE)
+----------------------------------------
+
+=========================================
+GROUP: 📋 Nội dung cuộc họp | TYPE: Câu hỏi còn bỏ ngỏ
+=========================================
+Q: 2026年5月1日の電話で、明確な回答が得られなかった質問はありましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月2日の電話で、まだ確認できていない情報や未解決の事項はありますか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月3日の電話終了時点で、まだ確認できていなかった事項は何ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月4日の電話終了時点で、まだ確認できていない事項や未解決の事項はありますか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月5日の電話終了時点で、まだ確認されていない事項や未解決の事項はありますか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月6日の電話終了時点で、まだ確認できていない事項や未解決の事項は何ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月7日の通話終了時点で、未確定または未解決の事項は残っていますか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月8日の電話で、「携帯にかけても問題ないか」という質問に対する明確な回答はありましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月9日の電話終了時点で、東浦町の物件に関する問い合わせメールについて未確認または未解決の事項はありますか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 📋 Nội dung cuộc họp | TYPE: Hỏi về báo cáo tiến độ
+=========================================
+Q: 2026年5月1日の電話で、SPEAKER 2が説明した現在の状況や進捗を要約してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月2日の電話で、石田志保様の勤務状況についてどのような説明がありましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月3日の電話で、Bが説明した物件の現在の状況をまとめてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月4日の電話で、横堀様はこれまで中原凛花様へどのような連絡を行っていたと説明しましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月5日の電話で、クマガイ様は先ほど話していた来週の打ち合わせについてどのような状況説明をしましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月6日の電話で、建設のエスタ側はカセ様の現在の状況についてどのように説明しましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月7日の通話で、SPEAKER 1は打ち合わせ日程についてどのような状況説明をしましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月8日の電話で、保険代理店ベネフィット側はおのだ様の現在の状況についてどのように説明しましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月9日の電話で、中央清算管理課は山内様の現在の状況についてどのように説明しましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 📋 Nội dung cuộc họp | TYPE: Hỏi về chủ đề cụ thể
+=========================================
+Q: 2026年5月1日の梅田様・スリーラスター様に関する電話で、どのような内容が確認されましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月2日のPMG部 石田志保様宛ての電話では、どのような用件で連絡がありましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月3日に島田様からあったアセットジャパンの物件に関する電話では、どのような問い合わせがありましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月4日に三菱UFJ銀行の横堀様からあった電話では、中原凛花様に関してどのような用件でアセットジャパンへ連絡されましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月5日に行われた株式会社サカモトとアセットジャパンのクマガイ様との電話では、来週のどの打ち合わせについて話し合っていましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月6日にAJテクノロジーズの山下様が建設のエスタへ電話した際、誰について確認するために連絡しましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月7日のアセットジャパンのクマガイ様との通話で、来週の打ち合わせとはどの予定について話していましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月8日の保険代理店ベネフィットへの電話で、AJテクノロジーズのツジ様は誰に取り次ぎを依頼しましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月9日の、アセットジャパンの伊藤様が山内様宛てに東浦町の物件について伝言を依頼した電話では、どのような内容が話し合われましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 📋 Nội dung cuộc họp | TYPE: Hỏi về quyết định
+=========================================
+Q: 2026年5月1日の電話では、サイズ書の有無について最終的にどのような結論になりましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月2日の電話では、石田志保様への取り次ぎについて最終的にどのような対応になりましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月3日の島田様からの物件問い合わせに対して、最終的にどのような対応方針となりましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月4日の横堀様からの電話の結果として、中原凛花様に対してどのような対応を行うことになりましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月5日の打ち合わせ日程調整の電話で、14日水曜日の打ち合わせ日時について最終的にどのような決定がされましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月6日の電話で、カセ様が外出中であることが分かった後、どのような対応方針が決まりましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月7日の打ち合わせ日程調整の電話で、14日水曜日10時からの打ち合わせについて最終的にどのような結論になりましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月8日の電話で、おのだ様が不在であることを受けて最終的にどのような対応方針になりましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月9日の東浦町の物件に関する電話で、山内様が不在であることを受けて最終的にどのような対応方針になりましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 📋 Nội dung cuộc họp | TYPE: Hỏi về việc cần làm / cam kết
+=========================================
+Q: 2026年5月1日の電話の結果、追加で確認が必要な事項はありましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月2日の電話の後、誰がどのような対応を行う予定になっていますか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月3日の島田様との電話後、担当者はどのような対応を行う予定でしたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月4日の電話後、中原凛花様・アセットジャパン・三菱UFJ銀行のそれぞれが行う予定の対応を整理してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月5日の電話後、サカモト様はどの日時に訪問することを約束しましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月6日の電話後、山下様はどのような行動を取る予定になっていますか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月7日の通話後、各参加者はどのような対応を行う予定ですか？また訪問予定はどのように決まりましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月8日の電話終了後、各参加者はどのような対応を行う予定になっていますか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月9日の東浦町の物件に関する電話の後、誰がどのような対応を行う予定になっていますか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 📋 Nội dung cuộc họp | TYPE: Hỏi về vấn đề / lo ngại
+=========================================
+Q: 2026年5月1日の電話で、資料の未着や確認漏れに関する懸念はありましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月2日の電話で、石田志保様にすぐ取り次げなかった理由は何と説明されましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月3日の物件問い合わせ電話で、Bが不安や懸念として挙げていた内容は何ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月4日の電話で、中原凛花様への取次ぎに関してどのような問題や制約が説明されましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月5日の打ち合わせ日程調整の電話で、問題点や懸念事項は挙げられましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月6日のAJテクノロジーズからの電話で共有された問題点や連絡上の障害は何でしたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月7日の打ち合わせ日程調整の通話で、打ち合わせ実施に関する懸念点や問題はありましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月8日の電話で、おのだ様への連絡に関して確認できなかったことや不確実な情報は何でしたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月9日の電話で、山内様とすぐ連絡が取れないことに関して説明された状況や制約は何ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 📋 Nội dung cuộc họp | TYPE: Hỏi về ý kiến phản đối
+=========================================
+Q: 2026年5月1日の電話で、相手の説明に対する異議や否定的な反応はありましたか？誰が発言しましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月2日の電話で、相手の要望を断ったり否定したりする発言はありましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月3日の島田様との電話では、相手の提案に対する否定的な反応や反対意見はありましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月4日の電話では、横堀様からの依頼に対してアセットジャパン側が断ったり反対したりした内容はありましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月5日の電話で、クマガイ様が提案した14日水曜日10時開始の打ち合わせに対して、サカモト様は反対や異議を述べましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月6日の電話で、カセ様への連絡方法について建設のエスタ側が反対や拒否をした内容はありましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月7日の通話で、14日水曜日10時の打ち合わせ案に対して相手側から反対や日程変更の要望はありましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月8日の電話で、相手の提案や状況に対して反対・拒否・否定的な発言はありましたか？あれば誰の発言ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月9日の東浦町の物件に関する電話で、相手の提案や依頼に対して否定・反対・拒否を示した発言はありましたか？あれば誰が発言しましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 📋 Nội dung cuộc họp | TYPE: Hỏi về đề xuất
+=========================================
+Q: 2026年5月1日の電話で、SPEAKER 2はスリーラスター様について何を確認しようとしていましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月2日の電話で、Aはバルテスの中岡様に対してどのような依頼をしましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月3日の島田様からの物件問い合わせ電話で、Bは担当者にどのような依頼や相談をしたかったのですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月4日の電話で、横堀様はアセットジャパン側にどのような依頼やお願いをしましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月5日の電話で、クマガイ様は打ち合わせの日程についてどのような提案や依頼をしましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月6日の電話で、山下様はカセ様と連絡を取るためにどのような申し出をしましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月7日の通話で、SPEAKER 1（クマガイ様）は打ち合わせ日程についてどのような提案や依頼をしましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月8日の電話で、AJテクノロジーズのツジ様はおのだ様への連絡方法についてどのような提案や確認を行いましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月9日の電話で、アセットジャパンの伊藤様は山内様宛にどのような依頼や伝言をお願いしましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 📝 Tóm tắt cuộc họp | TYPE: Danh sách chủ đề đã thảo luận
+=========================================
+Q: 2026年5月6日の電話で、改めて連絡することになった経緯を説明してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月7日の通話で確認・合意された内容を整理してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月8日の電話で、改めて連絡することになった経緯を説明してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月9日の電話で、山内様への伝言依頼に至った経緯を説明してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 📝 Tóm tắt cuộc họp | TYPE: Liệt kê các chủ đề đã thảo luận
+=========================================
+Q: 2026年5月1日の電話で話されたトピックを一覧で教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月4日の電話をもとに、受付担当者が中原様へ伝えるべき内容を整理してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月5日の電話で確認された打ち合わせ情報を整理してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 📝 Tóm tắt cuộc họp | TYPE: Theo dõi chủ đề qua nhiều họp
+=========================================
+Q: 2026年5月6日の電話におけるカセ様に関するやり取りを要約してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月7日の通話における打ち合わせ日程調整の経緯を要約してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月8日の電話で、携帯電話への連絡可否に関するやり取りを要約してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月9日の電話における東浦町の物件に関するやり取りを要約してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 📝 Tóm tắt cuộc họp | TYPE: Thông tin người tham dự
+=========================================
+Q: 2026年5月2日のPMG部 石田志保様宛ての電話の目的と結果をまとめてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月2日の電話での石田志保様に関するやり取りを要約してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月2日の電話で、折り返し連絡に至った経緯を説明してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月2日の電話で確認された連絡先情報をまとめてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 📝 Tóm tắt cuộc họp | TYPE: Tóm tắt 1 cuộc gọi cụ thể
+=========================================
+Q: 2026年5月3日の島田様からの物件問い合わせ電話の要件と対応内容を要約してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 📝 Tóm tắt cuộc họp | TYPE: Tóm tắt kết quả xác nhận
+=========================================
+Q: 2026年5月1日の電話で最終的に確認できた内容を要約してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月3日の電話では、最終的にどのような対応を行うことになりましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月4日の電話で依頼された、中原凛花様への伝言内容をまとめてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 📝 Tóm tắt cuộc họp | TYPE: Tóm tắt kết quả xác nhận lịch hẹn
+=========================================
+Q: 2026年5月5日の電話で、打ち合わせの日程は最終的にどのように決まりましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 📝 Tóm tắt cuộc họp | TYPE: Tóm tắt một cuộc họp
+=========================================
+Q: 2026年5月1日の梅田様・スリーラスター様に関する電話を要約してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月6日にAJテクノロジーズの山下様は何のために電話をかけましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月7日の打ち合わせ日程調整の電話の目的と結果をまとめてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月8日に行われた、おのだ様への取次ぎ依頼に関する電話の目的と結果をまとめてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月9日の東浦町の物件に関する電話の目的と結果をまとめてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 📝 Tóm tắt cuộc họp | TYPE: Tóm tắt nhiều cuộc họp
+=========================================
+Q: 2026年5月6日のカセ様在席確認に関する電話の目的と結果をまとめてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月7日の通話で確認された打ち合わせ日程に関する内容を要約してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月8日の電話における、おのだ様に関するやり取りを要約してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月9日の電話における山内様に関するやり取りを要約してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 📝 Tóm tắt cuộc họp | TYPE: Tóm tắt nội dung cuộc gọi
+=========================================
+Q: 2026年5月5日に行われた株式会社サカモトとアセットジャパンとの打ち合わせ日程調整の電話内容を要約してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 📝 Tóm tắt cuộc họp | TYPE: Tóm tắt theo chủ đề
+=========================================
+Q: 2026年5月1日の電話で行われた確認対応についてまとめてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月3日、島田様は何のためにアセットジャパンへ電話をかけましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月3日の島田様による物件問い合わせ内容をまとめてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月4日の三菱UFJ銀行の横堀様からの連絡内容を要約してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 📝 Tóm tắt cuộc họp | TYPE: Tóm tắt theo khoảng thời gian
+=========================================
+Q: 2026年5月1日の電話の開始から30秒間の内容を要約してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 📝 Tóm tắt cuộc họp | TYPE: Tóm tắt thông tin cuộc họp sắp tới
+=========================================
+Q: 2026年5月5日の電話で決定した来週の打ち合わせ内容をまとめてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 🕐 Tìm theo thời gian | TYPE: Khoảng thời gian
+=========================================
+Q: 2026年5月1日から2026年5月10日までの間に、スリーラスター様に関する会話はありましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月1日から2026年5月5日までの間に、PMG部の石田志保様に関する通話はありましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月1日から5月5日までの島田様との通話履歴をすべて表示してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月1日から5月6日までの三菱UFJ銀行との通話履歴をすべて表示してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月1日から5月7日までのサカモト様との通話履歴をすべて表示してください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月1日から5月8日までのAJテクノロジーズとの通話履歴をすべて見せてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月1日から5月9日までの期間で、打ち合わせ日程調整に関する通話履歴をすべて見せてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月1日から5月10日までのAJテクノロジーズとの通話履歴をすべて見せてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月1日から5月11日までの期間における、アセットジャパンから山内様宛ての連絡や東浦町の物件に関する通話履歴をすべて見せてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 🕐 Tìm theo thời gian | TYPE: Mốc thời gian mơ hồ
+=========================================
+Q: 最近の会話でスリーラスター様の話題は出ましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 最近の通話で、バルテスの中岡様からの連絡はありましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 最近の通話の中で、島田様から内見希望に関する連絡はありましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 最近の通話の中で、三菱UFJ銀行の横堀様から中原様宛ての連絡はありましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 最近の通話の中で、サカモト様から打ち合わせの日程調整に関する連絡はありましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 最近の通話の中で、AJテクノロジーズの山下様からカセ様宛ての連絡はありましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 最近の通話で、アセットジャパンのクマガイ様から打ち合わせ日程調整に関する連絡はありましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 最近の通話で、AJテクノロジーズのツジ様からおのだ様宛ての連絡はありましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 最近の通話で、アセットジャパンの伊藤様から山内様宛てに東浦町の物件に関する伝言や連絡はありましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 🕐 Tìm theo thời gian | TYPE: Ngày cụ thể
+=========================================
+Q: 2026年5月1日に行われた梅田様・スリーラスター様に関する電話の内容を教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月2日のPMG部 石田志保様宛ての電話について教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月3日の島田様からの通話について教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月4日の三菱UFJ銀行の横堀様からの通話について教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月5日のサカモト様からの通話について教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月6日のAJテクノロジーズの山下様からの通話について教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月7日に行われた、アセットジャパンのクマガイ様による打ち合わせ日程調整の通話について教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月8日のAJテクノロジーズのツジ様から保険代理店ベネフィットへの通話について教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月9日に、アセットジャパンの伊藤様が山内様宛てに東浦町の物件について伝言を依頼した電話について教えてください。
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+
+=========================================
+GROUP: 🕐 Tìm theo thời gian | TYPE: Tìm theo thời điểm trong cuộc họp
+=========================================
+Q: 2026年5月1日の電話で、スリーラスター様の話題は何分頃に出ましたか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月2日の電話で、中岡様が電話番号を伝えたのは何分頃ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月3日の電話で、島田様が「今物件の目の前にいる」と話したのは通話の何分頃ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月4日の電話で、横堀様が銀行の受付時間について説明したのは通話の何分頃ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月5日の電話で、クマガイ様が14日水曜日10時からの打ち合わせを提案したのは通話の何分頃ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月6日の電話で、山下様が「カセさんってお戻りになられてますか？」と尋ねたのは通話の何分頃ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月7日の通話で、クマガイ様が14日水曜日10時からの打ち合わせを提案したのは通話の何分頃ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月8日の通話で、ツジ様がおのだ様の携帯電話に連絡しても問題ないか尋ねたのは何分頃ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------
+Q: 2026年5月9日の電話で、伊藤様が「東浦町の物件についてメールで問い合わせる」と山内様宛ての伝言を依頼したのは通話の何分頃ですか？
+SQL: SKIP (operator=skip, target=none)
+----------------------------------------

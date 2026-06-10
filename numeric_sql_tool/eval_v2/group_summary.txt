@@ -1,0 +1,42 @@
+                   group                                type  total  skipped  sql_queries
+0       👥 Người tham gia                    Ai đã nói điều X      9        9            0
+1       👥 Người tham gia             Phát biểu của một người      9        9            0
+2       👥 Người tham gia             Thông tin người tham dự      9        9            0
+3       👥 Người tham gia             Trao đổi giữa hai người      9        9            0
+4      📄 Tài liệu nội bộ               Quy trình & hướng dẫn      9        9            0
+5      📄 Tài liệu nội bộ               Quy định & chính sách      9        9            0
+6      📄 Tài liệu nội bộ        Thông tin liên lạc & tổ chức      9        9            0
+7      📄 Tài liệu nội bộ          Tìm trích dẫn / điều khoản      9        9            0
+8      📄 Tài liệu nội bộ             Định nghĩa & tiêu chuẩn      9        9            0
+9   📊 Thống kê & Số liệu                Dài nhất / ngắn nhất     14       14            0
+10  📊 Thống kê & Số liệu          Kết hợp nội dung + số liệu      8        8            0
+11  📊 Thống kê & Số liệu             Thông tin người tham dự      3        0            3
+12  📊 Thống kê & Số liệu        Thống kê theo người tham gia     14        8            6
+13  📊 Thống kê & Số liệu                   Tổng / trung bình     14        0           14
+14  📊 Thống kê & Số liệu        Tổng / trung bình thời lượng      1        0            1
+15  📊 Thống kê & Số liệu                        Đếm số lượng      8        0            8
+16   📋 Nội dung cuộc họp                  Câu hỏi còn bỏ ngỏ      9        9            0
+17   📋 Nội dung cuộc họp              Hỏi về báo cáo tiến độ      9        9            0
+18   📋 Nội dung cuộc họp                Hỏi về chủ đề cụ thể      9        9            0
+19   📋 Nội dung cuộc họp                   Hỏi về quyết định      9        9            0
+20   📋 Nội dung cuộc họp       Hỏi về việc cần làm / cam kết      9        9            0
+21   📋 Nội dung cuộc họp             Hỏi về vấn đề / lo ngại      9        9            0
+22   📋 Nội dung cuộc họp              Hỏi về ý kiến phản đối      9        9            0
+23   📋 Nội dung cuộc họp                      Hỏi về đề xuất      9        9            0
+24    📝 Tóm tắt cuộc họp       Danh sách chủ đề đã thảo luận      4        4            0
+25    📝 Tóm tắt cuộc họp     Liệt kê các chủ đề đã thảo luận      3        3            0
+26    📝 Tóm tắt cuộc họp       Theo dõi chủ đề qua nhiều họp      4        4            0
+27    📝 Tóm tắt cuộc họp             Thông tin người tham dự      4        4            0
+28    📝 Tóm tắt cuộc họp           Tóm tắt 1 cuộc gọi cụ thể      1        1            0
+29    📝 Tóm tắt cuộc họp            Tóm tắt kết quả xác nhận      3        3            0
+30    📝 Tóm tắt cuộc họp   Tóm tắt kết quả xác nhận lịch hẹn      1        1            0
+31    📝 Tóm tắt cuộc họp                Tóm tắt một cuộc họp      5        5            0
+32    📝 Tóm tắt cuộc họp              Tóm tắt nhiều cuộc họp      4        4            0
+33    📝 Tóm tắt cuộc họp           Tóm tắt nội dung cuộc gọi      1        1            0
+34    📝 Tóm tắt cuộc họp                 Tóm tắt theo chủ đề      4        4            0
+35    📝 Tóm tắt cuộc họp       Tóm tắt theo khoảng thời gian      1        1            0
+36    📝 Tóm tắt cuộc họp  Tóm tắt thông tin cuộc họp sắp tới      1        1            0
+37  🕐 Tìm theo thời gian                    Khoảng thời gian      9        9            0
+38  🕐 Tìm theo thời gian                 Mốc thời gian mơ hồ      9        9            0
+39  🕐 Tìm theo thời gian                         Ngày cụ thể      9        9            0
+40  🕐 Tìm theo thời gian   Tìm theo thời điểm trong cuộc họp      9        9            0

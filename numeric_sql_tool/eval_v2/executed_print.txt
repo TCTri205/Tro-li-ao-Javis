@@ -1,0 +1,102 @@
+Total executed: 25
+--------------------------------------------------------------------------------
+1. Question: 2026年5月1日の電話の総通話時間はどのくらいでしたか？
+   SQL: SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+   Result: 102.0
+--------------------------------------------------------------------------------
+2. Question: 2026年5月1日の電話で、SPEAKER 1の平均発話時間はどのくらいでしたか？
+   SQL: SELECT COALESCE(AVG(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+   Result: 102.0
+--------------------------------------------------------------------------------
+3. Question: 2026年5月1日から2026年5月10日までの間に、スリーラスター様に関する会話はありましたか？
+   SQL: SELECT COUNT(DISTINCT t.id) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+   Result: 9.0
+--------------------------------------------------------------------------------
+4. Question: 最近の会話でスリーラスター様の話題は出ましたか？
+   SQL: SELECT COUNT(DISTINCT t.id) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+   Result: 9.0
+--------------------------------------------------------------------------------
+5. Question: 最近の通話で、バルテスの中岡様からの連絡はありましたか？
+   SQL: SELECT COUNT(DISTINCT t.id) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+   Result: 9.0
+--------------------------------------------------------------------------------
+6. Question: 2026年5月3日の島田様との通話時間はどのくらいでしたか？
+   SQL: SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+   Result: 204.0
+--------------------------------------------------------------------------------
+7. Question: 最近の通話の中で、島田様から内見希望に関する連絡はありましたか？
+   SQL: SELECT COUNT(DISTINCT t.id) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+   Result: 9.0
+--------------------------------------------------------------------------------
+8. Question: 2026年5月4日の、三菱UFJ銀行の横堀様がアセットジャパンへ中原凛花様宛ての伝言依頼を行った通話について、通話全体の時間はどのくらいでしたか？
+   SQL: SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+   Result: 105.0
+--------------------------------------------------------------------------------
+9. Question: 2026年5月4日の、三菱UFJ銀行の横堀様がアセットジャパンへ中原凛花様宛ての伝言依頼を行った通話について、横堀様の平均発話時間はどのくらいでしたか？
+   SQL: SELECT COALESCE(AVG(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+   Result: 105.0
+--------------------------------------------------------------------------------
+10. Question: 最近の通話の中で、三菱UFJ銀行の横堀様から中原様宛ての連絡はありましたか？
+   SQL: SELECT COUNT(DISTINCT t.id) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+   Result: 9.0
+--------------------------------------------------------------------------------
+11. Question: 2026年5月5日の打ち合わせ日程調整の通話時間はどのくらいでしたか？
+   SQL: SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+   Result: 34.0
+--------------------------------------------------------------------------------
+12. Question: 2026年5月5日の電話におけるサカモト様の平均発話時間はどのくらいですか？
+   SQL: SELECT COALESCE(AVG(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+   Result: 34.0
+--------------------------------------------------------------------------------
+13. Question: 最近の通話の中で、サカモト様から打ち合わせの日程調整に関する連絡はありましたか？
+   SQL: SELECT COUNT(DISTINCT t.id) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+   Result: 9.0
+--------------------------------------------------------------------------------
+14. Question: 2026年5月6日の通話時間はどのくらいでしたか？
+   SQL: SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+   Result: 25.0
+--------------------------------------------------------------------------------
+15. Question: 2026年5月6日の電話における山下様の平均発話時間はどのくらいですか？
+   SQL: SELECT COALESCE(AVG(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+   Result: 25.0
+--------------------------------------------------------------------------------
+16. Question: 最近の通話の中で、AJテクノロジーズの山下様からカセ様宛ての連絡はありましたか？
+   SQL: SELECT COUNT(DISTINCT t.id) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+   Result: 9.0
+--------------------------------------------------------------------------------
+17. Question: 2026年5月7日の通話の総時間はどのくらいでしたか？
+   SQL: SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+   Result: 28.0
+--------------------------------------------------------------------------------
+18. Question: 2026年5月7日の通話におけるSPEAKER 2の平均発話時間はどのくらいですか？
+   SQL: SELECT COALESCE(AVG(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+   Result: 28.0
+--------------------------------------------------------------------------------
+19. Question: 最近の通話で、アセットジャパンのクマガイ様から打ち合わせ日程調整に関する連絡はありましたか？
+   SQL: SELECT COUNT(DISTINCT t.id) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+   Result: 9.0
+--------------------------------------------------------------------------------
+20. Question: 2026年5月8日の通話時間はどのくらいでしたか？
+   SQL: SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+   Result: 36.0
+--------------------------------------------------------------------------------
+21. Question: 2026年5月8日の通話で、ツジ様の平均発話時間はどのくらいですか？
+   SQL: SELECT COALESCE(AVG(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+   Result: 36.0
+--------------------------------------------------------------------------------
+22. Question: 最近の通話で、AJテクノロジーズのツジ様からおのだ様宛ての連絡はありましたか？
+   SQL: SELECT COUNT(DISTINCT t.id) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+   Result: 9.0
+--------------------------------------------------------------------------------
+23. Question: 2026年5月9日の東浦町の物件に関する通話時間はどのくらいでしたか？
+   SQL: SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+   Result: 46.0
+--------------------------------------------------------------------------------
+24. Question: 2026年5月9日の電話で、アセットジャパンの伊藤様の平均発話時間はどのくらいですか？
+   SQL: SELECT COALESCE(AVG(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+   Result: 46.0
+--------------------------------------------------------------------------------
+25. Question: 最近の通話で、アセットジャパンの伊藤様から山内様宛てに東浦町の物件に関する伝言や連絡はありましたか？
+   SQL: SELECT COUNT(DISTINCT t.id) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+   Result: 9.0
+--------------------------------------------------------------------------------
