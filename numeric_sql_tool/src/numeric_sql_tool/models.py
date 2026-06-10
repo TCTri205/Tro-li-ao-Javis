@@ -7,9 +7,11 @@ from pydantic import BaseModel, Field
 
 class NumericIntent(BaseModel):
     operator: Literal["sum", "avg", "max", "min", "count", "skip", "none"] = "none"
-    target: Literal["duration_seconds", "meeting_count", "time_start_sec", "none"] = "none"
+    target: Literal["duration_seconds", "meeting_count", "time_start_sec", "speaking_time", "turn_count", "mention_count", "none"] = "none"
     group_by: Literal["none", "user_id", "day", "speaker"] = "none"
     context_filter: str | None = None
+    speaker: str | None = None
+    keyword: str | None = None
 
 
 class NumericRow(BaseModel):

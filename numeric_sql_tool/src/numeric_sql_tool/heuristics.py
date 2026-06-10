@@ -18,17 +18,16 @@ _QUALITATIVE_RE = re.compile(
     r"いくらですか|パーセント|原因|対策|対応策|アクション|曜日|天気|差は|比べ|対比|"
     r"どっち|どちら|どこですか|こんにちは|削除|できますか|おすすめ|"
     r"市場|内訳|募集|削減|消化率|多すぎる|指示しましたか|決まりましたか|"
-    r"何億円|何社|何名|発言.*回|回.*発言|誰|何が決まり|リリース|予定日|"
-    r"取得予定|締め切り|ローンチ日|理由|分析|問題|どんな|どのような|テーマ|冒頭|提案|反対|名前|社名|会社名|解決|アジェンダ|進捗|レポート|最適化|計画|決定事項|"
+    r"何億円|何社|何名|誰|何が決まり|リリース|予定日|"
+    r"取得予定|締め切り|ローンチ日|理由|分析|問題|どんな|どのような|テーマ|冒頭|提案|反対|社名|解決|アジェンダ|進捗|レポート|最適化|計画|決定事項|"
     r"参加者|参加企業|"
     r"効率的|トレンド|改善提案|根拠|推移|懸念|締めくくり|"
-    r"フォローアップ|スキルセット|技術的な課題|承認されなかった|ペースについて|生産的|適切|課題|言及|"
+    r"フォローアップ|スキルセット|技術的な課題|承認されなかった|ペースについて|生産的|適切|課題|"
     r"まとめて|一覧|目的|結果|要旨|内容|やり取り|時系列|フロー|マニュアル|規程|ルール|規則|基準|定義|指示|確認内容|確認事項"
 )
 _UNSUPPORTED_OPS_RE = re.compile(
     r"割合|パーセント|比率|中央値|メジアン|パーセンタイル|週ごと|週別|曜日|土日|平日|営業日|"
     r"両方参加|より何件多|より何回多|前半|後半|"
-    r"発言した合計時間|発言した平均|発言.*(分|秒|時間)|発話.*(分|秒|時間)|発話時間|発言時間|平均発話時間|平均発言時間|"
     r"先々月|第\d週|\d+週目|週目|上旬|中旬|下旬|年累計|直近\d+ヶ月|Q[1-4]|四半期|最終|最初|(?:今年|去年)(?!の?\d+月)|"
     r"\d+(分|時間|秒|日)(?:[をが])?(?:以上|超|以下|未満|より|ごと)|"
     r"\d+(回目|番目)に|\d+(回目|番目)の|二番目|2番目|"
@@ -62,6 +61,78 @@ def heuristic_numeric_intent(query: str) -> NumericIntent:
     q_lower = query.lower().strip()
     if q_lower in {"会議", "こんにちは"}:
         return NumericIntent(operator="skip", target="none", group_by="none")
+
+    # Custom fine-grained quantitative queries check
+    # 1. Speaking time
+    if "発話時間" in query or "発言時間" in query:
+        speaker_match = re.search(r"([^、\s]+?)(?:様)?の(?:平均)?発[話言]時間", query)
+        if speaker_match:
+            speaker = speaker_match.group(1)
+            for sep in ["における", "での", "の", "で", "に", "から", "と", "が", "は"]:
+                if sep in speaker and not speaker.startswith("SPEAKER"):
+                    speaker = speaker.split(sep)[-1]
+            if any(k in speaker for k in ["会議", "電話", "通話", "月", "日", "今日", "昨日"]) or ("様" not in query and "speaker" not in query.lower()):
+                return NumericIntent(operator="skip", target="none", group_by="none")
+            operator = "avg" if "平均" in query else "sum"
+            return NumericIntent(
+                operator=operator,
+                target="speaking_time",
+                group_by="none",
+                speaker=speaker
+            )
+
+    # 2. Turn count
+    if "何回発言" in query or re.search(r"発言.*何回|何回.*発言", query):
+        speaker_match = re.search(r"([^、\s]+?)(?:様)?は(?:会話の中で)?何回発言", query)
+        if speaker_match:
+            speaker = speaker_match.group(1)
+            for sep in ["における", "での", "の", "で", "に", "から", "と", "が", "は"]:
+                if sep in speaker and not speaker.startswith("SPEAKER"):
+                    speaker = speaker.split(sep)[-1]
+            if any(k in speaker for k in ["会議", "電話", "通話", "月", "日", "今日", "昨日"]) or ("様" not in query and "speaker" not in query.lower()):
+                return NumericIntent(operator="skip", target="none", group_by="none")
+            return NumericIntent(
+                operator="count",
+                target="turn_count",
+                group_by="none",
+                speaker=speaker
+            )
+
+    # 3. Mention count
+    is_mention_count = False
+    if "何回言及" in query or "言及された回数" in query or "言及された件数" in query or "言及された数" in query or "言及数は" in query or "言及は何回" in query or ("言及" in query and "何回" in query):
+        is_mention_count = True
+    elif "会社名の確認は何回" in query:
+        is_mention_count = True
+    elif "折り返し連絡に関する発言は何回" in query or ("折り返し" in query and "発言" in query and "何回" in query):
+        is_mention_count = True
+
+    if is_mention_count:
+        quote_match = re.search(r"「([^」]+)」", query)
+        if quote_match:
+            keyword = quote_match.group(1)
+        elif "会社名" in query:
+            keyword = "会社名"
+        elif "折り返し" in query:
+            keyword = "折り返し"
+        else:
+            name_match = re.search(r"([^、\s]+?)(?:様の名前|様|の名前)は?が?については?何回言及", query)
+            if name_match:
+                keyword = name_match.group(1)
+            else:
+                keyword = None
+        return NumericIntent(
+            operator="count",
+            target="mention_count",
+            group_by="none",
+            keyword=keyword
+        )
+
+    # Skip speaker-specific queries if they don't contain a valid speaker identifier (様 or speaker)
+    if any(k in query for k in ["発言", "発話"]):
+        if not any(k in query for k in ["話者", "ごと", "別"]):
+            if "様" not in query and "speaker" not in query.lower():
+                return NumericIntent(operator="skip", target="none", group_by="none")
 
     # Skip qualitative/semantic questions or detailed timestamps
     if _TIMESTAMP_RE.search(query) or _QUALITATIVE_RE.search(query):
@@ -249,7 +320,63 @@ def enforce_intent_invariants(intent: NumericIntent, query: str) -> NumericInten
     
     Invariant 1: Single-day queries never need GROUP BY day.
     """
+    if intent.operator in {"skip", "none"} or intent.target in {"none", "time_start_sec"}:
+        return intent
+
     if is_single_day_query(query) and intent.group_by == "day":
         intent.group_by = "none"
+
+    # Invariant 2: speaker speaking time
+    if "発話時間" in query or "発言時間" in query:
+        speaker_match = re.search(r"([^、\s]+?)(?:様)?の(?:平均)?発[話言]時間", query)
+        if speaker_match:
+            speaker = speaker_match.group(1)
+            for sep in ["における", "での", "の", "で", "に", "から", "と", "が", "は"]:
+                if sep in speaker and not speaker.startswith("SPEAKER"):
+                    speaker = speaker.split(sep)[-1]
+            if any(k in speaker for k in ["会議", "電話", "通話", "月", "日", "今日", "昨日"]) or ("様" not in query and "speaker" not in query.lower()):
+                return NumericIntent(operator="skip", target="none", group_by="none")
+            intent.speaker = speaker
+            intent.target = "speaking_time"
+            intent.operator = "avg" if "平均" in query else "sum"
+
+    # Invariant 3: turn count
+    if "何回発言" in query or re.search(r"発言.*何回|何回.*発言", query):
+        speaker_match = re.search(r"([^、\s]+?)(?:様)?は(?:会話の中で)?何回発言", query)
+        if speaker_match:
+            speaker = speaker_match.group(1)
+            if "の" in speaker and not speaker.startswith("SPEAKER"):
+                speaker = speaker.split("の")[-1]
+            intent.speaker = speaker
+            intent.target = "turn_count"
+            intent.operator = "count"
+
+    # Invariant 4: mention count
+    is_mention_count = False
+    if "何回言及" in query or "言及された回数" in query or "言及された件数" in query or "言及された数" in query or "言及数は" in query or "言及は何回" in query or ("言及" in query and "何回" in query):
+        is_mention_count = True
+    elif "会社名の確認は何回" in query:
+        is_mention_count = True
+    elif "折り返し連絡に関する発言は何回" in query or ("折り返し" in query and "発言" in query and "何回" in query):
+        is_mention_count = True
+
+    if is_mention_count:
+        quote_match = re.search(r"「([^」]+)」", query)
+        if quote_match:
+            keyword = quote_match.group(1)
+        elif "会社名" in query:
+            keyword = "会社名"
+        elif "折り返し" in query:
+            keyword = "折り返し"
+        else:
+            name_match = re.search(r"([^、\s]+?)(?:様の名前|様|の名前)は?が?については?何回言及", query)
+            if name_match:
+                keyword = name_match.group(1)
+            else:
+                keyword = None
+        intent.keyword = keyword
+        intent.target = "mention_count"
+        intent.operator = "count"
+
     return intent
 

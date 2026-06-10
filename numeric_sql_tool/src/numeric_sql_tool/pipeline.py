@@ -71,7 +71,7 @@ async def run_numeric_pipeline(
     if date_start is None and date_end is None:
         date_start, date_end = resolve_date_range(question, reference_date)
 
-    params = [user_id, date_start, date_end, intent.context_filter]
+    params = [user_id, date_start, date_end, intent.context_filter, intent.speaker, intent.keyword]
 
     async with db_pool.acquire() as conn:
         rows, sql_used = await _run_numeric_query(
@@ -99,7 +99,9 @@ def _numeric_where_clause() -> str:
         "($1::uuid IS NULL OR t.user_id = $1::uuid) "
         "AND ($2::date IS NULL OR t.meeting_date >= $2::date) "
         "AND ($3::date IS NULL OR t.meeting_date <= $3::date) "
-        "AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')"
+        "AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') "
+        "AND ($5::text IS NULL OR TRUE) "
+        "AND ($6::text IS NULL OR TRUE)"
     )
 
 
@@ -109,6 +111,53 @@ def build_numeric_sql(intent: NumericIntent) -> str | None:
         return None
 
     where = _numeric_where_clause()
+
+    if intent.target == "speaking_time":
+        agg = "AVG" if intent.operator == "avg" else "SUM"
+        return (
+            f"SELECT COALESCE({agg}(ct.time_end_sec - ct.time_start_sec), 0)::float AS value "
+            "FROM chunks_turn ct "
+            "JOIN transcripts t ON ct.transcript_id = t.id "
+            "WHERE (ct.speaker = $5::text OR ct.speaker = ("
+            "SELECT speaker FROM chunks_turn ct2 "
+            "JOIN transcripts t2 ON ct2.transcript_id = t2.id "
+            "WHERE ct2.text ILIKE '%' || $5::text || '%' "
+            "AND ($1::uuid IS NULL OR t2.user_id = $1::uuid) "
+            "AND ($2::date IS NULL OR t2.meeting_date >= $2::date) "
+            "AND ($3::date IS NULL OR t2.meeting_date <= $3::date) "
+            "LIMIT 1"
+            ")) "
+            f"AND {where}"
+        )
+
+    if intent.target == "turn_count":
+        return (
+            "SELECT COUNT(*)::float AS value "
+            "FROM chunks_turn ct "
+            "JOIN transcripts t ON ct.transcript_id = t.id "
+            "WHERE (ct.speaker = $5::text OR ct.speaker = ("
+            "SELECT speaker FROM chunks_turn ct2 "
+            "JOIN transcripts t2 ON ct2.transcript_id = t2.id "
+            "WHERE ct2.text ILIKE '%' || $5::text || '%' "
+            "AND ($1::uuid IS NULL OR t2.user_id = $1::uuid) "
+            "AND ($2::date IS NULL OR t2.meeting_date >= $2::date) "
+            "AND ($3::date IS NULL OR t2.meeting_date <= $3::date) "
+            "LIMIT 1"
+            ")) "
+            f"AND {where}"
+        )
+
+    if intent.target == "mention_count":
+        return (
+            "SELECT COALESCE(SUM("
+            "CASE WHEN $6::text IS NULL OR $6::text = '' THEN 0 "
+            "ELSE (LENGTH(ct.text) - LENGTH(REPLACE(ct.text, $6::text, ''))) / LENGTH($6::text) "
+            "END"
+            "), 0)::float AS value "
+            "FROM chunks_turn ct "
+            "JOIN transcripts t ON ct.transcript_id = t.id "
+            f"WHERE {where}"
+        )
 
     if intent.target == "meeting_count":
         value_expr = "COUNT(DISTINCT t.id)"
@@ -161,6 +210,14 @@ async def _run_numeric_query(
     statement_timeout_ms: int,
 ) -> tuple[list[NumericRow], str]:
     where = _numeric_where_clause()
+
+    if intent.target in {"speaking_time", "turn_count", "mention_count"}:
+        sql = build_numeric_sql(intent)
+        assert sql is not None
+        rows = await _fetch_rows(conn, sql, params, user_id, statement_timeout_ms)
+        if rows:
+            return [NumericRow(value=float(rows[0]["value"] or 0))], sql
+        return [NumericRow(value=0.0)], sql
 
     if intent.target == "meeting_count":
         value_expr = "COUNT(DISTINCT t.id)"

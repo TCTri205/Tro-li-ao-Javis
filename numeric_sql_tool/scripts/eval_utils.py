@@ -28,6 +28,11 @@ def normalize_sql(sql: str) -> str:
     for char in [',', '(', ')', '=', '<', '>', '!', '+', '-', '*', '/', '|', ':', '.']:
         s = re.sub(rf'\s*\{char}\s*', char, s)
         
+    # Strip trailing dummy parameters
+    s = s.replace("and($5::text is null or true)", "")
+    s = s.replace("and($6::text is null or true)", "")
+    s = " ".join(s.split())
+        
     return s.strip()
 
 def is_semantically_match(sql_gt: str, sql_actual: str) -> bool:
