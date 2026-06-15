@@ -19,7 +19,7 @@ def build_numeric_intent_prompt(query: str) -> tuple[str, str]:
         "Allowed values:\n"
         "operator: sum, avg, max, min, count, skip, none\n"
         "target: duration_seconds, meeting_count, time_start_sec, speaking_time, turn_count, mention_count, none\n"
-        "group_by: none, user_id, day, speaker\n"
+        "group_by: none, user_id, day, week, month, speaker\n"
         "context_filter: string or null\n"
         "speaker: string or null (extract speaker name, e.g. 'SPEAKER 1', 'サカモト', 'クマガイ' if the query asks about speaker turn count or speaking time)\n"
         "keyword: string or null (extract keyword to search for, e.g. '梅田', '14日水曜日', '会社名' if the query asks about keyword mention count)\n\n"

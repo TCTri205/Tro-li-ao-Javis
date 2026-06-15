@@ -106,7 +106,7 @@ def _numeric_where_clause() -> str:
 
 
 def build_numeric_sql(intent: NumericIntent) -> str | None:
-    """Return the SQL that run_numeric_pipeline would execute (params $1..$4)."""
+    """Return the SQL that run_numeric_pipeline would execute (params $1..$6)."""
     if intent.operator in {"skip", "none"} or intent.target in {"none", "time_start_sec"}:
         return None
 
@@ -114,49 +114,99 @@ def build_numeric_sql(intent: NumericIntent) -> str | None:
 
     if intent.target == "speaking_time":
         agg = "AVG" if intent.operator == "avg" else "SUM"
-        return (
-            f"SELECT COALESCE({agg}(ct.time_end_sec - ct.time_start_sec), 0)::float AS value "
-            "FROM chunks_turn ct "
-            "JOIN transcripts t ON ct.transcript_id = t.id "
-            "WHERE (ct.speaker = $5::text OR ct.speaker = ("
-            "SELECT speaker FROM chunks_turn ct2 "
-            "JOIN transcripts t2 ON ct2.transcript_id = t2.id "
-            "WHERE ct2.text ILIKE '%' || $5::text || '%' "
-            "AND ($1::uuid IS NULL OR t2.user_id = $1::uuid) "
-            "AND ($2::date IS NULL OR t2.meeting_date >= $2::date) "
-            "AND ($3::date IS NULL OR t2.meeting_date <= $3::date) "
-            "LIMIT 1"
-            ")) "
-            f"AND {where}"
-        )
+        if intent.speaker:
+            return (
+                "WITH speaker_resolved AS ("
+                "  ("
+                "    SELECT ct2.speaker"
+                "    FROM chunks_turn ct2"
+                "    JOIN transcripts t2 ON ct2.transcript_id = t2.id"
+                "    WHERE ct2.speaker = $5::text"
+                "      AND ($1::uuid IS NULL OR t2.user_id = $1::uuid)"
+                "      AND ($2::date IS NULL OR t2.meeting_date >= $2::date)"
+                "      AND ($3::date IS NULL OR t2.meeting_date <= $3::date)"
+                "    LIMIT 1"
+                "  )"
+                "  UNION ALL"
+                "  ("
+                "    SELECT ct2.speaker"
+                "    FROM chunks_turn ct2"
+                "    JOIN transcripts t2 ON ct2.transcript_id = t2.id"
+                "    WHERE ct2.text ILIKE '%' || $5::text || '%'"
+                "      AND ($1::uuid IS NULL OR t2.user_id = $1::uuid)"
+                "      AND ($2::date IS NULL OR t2.meeting_date >= $2::date)"
+                "      AND ($3::date IS NULL OR t2.meeting_date <= $3::date)"
+                "    ORDER BY ct2.time_start_sec ASC"
+                "    LIMIT 1"
+                "  )"
+                "  LIMIT 1"
+                ") "
+                f"SELECT COALESCE({agg}(ct.time_end_sec - ct.time_start_sec), 0)::float AS value "
+                "FROM chunks_turn ct "
+                "JOIN transcripts t ON ct.transcript_id = t.id "
+                "WHERE ct.speaker IN (SELECT speaker FROM speaker_resolved) "
+                f"AND {where}"
+            )
+        else:
+            return (
+                f"SELECT COALESCE({agg}(ct.time_end_sec - ct.time_start_sec), 0)::float AS value "
+                "FROM chunks_turn ct "
+                "JOIN transcripts t ON ct.transcript_id = t.id "
+                f"WHERE {where}"
+            )
 
     if intent.target == "turn_count":
-        return (
-            "SELECT COUNT(*)::float AS value "
-            "FROM chunks_turn ct "
-            "JOIN transcripts t ON ct.transcript_id = t.id "
-            "WHERE (ct.speaker = $5::text OR ct.speaker = ("
-            "SELECT speaker FROM chunks_turn ct2 "
-            "JOIN transcripts t2 ON ct2.transcript_id = t2.id "
-            "WHERE ct2.text ILIKE '%' || $5::text || '%' "
-            "AND ($1::uuid IS NULL OR t2.user_id = $1::uuid) "
-            "AND ($2::date IS NULL OR t2.meeting_date >= $2::date) "
-            "AND ($3::date IS NULL OR t2.meeting_date <= $3::date) "
-            "LIMIT 1"
-            ")) "
-            f"AND {where}"
-        )
+        if intent.speaker:
+            return (
+                "WITH speaker_resolved AS ("
+                "  ("
+                "    SELECT ct2.speaker"
+                "    FROM chunks_turn ct2"
+                "    JOIN transcripts t2 ON ct2.transcript_id = t2.id"
+                "    WHERE ct2.speaker = $5::text"
+                "      AND ($1::uuid IS NULL OR t2.user_id = $1::uuid)"
+                "      AND ($2::date IS NULL OR t2.meeting_date >= $2::date)"
+                "      AND ($3::date IS NULL OR t2.meeting_date <= $3::date)"
+                "    LIMIT 1"
+                "  )"
+                "  UNION ALL"
+                "  ("
+                "    SELECT ct2.speaker"
+                "    FROM chunks_turn ct2"
+                "    JOIN transcripts t2 ON ct2.transcript_id = t2.id"
+                "    WHERE ct2.text ILIKE '%' || $5::text || '%'"
+                "      AND ($1::uuid IS NULL OR t2.user_id = $1::uuid)"
+                "      AND ($2::date IS NULL OR t2.meeting_date >= $2::date)"
+                "      AND ($3::date IS NULL OR t2.meeting_date <= $3::date)"
+                "    ORDER BY ct2.time_start_sec ASC"
+                "    LIMIT 1"
+                "  )"
+                "  LIMIT 1"
+                ") "
+                "SELECT COUNT(*)::float AS value "
+                "FROM chunks_turn ct "
+                "JOIN transcripts t ON ct.transcript_id = t.id "
+                "WHERE ct.speaker IN (SELECT speaker FROM speaker_resolved) "
+                f"AND {where}"
+            )
+        else:
+            return (
+                "SELECT COUNT(*)::float AS value "
+                "FROM chunks_turn ct "
+                "JOIN transcripts t ON ct.transcript_id = t.id "
+                f"WHERE {where}"
+            )
 
     if intent.target == "mention_count":
         return (
             "SELECT COALESCE(SUM("
             "CASE WHEN $6::text IS NULL OR $6::text = '' THEN 0 "
-            "ELSE (LENGTH(ct.text) - LENGTH(REPLACE(ct.text, $6::text, ''))) / LENGTH($6::text) "
+            "ELSE (LENGTH(ct.text) - LENGTH(REPLACE(LOWER(ct.text), LOWER($6::text), ''))) / NULLIF(LENGTH($6::text), 0) "
             "END"
             "), 0)::float AS value "
             "FROM chunks_turn ct "
             "JOIN transcripts t ON ct.transcript_id = t.id "
-            f"WHERE {where}"
+            f"WHERE {where} AND ($6::text IS NULL OR ct.text ILIKE '%' || $6::text || '%')"
         )
 
     if intent.target == "meeting_count":
@@ -169,7 +219,7 @@ def build_numeric_sql(intent: NumericIntent) -> str | None:
             "t.duration_seconds AS value, t.summary AS summary "
             "FROM transcripts t WHERE "
             f"{where} AND t.duration_seconds IS NOT NULL "
-            f"ORDER BY t.duration_seconds {direction}, t.meeting_date {direction} LIMIT 1"
+            f"ORDER BY t.duration_seconds {direction}, t.meeting_date {direction} LIMIT {intent.limit}"
         )
     else:
         agg = "AVG" if intent.operator == "avg" else "SUM"
@@ -188,6 +238,20 @@ def build_numeric_sql(intent: NumericIntent) -> str | None:
             f"{value_expr} AS value "
             "FROM transcripts t WHERE "
             f"{where} GROUP BY t.meeting_date ORDER BY group_key LIMIT 31"
+        )
+    if intent.group_by == "week":
+        return (
+            "SELECT DATE_TRUNC('week', t.meeting_date)::date::text AS group_key, "
+            f"{value_expr} AS value "
+            "FROM transcripts t WHERE "
+            f"{where} GROUP BY DATE_TRUNC('week', t.meeting_date) ORDER BY group_key LIMIT 52"
+        )
+    if intent.group_by == "month":
+        return (
+            "SELECT TO_CHAR(t.meeting_date, 'YYYY-MM') AS group_key, "
+            f"{value_expr} AS value "
+            "FROM transcripts t WHERE "
+            f"{where} GROUP BY TO_CHAR(t.meeting_date, 'YYYY-MM') ORDER BY group_key LIMIT 12"
         )
     if intent.group_by == "speaker":
         return (
@@ -219,9 +283,7 @@ async def _run_numeric_query(
             return [NumericRow(value=float(rows[0]["value"] or 0))], sql
         return [NumericRow(value=0.0)], sql
 
-    if intent.target == "meeting_count":
-        value_expr = "COUNT(DISTINCT t.id)"
-    elif intent.target == "duration_seconds" and intent.operator in {"max", "min"}:
+    if intent.target == "duration_seconds" and intent.operator in {"max", "min"}:
         return await _run_duration_extreme(
             conn,
             intent,
@@ -230,44 +292,12 @@ async def _run_numeric_query(
             user_id=user_id,
             statement_timeout_ms=statement_timeout_ms,
         )
-    else:
-        agg = "AVG" if intent.operator == "avg" else "SUM"
-        value_expr = f"COALESCE({agg}(t.duration_seconds), 0)"
 
-    if intent.group_by == "user_id":
-        sql = (
-            "SELECT t.user_id::text AS group_key, "
-            f"{value_expr} AS value "
-            "FROM transcripts t WHERE "
-            f"{where} GROUP BY t.user_id ORDER BY value DESC LIMIT 20"
-        )
-        rows = await _fetch_rows(conn, sql, params, user_id, statement_timeout_ms)
-        return [NumericRow(group_key=r["group_key"], value=float(r["value"])) for r in rows], sql
-
-    if intent.group_by == "day":
-        sql = (
-            "SELECT t.meeting_date::text AS group_key, "
-            f"{value_expr} AS value "
-            "FROM transcripts t WHERE "
-            f"{where} GROUP BY t.meeting_date ORDER BY group_key LIMIT 31"
-        )
-        rows = await _fetch_rows(conn, sql, params, user_id, statement_timeout_ms)
-        return [NumericRow(group_key=r["group_key"], value=float(r["value"])) for r in rows], sql
-
-    if intent.group_by == "speaker":
-        sql = (
-            "SELECT x.speaker AS group_key, "
-            f"{value_expr} AS value "
-            "FROM transcripts t "
-            "JOIN (SELECT DISTINCT transcript_id, speaker FROM chunks_turn) x ON x.transcript_id = t.id "
-            "WHERE "
-            f"{where} GROUP BY x.speaker ORDER BY value DESC LIMIT 20"
-        )
-        rows = await _fetch_rows(conn, sql, params, user_id, statement_timeout_ms)
-        return [NumericRow(group_key=r["group_key"], value=float(r["value"])) for r in rows], sql
-
-    sql = f"SELECT {value_expr} AS value FROM transcripts t WHERE {where}"
+    sql = build_numeric_sql(intent)
+    assert sql is not None
     rows = await _fetch_rows(conn, sql, params, user_id, statement_timeout_ms)
+    if intent.group_by != "none":
+        return [NumericRow(group_key=r["group_key"], value=float(r["value"])) for r in rows], sql
     if rows:
         return [NumericRow(value=float(rows[0]["value"] or 0))], sql
     return [NumericRow(value=0.0)], sql
@@ -288,15 +318,17 @@ async def _run_duration_extreme(
     if not rows:
         return [NumericRow(value=0.0, metadata={"no_data": True})], sql
 
-    row = rows[0]
-    metadata = {
-        "transcript_id": row["transcript_id"],
-        "session_id": row["session_id"],
-        "meeting_date": row["meeting_date"],
-        "participants": row["participants"],
-        "summary": row["summary"],
-    }
-    return [NumericRow(value=float(row["value"] or 0), metadata=metadata)], sql
+    res_rows = []
+    for row in rows:
+        metadata = {
+            "transcript_id": row["transcript_id"],
+            "session_id": row["session_id"],
+            "meeting_date": row["meeting_date"],
+            "participants": row["participants"],
+            "summary": row["summary"],
+        }
+        res_rows.append(NumericRow(value=float(row["value"] or 0), metadata=metadata))
+    return res_rows, sql
 
 
 async def _fetch_rows(

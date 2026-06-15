@@ -26,7 +26,7 @@ _QUALITATIVE_RE = re.compile(
     r"まとめて|一覧|目的|結果|要旨|内容|やり取り|時系列|フロー|マニュアル|規程|ルール|規則|基準|定義|指示|確認内容|確認事項"
 )
 _UNSUPPORTED_OPS_RE = re.compile(
-    r"割合|パーセント|比率|中央値|メジアン|パーセンタイル|週ごと|週別|曜日|土日|平日|営業日|"
+    r"割合|パーセント|比率|中央値|メジアン|パーセンタイル|曜日|土日|平日|営業日|"
     r"両方参加|より何件多|より何回多|前半|後半|"
     r"先々月|第\d週|\d+週目|週目|上旬|中旬|下旬|年累計|直近\d+ヶ月|Q[1-4]|四半期|最終|最初|(?:今年|去年)(?!の?\d+月)|"
     r"\d+(分|時間|秒|日)(?:[をが])?(?:以上|超|以下|未満|より|ごと)|"
@@ -66,7 +66,16 @@ def heuristic_numeric_intent(query: str) -> NumericIntent:
     # 1. Speaking time
     if "発話時間" in query or "発言時間" in query:
         speaker_match = re.search(r"([^、\s]+?)(?:様)?の(?:平均)?発[話言]時間", query)
-        if speaker_match:
+        is_overall = "総発話" in query or "全体の発話" in query or "通話の発話" in query or "会議の発話" in query or not speaker_match
+        if is_overall:
+            operator = "avg" if "平均" in query else "sum"
+            return NumericIntent(
+                operator=operator,
+                target="speaking_time",
+                group_by="none",
+                speaker=None
+            )
+        elif speaker_match:
             speaker = speaker_match.group(1)
             for sep in ["における", "での", "の", "で", "に", "から", "と", "が", "は"]:
                 if sep in speaker and not speaker.startswith("SPEAKER"):
@@ -223,6 +232,10 @@ def heuristic_numeric_intent(query: str) -> NumericIntent:
         group_by = "user_id"
     elif re.search(r"日ごと|日別", query):
         group_by = "day"
+    elif re.search(r"週ごと|週別|毎週", query):
+        group_by = "week"
+    elif re.search(r"月ごと|月別|毎月", query):
+        group_by = "month"
     elif re.search(r"話者ごと|話者別", query):
         group_by = "speaker"
 
@@ -329,7 +342,12 @@ def enforce_intent_invariants(intent: NumericIntent, query: str) -> NumericInten
     # Invariant 2: speaker speaking time
     if "発話時間" in query or "発言時間" in query:
         speaker_match = re.search(r"([^、\s]+?)(?:様)?の(?:平均)?発[話言]時間", query)
-        if speaker_match:
+        is_overall = "総発話" in query or "全体の発話" in query or "通話の発話" in query or "会議の発話" in query or not speaker_match
+        if is_overall:
+            intent.speaker = None
+            intent.target = "speaking_time"
+            intent.operator = "avg" if "平均" in query else "sum"
+        elif speaker_match:
             speaker = speaker_match.group(1)
             for sep in ["における", "での", "の", "で", "に", "から", "と", "が", "は"]:
                 if sep in speaker and not speaker.startswith("SPEAKER"):
@@ -377,6 +395,17 @@ def enforce_intent_invariants(intent: NumericIntent, query: str) -> NumericInten
         intent.keyword = keyword
         intent.target = "mention_count"
         intent.operator = "count"
+
+    # Invariant 5: Top-N limit
+    limit_match = re.search(
+        r"上位\s*(\d+)|トップ\s*(\d+)|ベスト\s*(\d+)|ワースト\s*(\d+)|(\d+)\s*件の最長|(\d+)\s*件の最短|最長.*?(\d+)\s*件|最短.*?(\d+)\s*件",
+        query
+    )
+    if limit_match:
+        for g in limit_match.groups():
+            if g is not None:
+                intent.limit = int(g)
+                break
 
     return intent
 
