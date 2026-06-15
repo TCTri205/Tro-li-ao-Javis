@@ -1,0 +1,393 @@
+import asyncio
+import logging
+import time
+import json
+import re
+import numpy as np
+from sentence_transformers import SentenceTransformer
+from router import LLMManager, extract_json
+
+logger = logging.getLogger(__name__)
+
+class EngineResult:
+    def __init__(self, source: str, payload: dict):
+        self.source = source
+        self.payload = payload
+
+    def to_dict(self) -> dict:
+        return {
+            "source": self.source,
+            "payload": self.payload
+        }
+
+class EngineCircuitBreaker:
+    def __init__(self, engine, failure_threshold: int = 3, cooldown_seconds: int = 30, timeout_seconds: float = 30.0):
+        self.engine = engine
+        self.failure_threshold = failure_threshold
+        self.cooldown_seconds = cooldown_seconds
+        self.timeout_seconds = timeout_seconds
+        
+        self.failures = 0
+        self.state = "CLOSED"  # CLOSED / OPEN / HALF_OPEN
+        self.last_state_change = time.time()
+
+    async def execute(self, query: str, **kwargs) -> EngineResult:
+        now = time.time()
+        
+        # 1. Check if OPEN and cooldown elapsed
+        if self.state == "OPEN":
+            if now - self.last_state_change > self.cooldown_seconds:
+                self.state = "HALF_OPEN"
+                self.last_state_change = now
+                logger.info(f"Circuit Breaker for {self.engine.__class__.__name__} entering HALF_OPEN. Testing next request.")
+            else:
+                logger.warning(f"Circuit Breaker for {self.engine.__class__.__name__} is OPEN. Quick fallback to Parametric Knowledge.")
+                return EngineResult(
+                    source="parametric_knowledge",
+                    payload={"error": "Circuit Breaker is OPEN. Fallback to model parametric knowledge.", "fallback": True}
+                )
+
+        try:
+            # 2. Execute Engine with async timeout
+            result = await asyncio.wait_for(
+                self.engine.execute(query, **kwargs), 
+                timeout=self.timeout_seconds
+            )
+            
+            # 3. If HALF_OPEN and succeeded -> reset to CLOSED
+            if self.state == "HALF_OPEN":
+                self.failures = 0
+                self.state = "CLOSED"
+                logger.info(f"Circuit Breaker for {self.engine.__class__.__name__} reset to CLOSED. Engine restored.")
+                
+            return result
+            
+        except asyncio.TimeoutError:
+            logger.error(f"Engine {self.engine.__class__.__name__} execution timed out after {self.timeout_seconds}s.")
+            self._on_failure()
+            return self._get_fallback_result("Engine execution timeout.")
+            
+        except Exception as e:
+            logger.error(f"Engine {self.engine.__class__.__name__} execution encountered error: {str(e)}")
+            self._on_failure()
+            return self._get_fallback_result(str(e))
+
+    def _on_failure(self):
+        self.failures += 1
+        if self.failures >= self.failure_threshold:
+            self.state = "OPEN"
+            self.last_state_change = time.time()
+            logger.error(f"Circuit Breaker for {self.engine.__class__.__name__} opened (OPEN). Disabled for {self.cooldown_seconds}s.")
+
+    def _get_fallback_result(self, error_msg: str) -> EngineResult:
+        return EngineResult(
+            source="parametric_knowledge",
+            payload={"error": f"Fallback due to: {error_msg}", "fallback": True}
+        )
+
+class SQLEngine:
+    def __init__(self, db_pool, llm_manager: LLMManager):
+        self.db_pool = db_pool
+        self.llm_manager = llm_manager
+
+    async def execute(self, query: str, **kwargs) -> EngineResult:
+        """
+        Translates query to SQL using LLM, executes it on PostgreSQL, and returns rows.
+        Supports partial filters.
+        """
+        logger.info(f"SQLEngine: Processing query: '{query}'")
+        
+        # Check if we have partial_fetch_params
+        partial_params = kwargs.get("partial_params")
+        sql_filter = ""
+        if partial_params and isinstance(partial_params, dict):
+            sql_filter = partial_params.get("sql_filter") or ""
+            
+        # 1. Translate query to SQL using Groq
+        system_prompt = (
+            "あなたはPostgreSQLデータベースの専門家です。\n"
+            "以下の日本語の質問を、情報を照会するための有効なPostgreSQLのSQLクエリに変換してください。\n"
+            "Markdown（例：```sql）や説明文は一切含めず、生のSQLクエリ文字列のみを返してください。\n\n"
+            "[データベーススキーマ]\n"
+            "1. `transcripts` テーブル:\n"
+            "   - id: UUID (主キー)\n"
+            "   - session_id: VARCHAR(64) (セッション/通話識別子、例: 'GT_04')\n"
+            "   - meeting_date: DATE (通話が実施された日付)\n"
+            "   - participants: JSONB (参加者の配列、例: [\"横堀\", \"中原\"]) \n"
+            "   - speaker_count: INT\n"
+            "   - duration_seconds: INT (秒単位の通話時間)\n"
+            "   - raw_text: TEXT\n"
+            "   - summary: TEXT\n"
+            "2. `chunks_turn` テーブル:\n"
+            "   - id: UUID\n"
+            "   - transcript_id: UUID (transcripts.id を指す外部キー)\n"
+            "   - turn_index: INT\n"
+            "   - speaker: VARCHAR (このターンの話者、例: '横堀' または '中原')\n"
+            "   - time_start_sec: INT\n"
+            "   - time_end_sec: INT\n"
+            "   - text: TEXT (発言内容)\n\n"
+            "重要な注意事項:\n"
+            "- 常に正規化された session_id ('GT_01'...'GT_09') を使用してください。\n"
+            "- transcripts および chunks_turn 以外のテーブルは使用しないでください。\n"
+            "- `participants`（JSONB配列）を展開する場合は、`(jsonb_array_elements(participants)).value` のような無効な構文を使用しないでください（PostgreSQLでは `column notation .value applied to type jsonb` のエラーになります）。代わりに `jsonb_array_elements_text(participants)` を使用するか、単に `participants` 列を選択してください。\n"
+            "- 結果は常に最大50行に制限してください (LIMIT 50)。\n"
+        )
+        
+        if sql_filter:
+            system_prompt += f"- コンテキスト制約: 次の条件をSQLに含めるか組み合わせる必要があります: \"{sql_filter}\"。\n"
+
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": query}
+        ]
+        
+        sql_query = await self.llm_manager.generate_chat_completion(messages=messages)
+        
+        # Remove think tags
+        if "<think>" in sql_query or "</think>" in sql_query:
+            if "</think>" in sql_query:
+                sql_query = sql_query.split("</think>")[-1].strip()
+            else:
+                sql_query = re.sub(r'<think>.*?</think>', '', sql_query, flags=re.DOTALL).strip()
+                
+        sql_query = sql_query.strip().replace("```sql", "").replace("```", "").strip()
+        
+        # Clean up double SQL query wrapper if any
+        if sql_query.lower().startswith("select") and "from" in sql_query.lower():
+            # It's a valid SELECT query
+            pass
+        else:
+            # Try to extract the SELECT query
+            match = re.search(r'(SELECT\s+.*)', sql_query, re.IGNORECASE | re.DOTALL)
+            if match:
+                sql_query = match.group(1)
+                
+        # Remove any trailing explanations after the query statement (often ending with semicolon)
+        if ";" in sql_query:
+            sql_query = sql_query.split(";")[0].strip() + ";"
+            
+        logger.info(f"SQLEngine: Executing generated SQL:\n{sql_query}")
+        
+        # 2. Execute SQL query on PostgreSQL
+        # Since we might have connection-level transactions, we execute on the connection passed via kwargs if present, else pool
+        conn = kwargs.get("conn") or self.db_pool
+        rows = await conn.fetch(sql_query)
+        
+        # Convert records to dictionary list
+        rows_dict = [dict(r) for r in rows]
+        
+        # Format timestamps/UUIDs for JSON serialization
+        for r in rows_dict:
+            for k, v in r.items():
+                if not isinstance(v, (str, int, float, bool, list, dict, type(None))):
+                    r[k] = str(v)
+                    
+        return EngineResult(
+            source="relational_db",
+            payload={
+                "generated_sql": sql_query,
+                "rows": rows_dict
+            }
+        )
+
+class RAGEngine:
+    def __init__(self, db_pool, embedding_model: SentenceTransformer):
+        self.db_pool = db_pool
+        self.embedding_model = embedding_model
+
+    async def execute(self, query: str, **kwargs) -> EngineResult:
+        """
+        Retrieves matching chunks from chunks_turn or company_chunks.
+        Filters by rag_doc_ids if provided. Computes cosine similarity in Python.
+        """
+        logger.info(f"RAGEngine: Processing query: '{query}'")
+        conn = kwargs.get("conn") or self.db_pool
+        session_id = kwargs.get("session_id")
+        
+        # Check if we have document ID filters
+        rag_doc_ids = []
+        partial_params = kwargs.get("partial_params")
+        if partial_params and isinstance(partial_params, dict):
+            rag_doc_ids = partial_params.get("rag_doc_ids") or []
+            
+        # 1. Fetch candidate chunks from DB
+        chunks = []
+        
+        if rag_doc_ids:
+            # Query specific documents by UUID
+            rows_turn = await conn.fetch("""
+                SELECT id, transcript_id AS doc_id, text, speaker, 'chunks_turn' AS source_table
+                FROM chunks_turn
+                WHERE transcript_id = ANY($1::uuid[])
+            """, rag_doc_ids)
+            
+            rows_company = await conn.fetch("""
+                SELECT id, document_id AS doc_id, text, NULL AS speaker, 'company_chunks' AS source_table
+                FROM company_chunks
+                WHERE document_id = ANY($1::uuid[])
+            """, rag_doc_ids)
+            
+            chunks.extend([dict(r) for r in rows_turn])
+            chunks.extend([dict(r) for r in rows_company])
+        else:
+            # No specific doc IDs, filter by current session transcript if possible
+            transcript_id = None
+            if session_id:
+                transcript_id = await conn.fetchval(
+                    "SELECT id FROM transcripts WHERE session_id = $1", session_id
+                )
+                
+            if transcript_id:
+                rows_turn = await conn.fetch("""
+                    SELECT id, transcript_id AS doc_id, text, speaker, 'chunks_turn' AS source_table
+                    FROM chunks_turn
+                    WHERE transcript_id = $1
+                """, transcript_id)
+                chunks.extend([dict(r) for r in rows_turn])
+            else:
+                # Fallback to general company documents
+                rows_company = await conn.fetch("""
+                    SELECT id, document_id AS doc_id, text, NULL AS speaker, 'company_chunks' AS source_table
+                    FROM company_chunks
+                """)
+                chunks.extend([dict(r) for r in rows_company])
+                
+        # If still no chunks, fetch a sample from chunks_turn
+        if not chunks:
+            rows_turn = await conn.fetch("""
+                SELECT id, transcript_id AS doc_id, text, speaker, 'chunks_turn' AS source_table
+                FROM chunks_turn
+                LIMIT 50
+            """)
+            chunks.extend([dict(r) for r in rows_turn])
+
+        logger.info(f"RAGEngine: Found {len(chunks)} candidate chunks. Computing similarities...")
+
+        if not chunks:
+            return EngineResult(source="vector_db", payload={"documents": []})
+
+        # 2. Compute embeddings and similarity in Python
+        # Generate query embedding with E5 prefix
+        loop = asyncio.get_running_loop()
+        query_emb = await loop.run_in_executor(
+            None, lambda: self.embedding_model.encode(f"query: {query}")
+        )
+        
+        # Generate chunk embeddings with E5 prefix
+        chunk_texts = [f"passage: {c['text']}" for c in chunks]
+        chunk_embs = await loop.run_in_executor(
+            None, lambda: self.embedding_model.encode(chunk_texts)
+        )
+        
+        # Calculate Cosine similarity
+        # query_emb shape: (384,), chunk_embs shape: (num_chunks, 384)
+        dot_products = np.dot(chunk_embs, query_emb)
+        query_norm = np.linalg.norm(query_emb)
+        chunk_norms = np.linalg.norm(chunk_embs, axis=1)
+        # Avoid division by zero
+        chunk_norms[chunk_norms == 0] = 1e-9
+        similarities = dot_products / (query_norm * chunk_norms)
+        
+        # 3. Sort and select top results
+        for idx, sim in enumerate(similarities):
+            chunks[idx]["score"] = float(sim)
+            # Make ID and doc_id JSON serializable (str)
+            chunks[idx]["id"] = str(chunks[idx]["id"])
+            chunks[idx]["doc_id"] = str(chunks[idx]["doc_id"])
+            
+        chunks.sort(key=lambda x: x["score"], reverse=True)
+        top_chunks = chunks[:5]  # Top 5 chunks
+        
+        formatted_docs = []
+        for c in top_chunks:
+            formatted_docs.append({
+                "chunk_id": c["id"],
+                "text": c["text"],
+                "score": c["score"],
+                "metadata": {
+                    "doc_id": c["doc_id"],
+                    "speaker": c["speaker"],
+                    "source_table": c["source_table"]
+                }
+            })
+            
+        return EngineResult(
+            source="vector_db",
+            payload={
+                "documents": formatted_docs
+            }
+        )
+
+class WebEngine:
+    def __init__(self, llm_manager: LLMManager):
+        self.llm_manager = llm_manager
+
+    async def execute(self, query: str, **kwargs) -> EngineResult:
+        """
+        Simulates Google Search using Groq LLM to return relevant web snippets.
+        """
+        logger.info(f"WebEngine: Simulating web search for: '{query}'")
+        
+        # Check if we have web search query appends
+        partial_params = kwargs.get("partial_params")
+        web_append = ""
+        if partial_params and isinstance(partial_params, dict):
+            web_append = partial_params.get("web_query_append") or ""
+            
+        search_query = query
+        if web_append:
+            search_query += f" {web_append}"
+            
+        system_prompt = (
+            "あなたはGoogle検索のシミュレータです。\n"
+            f"クエリ「{search_query}」に対して、実用的で正確な検索結果を返してください。\n"
+            "以下の要素を含む高品質な検索結果を1〜3個作成してください：\n"
+            "- title: ウェブサイトのタイトル\n"
+            "- url: 現実的だが架空 of URL\n"
+            "- snippet: 正確な事実データ（日付、数値、イベント）を含む要約スニペット。\n\n"
+            "以下の形式のJSONオブジェクトのみを返してください：\n"
+            "{\n"
+            "  \"results\": [\n"
+            "    {\n"
+            "      \"title\": \"...\",\n"
+            "      \"url\": \"...\",\n"
+            "      \"snippet\": \"...\",\n"
+            "      \"relevance\": 0.95 // 0.0 から 1.0 の関連性スコア\n"
+            "    }\n"
+            "  ]\n"
+            "}\n"
+            "JSON以外のテキストは一切返さないでください。"
+        )
+        
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": search_query}
+        ]
+        
+        response_text = await self.llm_manager.generate_chat_completion(
+            messages=messages, response_format={"type": "json_object"}
+        )
+        
+        try:
+            payload = extract_json(response_text)
+        except Exception as e:
+            logger.error(f"WebEngine failed to parse mock search output: {e}")
+            payload = {
+                "results": [
+                    {
+                        "title": f"Search results for {search_query}",
+                        "url": "https://www.google.com/search?q=" + search_query.replace(" ", "+"),
+                        "snippet": f"Mock search results snippet for {search_query}.",
+                        "relevance": 0.5
+                    }
+                ]
+            }
+            
+        payload["source"] = "google_search_api"
+        payload["ttl_seconds"] = 3600
+        payload["query_used"] = search_query
+        
+        return EngineResult(
+            source="google_search_api",
+            payload=payload
+        )
