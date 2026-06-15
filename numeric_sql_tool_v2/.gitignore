@@ -1,0 +1,14 @@
+.env
+.venv/
+venv/
+__pycache__/
+*.pyc
+.restore_dump_sanitized.sql
+*.sql
+.omg/
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/

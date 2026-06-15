@@ -1,0 +1,50 @@
+from __future__ import annotations
+
+
+def build_numeric_intent_prompt(query: str) -> tuple[str, str]:
+    system = (
+        "You are a routing and intent classifier for a Numeric SQL Tool.\n"
+        "Your task is to analyze the user's question and fill in a JSON structure.\n\n"
+        "SUPPORTED aggregations:\n"
+        "  1. Meeting-level: count/sum/avg/max/min of meeting count or duration_seconds (from `transcripts` table).\n"
+        "  2. Turn-level: count/avg/max/min of individual utterances (from `chunks_turn` table).\n\n"
+        "TARGET VALUES:\n"
+        "  - `meeting_count`  : number of meetings.\n"
+        "  - `duration_seconds`: total/avg/max/min call duration in seconds.\n"
+        "  - `turn_count`     : number of utterance turns (optionally filtered by speaker).\n"
+        "  - `turn_duration`  : duration of individual turns (time_end_sec - time_start_sec).\n"
+        "  - `mention_count`  : number of times an entity/person is mentioned in turn text.\n"
+        "  - `speaker_name`   : return the name of a speaker (for 'who spoke most/longest/shortest').\n\n"
+        "FIELD GUIDANCE:\n"
+        "  - `speaker_filter`: set to the speaker label (e.g. 'SPEAKER 1') when question filters by a specific speaker.\n"
+        "  - `entity_filter` : set to the entity name (e.g. '梅田') when question asks how many times a name is mentioned.\n"
+        "  - `group_by`      : 'speaker' when question asks 'most talkative speaker' or groups by speaker.\n\n"
+        "TURN-LEVEL EXAMPLES:\n"
+        "  - '梅田様については何回言及されましたか？' → operator=count, target=mention_count, entity_filter='梅田'\n"
+        "  - 'SPEAKER 1の平均発話時間は？'         → operator=avg, target=turn_duration, speaker_filter='SPEAKER 1'\n"
+        "  - 'SPEAKER 1は何回発言しましたか？'      → operator=count, target=turn_count, speaker_filter='SPEAKER 1'\n"
+        "  - '最も長い発言は誰の発言でしたか？'      → operator=max, target=speaker_name, group_by=none\n"
+        "  - '最も短い発言は誰の発言でしたか？'      → operator=min, target=speaker_name, group_by=none\n"
+        "  - '最も多く発言したのは誰ですか？'        → operator=max, target=speaker_name, group_by=speaker\n\n"
+        "SKIP RULES (set operator='skip', target='none'):\n"
+        "  - Qualitative/semantic questions (asking 'what', 'why', 'where', 'how', topics, summaries).\n"
+        "  - Specific content values (budget amounts, prices, costs, opinions).\n"
+        "  - Turn-level timestamps: 'what minute/second did X speak', 'when did Y say Z'.\n"
+        "  - Non-questions (greetings, commands, single words).\n"
+        "  - Complex comparisons or multi-metric queries.\n\n"
+        "Return ONLY a JSON block matching the schema of NumericIntent."
+    )
+    user = (
+        "You are filling a JSON form for numeric aggregation. "
+        "Pick values that best match the question.\n"
+        "Allowed values:\n"
+        "  operator: sum, avg, max, min, count, skip, none\n"
+        "  target: duration_seconds, meeting_count, turn_count, turn_duration, mention_count, speaker_name, time_start_sec, none\n"
+        "  group_by: none, user_id, day, speaker\n"
+        "  context_filter: string or null\n"
+        "  speaker_filter: string or null  (e.g. 'SPEAKER 1')\n"
+        "  entity_filter: string or null   (e.g. '梅田')\n\n"
+        f"Question: {query}\n"
+        "Return JSON for NumericIntent."
+    )
+    return system, user
