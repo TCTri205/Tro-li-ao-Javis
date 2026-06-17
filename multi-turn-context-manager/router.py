@@ -83,9 +83,15 @@ def heuristic_pipeline_guess(query: str) -> str:
     query_lower = query.lower()
     
     # Check Japanese SQL keywords
-    sql_keywords = ["選択", "カウント", "平均", "時間", "通話", "日付", "何時", "誰", "秒", "分", "通話時間", "だれ", "何秒", "何分"]
+    sql_keywords = [
+        "選択", "カウント", "平均", "時間", "通話", "日付", "何時", "誰", "秒", "分", "通話時間", 
+        "だれ", "何秒", "何分", "件数", "何件", "いつ", "何日"
+    ]
     # Check Japanese RAG keywords
-    rag_keywords = ["要約", "内容", "詳細", "発言", "翻訳", "ドキュメント", "ファイル", "テキスト", "何を話した", "訳"]
+    rag_keywords = [
+        "要約", "内容", "詳細", "発言", "翻訳", "ドキュメント", "ファイル", "テキスト", "何を話した", 
+        "訳", "内見", "契約", "相談", "面談", "打ち合わせ", "議事録", "ログ"
+    ]
     # Check Japanese WEB keywords
     web_keywords = ["天気", "株価", "三菱", "ニュース", "ネット", "検索", "グーグル", "株"]
     
@@ -244,7 +250,7 @@ class JavisQwenManager(LLMManager):
         
         # Disable keep-alive to prevent hangs on Windows when endpoint closes connection
         limits = httpx.Limits(max_keepalive_connections=0, max_connections=20)
-        timeout = httpx.Timeout(12.0, connect=5.0, read=12.0, write=5.0, pool=5.0)
+        timeout = httpx.Timeout(8.0, connect=3.0, read=8.0, write=3.0, pool=3.0)
         self.http_client = httpx.AsyncClient(limits=limits, timeout=timeout)
         self.client = AsyncOpenAI(
             api_key=self.api_key,
@@ -253,7 +259,7 @@ class JavisQwenManager(LLMManager):
         )
 
     async def generate_chat_completion(self, messages, response_format=None, max_retries=3):
-        timeout_val = float(os.getenv("JAVIS_QWEN_TIMEOUT", "10.0"))
+        timeout_val = float(os.getenv("JAVIS_QWEN_TIMEOUT", "6.0"))
         for attempt in range(max_retries):
             try:
                 kwargs = {
@@ -489,10 +495,11 @@ class Router:
             "   - クエリが既存のキャッシュ（[アクティブキャッシュ]）と異なるトピックである場合、必ず `target_topic_key` を**新しく作成**（例: 'new_topic_123'）し、`needs_retrieval: \"full\"` にしてください。\n"
             "   - **既存のトピックキーを別の種類の情報（例：GT_04の通話にWEB検索の結果を入れる）で上書きしないでください。**\n"
             "2. **Pipeline の厳格な使い分け**:\n"
-            "   - **SQL**: 通話時間（duration）、日付（meeting_date）、参加者（participants）、件数などの**数値や構造化データ**が必要な場合。\n"
-            "   - **RAG**: 会話の具体的な内容、発言の詳細、要約、特定の話題について何を話したかなどの**テキスト読解**が必要な場合。\n"
-            "   - **WEB**: データベースにない外部情報（株価、ニュース、一般知識）が必要な場合。\n"
-            "   - **MODEL**: 挨拶や雑談のみ。\n"
+            "   - **SQL**: 通話時間（duration）、日付（meeting_date）、参加者（participants）、件数、通話の有無など、データベースの**数値や構造化データ**が必要な場合。\n"
+            "   - **RAG**: 会話の具体的な内容、発言の詳細、要約、特定の話題（例: 内見(ないけん・物件の内覧)、契約、物件情報、顧客情報、交渉内容など）について何を話したかなど、通話録音やテキストの**読解・要約**が必要な場合。\n"
+            "   - **WEB**: データベースにない外部情報（最新の株価、一般ニュース、社外の一般知識など）が必要な場合。\n"
+            "   - **MODEL**: 挨拶、日常会話、データベースと関係のない純粋な雑談・相談のみ。\n"
+            "   - **重要**: 過去の通話、履歴、内見、または特定の業務データに関する質問は、絶対に SQL または RAG に振り分けてください。これらを MODEL に振り分けてはいけません！\n"
             "3. **キャッシュの再利用**:\n"
             "   - 同一トピックへの継続質問（same_entity等）の場合のみ、既存の `target_topic_key` を正確に使用してください。\n\n"
             "出力形式（JSONのみ）：\n"
@@ -533,6 +540,30 @@ class Router:
             for k, v in defaults.items():
                 if k not in result:
                     result[k] = v
+            
+            # Clean and sanitize target_topic_key
+            if "target_topic_key" in result and isinstance(result["target_topic_key"], str):
+                result["target_topic_key"] = result["target_topic_key"].strip().strip('"').strip("'")
+                
+            # Synchronize target_topic_key with active caches to prevent case-sensitive mismatches
+            if result.get("target_topic_key"):
+                target_key = result["target_topic_key"]
+                matched_key = None
+                for cache in active_caches:
+                    if cache["topic_key"].lower() == target_key.lower():
+                        matched_key = cache["topic_key"]
+                        break
+                
+                if matched_key:
+                    # Use the exact case-sensitive key from the database
+                    result["target_topic_key"] = matched_key
+                else:
+                    # If LLM requested cache reuse for a non-existent key, downgrade to full retrieval
+                    if result.get("use_cache"):
+                        logger.warning(f"LLM requested cache reuse for key '{target_key}' but it does not exist in active caches. Downgrading to full retrieval.")
+                        result["use_cache"] = False
+                        if result.get("needs_retrieval") == "none":
+                            result["needs_retrieval"] = "full"
         except Exception as e:
             logger.error(f"Error calling LLM Router: {e}. Activating fallback routing.")
             query_emb = await _safe_embed(query, self.embedding_model)
@@ -589,8 +620,8 @@ class Router:
                         "needs_retrieval": "full",
                         "context_reuse_type": "none",
                         "rewritten_query": query,
-                        "target_topic_key": closest_slot['topic_key'],
-                        "target_pipeline": closest_slot['last_pipeline'],
+                        "target_topic_key": f"fallback_{int(time.time())}",
+                        "target_pipeline": guessed_pipeline,
                         "partial_fetch_params": None,
                         "routing_method": "embeddings"
                     }

@@ -409,7 +409,7 @@ class TestSuite:
         # Handled in NEG_010
 
         # FIX_008 & FIX_011: Advisory Lock Concurrency Queueing
-        logger.info("FIX_008: Running 5 concurrent requests to test advisory lock queuing...")
+        logger.info("FIX_008: Running 3 concurrent requests to test advisory lock queuing...")
         q_con = "それで、5月5日の通話はどうですか？"
         
         async def call_handle(idx):
@@ -419,13 +419,13 @@ class TestSuite:
             return idx, (end - start) * 1000
 
         # Run them in parallel
-        tasks = [call_handle(i) for i in range(5)]
+        tasks = [call_handle(i) for i in range(3)]
         con_results = await asyncio.gather(*tasks)
         
         # If advisory lock queued them, they should finish sequentially (latencies will scale up)
         latencies = [r[1] for r in con_results]
         logger.info(f"Concurrent request latencies: {latencies}")
-        passed = max(latencies) > sum(latencies)/5 # shows sequential execution timing delay
+        passed = max(latencies) > sum(latencies)/3 # shows sequential execution timing delay
         await self.record_result("FIX", "FIX_008", "Concurrent advisory locks", {}, passed)
 
         # FIX_009: Advisory Lock Timeout

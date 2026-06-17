@@ -431,21 +431,23 @@ class IntelligentOrchestrator:
         """
         system_prompt = (
             "あなたはプロのAI検証担当（Verifier）です。AIアシスタントの回答が、提供された生データ（Context）に対して誠実かつ正確であるかを確認してください。\n\n"
+            "【最優先ルール】\n"
+            "AIアシスタントの回答が「データが見つかりません」「提供された情報からは確認できません」といった『情報の不在』を正しく伝えている場合、絶対に合格（\"passed\": true）として判定してください！これを不合格（\"passed\": false）にしてはいけません。情報がないことを正直に伝えるのはハルシネーションの防止であり、極めて望ましい正しい挙動です。\n\n"
             "【合格 (passed: true) と判定すべきケース】\n"
-            "1. 回答内容がすべてコンテキスト内の事実に基づいている。\n"
-            "2. コンテキストに情報がない、または不足している場合に、AIが「確認できませんでした」「データがありません」と正直に回答している。（これはハルシネーションではありません）\n"
-            "3. AIが「コンテキストに基づくと〜」と前置きして、コンテキストの範囲内でのみ答えている。\n\n"
+            "1. AIの回答が、提供された生データ（Context）内の事実のみに基づいている。\n"
+            "2. 生データ（Context）に該当する情報がない、または不足している場合に、AIが「確認できません」「見つかりませんでした」「データがありません」と正直かつ正当に答えている（これは100%正しい挙動です）。\n"
+            "3. AIがコンテキストの範囲内でのみ答えている。\n\n"
             "【不合格 (passed: false) と判定すべきケース】\n"
-            "1. コンテキストにない数値を答えたり、存在しない人名や出来事を捏造している。\n"
-            "2. コンテキストの内容と明らかに矛盾する回答をしている。\n"
-            "3. 「わからない」と答えるべきなのに、自分の学習データから勝手に情報を補完して事実として伝えている。\n\n"
+            "1. 生データ（Context）にない数値、人名、出来事などを捏造して回答に含めている（ハルシネーション）。\n"
+            "2. 生データ（Context）の内容と明らかに矛盾する、あるいは歪曲した回答をしている。\n"
+            "3. 生データ（Context）に情報がないのにもかかわらず、自分の学習データから勝手に情報を補完して、あたかもそれが提供されたデータにあるかのように伝えている。\n\n"
             "[CONTEXT (生データ)]\n"
             f"{context_str}\n\n"
             "[AI ASSISTANT RESPONSE]\n"
             f"{response}\n\n"
-            "出力形式（JSONのみ）：\n"
+            "出力形式（必ず以下のJSON形式でのみ出力してください）：\n"
             "{\n"
-            "  \"passed\": boolean,\n"
+            "  \"passed\": true または false,\n"
             "  \"issues\": \"不合格の場合の具体的な理由。合格なら null\"\n"
             "}"
         )
@@ -460,7 +462,10 @@ class IntelligentOrchestrator:
                 messages=messages, response_format={"type": "json_object"}
             )
             verdict = extract_json(verdict_text)
-            return verdict.get("passed", True), verdict.get("issues")
+            passed = verdict.get("passed", True)
+            if isinstance(passed, str):
+                passed = passed.lower() == "true"
+            return passed, verdict.get("issues")
         except Exception as e:
             logger.error(f"Error during self-check verification: {e}")
             # If verifier fails, default to True to avoid infinite retry loop

@@ -8,6 +8,8 @@ async def get_cache_slot(conn, session_id: str, topic_key: str) -> dict:
     """
     Retrieves the cache metadata and payload for a given session and topic_key.
     """
+    if topic_key:
+        topic_key = topic_key.strip().strip('"').strip("'")
     row = await conn.fetchrow("""
         SELECT c.id, c.topic_key, c.last_pipeline, c.last_routing_method, c.refreshed_at, p.cached_payload, p.summary_context
         FROM session_context_cache c
@@ -30,6 +32,8 @@ async def touch_cache_slot(conn, session_id: str, topic_key: str):
     """
     Only updates last_accessed_at timestamp when a cache slot is hit.
     """
+    if topic_key:
+        topic_key = topic_key.strip().strip('"').strip("'")
     await conn.execute("""
         UPDATE session_context_cache
         SET last_accessed_at = NOW()
@@ -41,6 +45,8 @@ async def insert_cache_slot(conn, session_id: str, topic_key: str, last_pipeline
     """
     Inserts a new cache slot, performing LRU eviction if the session exceeds 3 slots.
     """
+    if topic_key:
+        topic_key = topic_key.strip().strip('"').strip("'")
     # Count current slots for this session
     cnt = await conn.fetchval(
         "SELECT COUNT(*) FROM session_context_cache WHERE session_id = $1", session_id
@@ -79,6 +85,8 @@ async def upsert_cache_slot(conn, session_id: str, topic_key: str, last_pipeline
     """
     Upserts a cache slot. If the slot already exists, it updates it; otherwise, it inserts it.
     """
+    if topic_key:
+        topic_key = topic_key.strip().strip('"').strip("'")
     row = await conn.fetchrow(
         "SELECT id FROM session_context_cache WHERE session_id = $1 AND topic_key = $2", session_id, topic_key
     )
@@ -102,10 +110,11 @@ async def upsert_cache_slot(conn, session_id: str, topic_key: str, last_pipeline
             """, last_pipeline, last_routing_method, cache_id)
             
         await conn.execute("""
-            UPDATE session_context_payload
-            SET cached_payload = $1, summary_context = $2
-            WHERE cache_id = $3
-        """, json.dumps(payload), json.dumps(summary_context), cache_id)
+            INSERT INTO session_context_payload (cache_id, cached_payload, summary_context)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (cache_id)
+            DO UPDATE SET cached_payload = EXCLUDED.cached_payload, summary_context = EXCLUDED.summary_context
+        """, cache_id, json.dumps(payload), json.dumps(summary_context))
         
         return cache_id
     else:
@@ -116,6 +125,8 @@ async def update_cache_slot(conn, session_id: str, topic_key: str, payload: dict
     Updates the payload and timestamps (and optionally query_embedding) of an existing cache slot.
     Locks the row using FOR UPDATE first to prevent concurrent transaction interference.
     """
+    if topic_key:
+        topic_key = topic_key.strip().strip('"').strip("'")
     # [Locking Gap 2]: Lock hot row to prevent LRU eviction from deleting it during transaction
     await conn.execute("""
         SELECT 1 FROM session_context_cache
@@ -123,25 +134,27 @@ async def update_cache_slot(conn, session_id: str, topic_key: str, payload: dict
         FOR UPDATE
     """, session_id, topic_key)
     
-    # Update cold payload
-    if summary_context is not None:
-        await conn.execute("""
-            UPDATE session_context_payload
-            SET cached_payload = $1, summary_context = $3
-            WHERE cache_id = (
-                SELECT id FROM session_context_cache
-                WHERE session_id = $2 AND topic_key = $4
-            )
-        """, json.dumps(payload), session_id, json.dumps(summary_context), topic_key)
-    else:
-        await conn.execute("""
-            UPDATE session_context_payload
-            SET cached_payload = $1
-            WHERE cache_id = (
-                SELECT id FROM session_context_cache
-                WHERE session_id = $2 AND topic_key = $3
-            )
-        """, json.dumps(payload), session_id, topic_key)
+    # Get cache_id for payload insertion/update
+    cache_id = await conn.fetchval("""
+        SELECT id FROM session_context_cache
+        WHERE session_id = $1 AND topic_key = $2
+    """, session_id, topic_key)
+    
+    if cache_id:
+        if summary_context is not None:
+            await conn.execute("""
+                INSERT INTO session_context_payload (cache_id, cached_payload, summary_context)
+                VALUES ($1, $2, $3)
+                ON CONFLICT (cache_id)
+                DO UPDATE SET cached_payload = EXCLUDED.cached_payload, summary_context = EXCLUDED.summary_context
+            """, cache_id, json.dumps(payload), json.dumps(summary_context))
+        else:
+            await conn.execute("""
+                INSERT INTO session_context_payload (cache_id, cached_payload)
+                VALUES ($1, $2)
+                ON CONFLICT (cache_id)
+                DO UPDATE SET cached_payload = EXCLUDED.cached_payload
+            """, cache_id, json.dumps(payload))
         
     # Update hot table metadata
     if query_embedding:
