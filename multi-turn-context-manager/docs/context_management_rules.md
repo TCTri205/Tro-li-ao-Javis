@@ -9,67 +9,51 @@ graph TD
     Query[Truy vấn người dùng] --> Tier1{Tier 1: Bộ lọc nhanh}
     Tier1 -->|Khớp thực thể / Độ tương đồng > 0.78| CacheHit[Cache Hit: use_cache = true]
     Tier1 -->|Độ tương đồng < 0.45| TopicShift[Chuyển chủ đề: needs_retrieval = full]
-    Tier1 -->|Lỗi Embedding / Độ tương đồng vùng xám| Tier2[Tier 2: LLM Router & Rewriter]
+    Tier1 -->|Lỗi Embedding / Độ tương đồng vùng xám / Sai lệch metadata| Tier2[Tier 2: LLM Router & Rewriter]
     
     Tier2 -->|Phân tích & Viết lại| Decision[Quyết định cuối cùng: is_follow_up, use_cache, needs_retrieval]
 ```
 
 ### 1. Tier 1: Fast Filter (Heuristic, Tìm kiếm thực thể, Khoảng cách Embedding)
 
-Tier 1 thực hiện tuần tự 4 bước kiểm tra sau:
+Tier 1 thực hiện tuần tự các bước kiểm tra sau để đưa ra quyết định trong < 15ms:
 
-1.  **Heuristic (Regex & Rule):** Phát hiện các từ khóa chuyển đổi chủ đề như chào hỏi, "vậy còn", "chuyện khác", "bỏ qua",... và đưa ra quyết định Topic Shift ngay lập tức.
-2.  **Lightweight Entity Index Lookup (Tìm kiếm thực thể nhanh):**
-    *   Kiểm tra xem truy vấn có chứa các đại từ hoặc từ chỉ định (ví dụ: "nó", "cái đó", "lúc nãy", "người đó", "này") hay không.
-    *   Thực hiện tìm kiếm ARRAY trong SQL trên bảng `session_entity_index` để xác định các thực thể liên quan đến phiên hiện tại.
-    *   Nếu khớp với một thực thể duy nhất: Đặt `use_cache = true` và chuyển nhanh đến Slot Cache tương ứng mà không cần tính toán embedding hay thông qua LLM (mất khoảng 1-2ms).
-3.  **Semantic Embedding Distance (pgvector):**
-    *   Sử dụng mô hình `multilingual-e5-small` để tạo vector embedding $V_{new}$ cho truy vấn.
-    *   Tính toán khoảng cách cosine với `query_embedding` của từng Slot Cache hiện có.
-    *   **Khớp với độ tin cậy cao (Khoảng cách < 0.22 / Độ tương đồng > 0.78):** Tự động gán vào chủ đề có độ tương đồng cao nhất và đặt `use_cache = true`.
-    *   **Chuyển đổi ngữ nghĩa (Khoảng cách > 0.55 / Độ tương đồng < 0.45):** Xác định là một chủ đề hoàn toàn mới và đặt `needs_retrieval = "full"`.
-4.  **Trình bao bọc Embedding an toàn (`_safe_embed()`):**
-    *   Có tính năng timeout 1.0s và kiểm tra vector 0. Nếu mô hình embedding gặp sự cố, hệ thống sẽ bỏ qua Tier 1 và chuyển sang Tier 2 với lý do `routing_reason = 'embedding_failure'`.
+1.  **Heuristic Switching:** Phát hiện các từ khóa chuyển đổi cứng (ví dụ: "thôi", "hủy", "chuyện khác", "quên đi") bằng Regex để ép định tuyến sang Tier 2 thực hiện Topic Shift.
+2.  **Lightweight Entity Index Lookup:**
+    *   Sử dụng danh sách hơn 30 đại từ và từ chỉ định (ví dụ: "nó", "người đó", "cuộc gọi lúc nãy", "đó", "họ", "anh ấy").
+    *   Tra cứu bảng `session_entity_index`. Nếu khớp duy nhất một thực thể, hệ thống tự động giải quyết đại từ và gán `use_cache = true`.
+3.  **Metadata Mismatch Detection (Phát hiện sai lệch):**
+    *   Nếu truy vấn đề cập đến một mã GT (ví dụ: GT_05) hoặc một ngày cụ thể khác với thông tin trong Slot Cache gần nhất, hệ thống sẽ ép định tuyến sang Tier 2 để xử lý chuyển chủ đề, tránh việc "râu ông nọ cắm cằm bà kia".
+4.  **Semantic Embedding Distance (pgvector):**
+    *   **Vùng Xanh (Khoảng cách < 0.22):** Độ tương đồng cao. Coi là cùng một chủ đề (Same Entity).
+    *   **Vùng Đỏ (Khoảng cách > 0.55):** Độ tương đồng thấp. Coi là chủ đề mới hoàn toàn (Topic Shift).
+    *   **Vùng Xám (0.22 - 0.55):** Không chắc chắn, chuyển sang Tier 2.
 
 ### 2. Tier 2: LLM Router & Rewriter (Phân tích nâng cao)
 
-Được kích hoạt khi Tier 1 xác định kết quả nằm trong vùng xám hoặc xảy ra lỗi embedding. Groq LLM (llama-3.3-70b) sẽ phân tích sâu lịch sử trò chuyện và metadata cache đang hoạt động.
+Được kích hoạt khi Tier 1 không thể đưa ra quyết định tin cậy. Hỗ trợ mô hình **Groq (llama-3.3-70b)** hoặc **Javis Qwen** (cho các suy luận phức tạp).
 
-*   **Đầu vào:** Lịch sử trò chuyện mới nhất (8 lượt), danh sách metadata cache đang hoạt động.
-*   **Đầu ra:** Trả về một đối tượng JSON bao gồm:
-    *   `is_follow_up`: Có phải là tiếp nối nội dung trước đó hay không.
-    *   `use_cache`: Có thể tái sử dụng payload cache hiện có không.
-    *   `needs_retrieval`: "none" (cache đã đủ), "partial" (cần truy xuất thêm có điều kiện), "full" (truy xuất mới).
-    *   `rewritten_query`: Truy vấn tiếng Nhật/Việt đã được viết lại, bổ sung đại từ và làm rõ ngữ cảnh.
-    *   `target_topic_key`: Khóa của slot mục tiêu.
-    *   `target_pipeline`: SQL | RAG | WEB | MODEL.
-    *   `partial_fetch_params`: Các tham số lọc khi truy xuất `partial` (như mệnh đề SQL WHERE hoặc ID tài liệu).
+*   **Đầu vào:** 8 tin nhắn lịch sử gần nhất, metadata của 3 Slot Cache đang hoạt động.
+*   **Chức năng chính:**
+    *   **Co-reference Resolution:** Giải quyết các đại từ phức tạp (ví dụ: "Họ nói gì về giá?" -> "Nhân viên công ty A và B nói gì về giá trong GT_04?").
+    *   **Query Rewriting:** Viết lại truy vấn thành câu hoàn chỉnh, độc lập với ngữ cảnh để các Engine (SQL/RAG) xử lý chính xác.
+    *   **Pipeline Selection:** SQL (dữ liệu số/cấu trúc), RAG (đọc hiểu văn bản), WEB (thông tin bên ngoài), MODEL (雑談 - hội thoại thông thường).
+*   **Đầu ra:** Đối tượng JSON chứa `rewritten_query`, `target_pipeline`, `needs_retrieval`, và `target_topic_key`.
 
 ## Cấu trúc và Quản lý Cache (Cache Structure & Management)
 
-### 1. Cấu trúc Payload Cache thống nhất (Unified Cache Payload Structure)
+### 1. Chính sách quản lý Slot (Slot Management Policy)
 
-Mỗi pipeline (SQL, RAG, WEB) lưu trữ payload theo định dạng đã được tối ưu hóa riêng:
+*   **LRU Eviction (3 slots):** Hệ thống chỉ giữ tối đa 3 chủ đề nóng nhất cho mỗi phiên. Khi có chủ đề thứ 4, slot có `last_accessed_at` cũ nhất sẽ bị xóa tự động.
+*   **TTL (Time To Live):** Đối với dữ liệu từ pipeline WEB, hệ thống kiểm tra `refreshed_at`. Nếu dữ liệu cũ hơn 3600 giây (1 giờ), hệ thống sẽ ép `needs_retrieval = full` để cập nhật thông tin mới nhất.
 
-*   **SQL:** `{"generated_sql": "...", "rows": [...]}`
-*   **RAG:** `{"documents": [{"text": "...", "score": 0.9, "metadata": {...}}, ...]}`
-*   **WEB:** `{"results": [{"title": "...", "url": "...", "snippet": "..."}], "query_used": "..."}`
+### 2. Ngăn chặn sự trôi dạt ngữ nghĩa (Embedding Update)
 
-### 2. Chính sách quản lý Slot (Slot Management Policy)
-
-Hệ thống quản lý song song 3 Slot Cache và duy trì độ mới bằng các dấu thời gian sau:
-
-*   **`last_accessed_at` (Thời gian truy cập cuối):** Cập nhật sau mỗi lần đọc/ghi. Đây là tiêu chí để loại bỏ dữ liệu theo thuật toán LRU (Least Recently Used).
-*   **`refreshed_at` (Thời gian cập nhật dữ liệu):** Chỉ cập nhật khi thực thi engine bên ngoài để lấy dữ liệu. Dùng để kiểm tra TTL (Time To Live) của pipeline WEB.
-
-### 3. Ngăn chặn sự trôi dạt ngữ nghĩa (Embedding Update)
-
-*   **`needs_retrieval != "none"` (Truy xuất mới/từng phần):** Do tâm điểm ngữ cảnh thay đổi theo các câu hỏi tiếp nối của người dùng, hệ thống sẽ **bắt buộc cập nhật** `query_embedding` bằng vector của truy vấn đã được viết lại.
-*   **`needs_retrieval == "none"` (Cache Hit):** Để tiết kiệm tài nguyên, chỉ cập nhật `last_accessed_at` và không cập nhật embedding.
+*   **Khi Hit (needs_retrieval = none):** Chỉ cập nhật `last_accessed_at` để duy trì thứ tự LRU.
+*   **Khi lấy thêm (needs_retrieval = partial):** Cập nhật `payload` mới (merge), cập nhật `refreshed_at` và cập nhật `query_embedding` bằng vector của truy vấn mới nhất để bám sát trọng tâm ngữ cảnh.
+*   **Khi Shift (needs_retrieval = full):** Tạo slot mới hoặc ghi đè slot cũ, lưu embedding mới.
 
 ## Thực thi song song và Bảo vệ tính toàn vẹn (Concurrency & Integrity)
 
-Để ngăn chặn xung đột (Race Condition) do các yêu cầu liên tiếp trong cùng một phiên, hệ thống thực hiện bảo vệ qua 2 lớp:
-
-1.  **Transaction Advisory Lock:** Giữ một khóa độc quyền cấp PostgreSQL từ lúc bắt đầu đến khi kết thúc bộ điều phối (Orchestrator).
-2.  **Khóa mức hàng (FOR UPDATE):** Trong quá trình truy xuất từng phần (`partial`), khóa hàng metadata tương ứng để đảm bảo nó không bị xóa bởi cơ chế LRU.
+*   **Advisory Lock:** Sử dụng `pg_try_advisory_xact_lock` để đảm bảo tính tuần tự của các yêu cầu trong cùng một phiên. Nếu một yêu cầu đang xử lý, yêu cầu thứ hai sẽ phải đợi (retry trong 8 giây) hoặc bị từ chối.
+*   **Row Locking (`FOR UPDATE`):** Khi thực hiện cập nhật `partial`, hệ thống khóa hàng dữ liệu trong bảng `session_context_cache` để tránh việc tiến trình khác xóa slot đó do chính sách LRU.

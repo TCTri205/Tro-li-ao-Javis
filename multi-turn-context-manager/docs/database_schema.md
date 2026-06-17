@@ -3,14 +3,15 @@
 ## 1. Lưu trữ vĩnh viễn (Persistent Cold Storage)
 
 ### Bảng `transcripts`
-Lưu trữ nhật ký cuộc gọi và siêu dữ liệu (metadata) của tài liệu (lược đồ hiện có).
+Lưu trữ nhật ký cuộc gọi và siêu dữ liệu (metadata) của tài liệu.
 
 | Tên cột | Kiểu dữ liệu | Ràng buộc |
 | :--- | :--- | :--- |
 | `id` | `UUID` | PRIMARY KEY |
-| `session_id` | `VARCHAR(64)` | INDEX |
+| `session_id` | `VARCHAR(64)` | INDEX (GT_XX session format) |
 | `meeting_date` | `DATE` | |
-| `participants` | `JSONB` | |
+| `participants` | `JSONB` | Danh sách người tham gia |
+| `summary` | `TEXT` | Tóm tắt cuộc gọi |
 
 ## 2. Bộ nhớ đệm ngữ cảnh động (Dynamic Context Cache)
 
@@ -21,36 +22,41 @@ Duy trì siêu dữ liệu để tìm kiếm và định tuyến nhanh chóng.
 | :--- | :--- | :--- |
 | `id` | `BIGSERIAL` | PRIMARY KEY |
 | `session_id` | `VARCHAR(64)` | NOT NULL, INDEX |
-| `topic_key` | `TEXT` | NOT NULL |
+| `topic_key` | `TEXT` | NOT NULL (e.g., sql_123, GT_04) |
 | `last_pipeline` | `VARCHAR(50)` | SQL, RAG, WEB, MODEL |
-| `query_embedding` | `vector(384)` | pgvector |
-| `last_accessed_at` | `TIMESTAMP` | Dấu thời gian dùng cho LRU |
-| `refreshed_at` | `TIMESTAMP` | Dấu thời gian dùng cho TTL |
+| `last_routing_method` | `VARCHAR(50)` | heuristics, embeddings, llm_router |
+| `query_embedding` | `vector(384)` | pgvector (multilingual-e5-small) |
+| `embedding_model_version` | `VARCHAR(50)` | default: 'multilingual-e5-small' |
+| `last_accessed_at` | `TIMESTAMP` | Cập nhật khi Hit (LRU policy) |
+| `refreshed_at` | `TIMESTAMP` | Cập nhật khi truy xuất Engine (TTL policy) |
 
 ### `session_context_payload` (Bảng Cold)
 Lưu trữ dữ liệu JSON lớn và chỉ được tải khi cần thiết.
 
 | Tên cột | Kiểu dữ liệu | Ràng buộc |
 | :--- | :--- | :--- |
-| `cache_id` | `BIGINT` | REFERENCES Hot Table (CASCADE) |
+| `cache_id` | `BIGINT` | PRIMARY KEY, REFERENCES `session_context_cache`(id) ON DELETE CASCADE |
 | `cached_payload` | `JSONB` | SQL rows, RAG chunks, Web snippets |
-| `summary_context` | `JSONB` | Tóm tắt hỗ trợ định tuyến |
+| `summary_context` | `JSONB` | Metadata tóm tắt (entity_type, entity_id, display_name) |
 
 ## 3. Chỉ mục thực thể (Entity Index)
 
 ### `session_entity_index`
-Ánh xạ nhanh các đại từ và tên thực thể.
+Ánh xạ nhanh các đại từ và tên thực thể để giải quyết Coreference (Tier 1).
 
 | Tên cột | Kiểu dữ liệu | Ràng buộc |
 | :--- | :--- | :--- |
 | `session_id` | `VARCHAR(64)` | NOT NULL, INDEX |
-| `entity_id` | `TEXT` | Định danh duy nhất của thực thể |
-| `entity_type` | `VARCHAR(50)` | person, document, v.v. |
-| `display_names` | `TEXT[]` | Mảng các đại từ chỉ định (GIN INDEX) |
-| `cache_slot_id` | `BIGINT` | Slot cache mục tiêu |
+| `entity_id` | `TEXT` | Định danh duy nhất (e.g., GT_04, Person_Name) |
+| `entity_type` | `VARCHAR(50)` | meeting_transcript, person, document, sql_result |
+| `display_names` | `TEXT[]` | Mảng các đại từ và tên hiển thị (GIN INDEX) |
+| `cache_slot_id` | `BIGINT` | REFERENCES `session_context_cache`(id) |
+
+**Constraint:** `UNIQUE (session_id, entity_id)` để hỗ trợ cơ chế UPSERT.
 
 ## 4. Các điểm tối ưu hóa chính (Key Optimizations)
 
-*   **Phân tách Hot/Cold:** Bằng cách tách biệt siêu dữ liệu (Hot) và dữ liệu tải trọng lớn (Cold), hiệu quả bộ nhớ của PostgreSQL được tối đa hóa và tránh được việc quét toàn bộ bảng (Seq Scan).
-*   **Chỉ mục GIN:** Áp dụng chỉ mục GIN cho cột `display_names` (mảng TEXT) giúp việc đối chiếu đại từ có thể thực hiện được trong thời gian không đổi (constant time).
-*   **Advisory Locks:** Kiểm soát việc thực thi đồng thời các yêu cầu đối với cùng một phiên ở cấp độ cơ sở dữ liệu để đảm bảo tính nhất quán của bộ nhớ đệm.
+*   **Phân tách Hot/Cold:** metadata nhẹ nằm ở bảng Hot để pgvector search nhanh, dữ liệu nặng nằm ở bảng Cold để tránh phình bộ nhớ khi quét index.
+*   **Chỉ mục GIN:** Áp dụng cho `display_names` giúp tra cứu đại từ chỉ định ("nó", "người đó") cực nhanh qua toán tử `@>`.
+*   **LRU Limit:** Hệ thống giới hạn 3 slot cache trên mỗi `session_id` thông qua kiểm tra số lượng bản ghi trước khi chèn mới trong `upsert_cache_slot`.
+*   **Transaction Advisory Locks:** Sử dụng `pg_try_advisory_xact_lock(bigint)` để đảm bảo chỉ một tiến trình được xử lý một phiên tại một thời điểm.

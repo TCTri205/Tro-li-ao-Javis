@@ -1,30 +1,68 @@
 # Đường ống Hệ thống (System Pipeline)
 
-## Luồng tổng thể
+Hệ thống quản lý ngữ cảnh đa lượt (multi-turn context management) hoạt động dựa trên một quy trình 8 bước nghiêm ngặt, đảm bảo tính nhất quán, hiệu suất và độ chính xác của câu trả lời.
 
-Hệ thống xử lý truy vấn của người dùng và tạo ra câu trả lời tối ưu thông qua các đường ống (pipeline) sau:
+## Luồng xử lý chi tiết
 
-### 1. Tiếp nhận và Khóa (Ingestion & Locking)
-*   Nhận truy vấn từ người dùng và lấy khóa cố vấn (advisory lock) dựa trên ID phiên. Việc này giúp ngăn chặn xử lý song song trong cùng một phiên.
+### 1. Tiếp nhận và Khóa phiên (Session Ingestion & Locking)
+*   **Mô tả:** Hệ thống tiếp nhận truy vấn và xác lập quyền truy cập độc quyền cho phiên làm việc.
+*   **Input:** `session_id`, `query`.
+*   **Cơ chế:** Sử dụng *Advisory Lock* (PostgreSQL) dựa trên `session_id` để ngăn chặn các yêu cầu song song ghi đè dữ liệu ngữ cảnh trong cùng một phiên.
+*   **Output:** Kết nối DB với giao dịch (transaction) đã được khóa.
 
-### 2. Định tuyến (Routing)
-*   **Tier 1:** Xác định bộ nhớ đệm (cache) thông qua khớp biểu thức chính quy nhanh, tìm kiếm thực thể hoặc độ tương đồng vector.
-*   **Tier 2:** Trong trường hợp ngữ cảnh phức tạp hoặc truy vấn mơ hồ, LLM sẽ phân tích lịch sử, viết lại truy vấn và chọn đường ống phù hợp.
+### 2. Định tuyến 2 tầng (2-Tier Routing)
+*   **Tầng 1 - Bộ lọc nhanh (Fast Filter):**
+    *   Sử dụng heuristics (từ khóa chuyển đổi), tra cứu thực thể nhanh (Entity Index) và khoảng cách vector (`pgvector`) để kiểm tra xem có thể tái sử dụng bộ nhớ đệm (cache) hay không.
+*   **Tầng 2 - Định tuyến LLM (LLM Router):**
+    *   Kích hoạt khi Tầng 1 rơi vào "vùng xám" hoặc có sự mơ hồ. LLM sẽ phân tích 8 tin nhắn gần nhất và metadata của cache để đưa ra quyết định.
+*   **Input:** `query`, `session_id`, lịch sử chat.
+*   **Output:** `route_result` bao gồm:
+    *   `rewritten_query`: Truy vấn đã được viết lại (giải quyết đại từ như "nó", "họ", "anh ấy").
+    *   `target_pipeline`: SQL, RAG, WEB hoặc MODEL.
+    *   `needs_retrieval`: `none` (dùng cache), `partial` (lấy thêm), hoặc `full` (truy xuất mới).
+    *   `target_topic_key`: Khóa định danh chủ đề hiện tại.
 
 ### 3. Thực thi và Truy xuất (Execution & Retrieval)
-*   **Cache Hit:** Lấy dữ liệu từ bộ nhớ đệm hiện có.
-*   **Partial Fetch:** Lấy thêm các thông tin cụ thể bổ sung vào ngữ cảnh hiện có và hợp nhất chúng.
-*   **Full Retrieval:** Truy xuất dữ liệu từ SQL, RAG hoặc WEB như một chủ đề mới.
+*   **Mô tả:** Dựa trên quyết định định tuyến, hệ thống thực thi các công cụ tương ứng.
+*   **Input:** `target_pipeline`, `rewritten_query`, `partial_fetch_params`.
+*   **Các kịch bản:**
+    *   **Cache Hit:** Lấy trực tiếp `payload` từ bảng `session_context_payload`.
+    *   **Partial Fetch:** Chạy Engine với tham số lọc bổ sung, sau đó hợp nhất (merge) kết quả mới vào `payload` cũ.
+    *   **Full Retrieval:** Chạy mới hoàn toàn các Engine (SQL Engine, RAG Engine, hoặc Web Engine).
+*   **Output:** `payload` (Dữ liệu thô JSON).
 
-### 4. Trích xuất thực thể (Entity Extraction)
-*   Trích xuất các thực thể chính (tên người, tài liệu, phiên gọi điện, v.v.) từ dữ liệu đã lấy và lập chỉ mục chúng bằng cách liên kết với các đại từ chỉ định.
+### 4. Trích xuất Thực thể và metadata (Entity Indexing & Summary)
+*   **Mô tả:** Phân tích dữ liệu thô để xây dựng bản đồ thực thể cho các lượt hội thoại sau.
+*   **Input:** `payload`, `target_pipeline`, `rewritten_query`.
+*   **Cơ chế:** 
+    *   Trích xuất `entity_id`, `entity_type`, `display_names` (các tên gọi khác nhau của thực thể).
+    *   Tự động liên kết các đại từ chỉ định ("cái này", "hợp đồng đó") với thực thể thực tế.
+    *   Xây dựng `summary_context` (tóm tắt ngắn gọn nội dung cache) để lưu vào bảng "Hot".
+*   **Output:** Cập nhật bảng `session_entity_index`.
 
-### 5. Tạo câu trả lời (Answer Generation)
-*   **Direct Path:** Đối với dữ liệu đơn giản, câu trả lời được tạo ngay lập tức bằng các mẫu đã định nghĩa trước.
-*   **LLM Path:** Đối với dữ liệu phức tạp, LLM sẽ đọc hiểu ngữ cảnh và tạo câu trả lời bằng tiếng Việt tự nhiên.
+### 5. Cập nhật Bộ nhớ đệm (Cache Orchestration)
+*   **Mô tả:** Lưu trữ trạng thái mới nhất của cuộc hội thoại.
+*   **Input:** `payload`, `summary_context`, `query_embedding`.
+*   **Cơ chế:** Sử dụng chiến lược LRU (Least Recently Used) - mỗi phiên chỉ giữ tối đa 3 slot cache chủ đề để tối ưu tài nguyên.
+*   **Output:** ID cache slot đã được cập nhật hoặc tạo mới.
 
-### 6. Xác minh (Verification)
-*   LLM tự kiểm tra xem câu trả lời được tạo ra có dựa trên dữ liệu đã cung cấp hay không và có chứa thông tin sai lệch nào không.
+### 6. Tạo câu trả lời (Answer Generation - Dual Path)
+*   **Đường dẫn Trực tiếp (Direct Path):** Dành cho dữ liệu đơn giản (ví dụ: SQL chỉ trả về 1 dòng), hệ thống dùng template để trả lời ngay mà không cần qua LLM lần 2.
+*   **Đường dẫn LLM (LLM Path):** Sử dụng LLM để đọc hiểu ngữ cảnh (`payload`) và `summary_context` để tạo câu trả lời tự nhiên bằng tiếng Việt/Nhật.
+*   **Input:** `payload`, `rewritten_query`, `summary_context`.
+*   **Output:** `answer`, `answer_confidence`.
 
-### 7. Phản hồi và Ghi nhật ký (Response & Logging)
-*   Gửi câu trả lời cho người dùng, lưu trữ thông tin thống kê định tuyến và lịch sử vào cơ sở dữ liệu để hoàn tất giao dịch.
+### 7. Xác minh tự thân (Self-Check Verification)
+*   **Mô tả:** Ngăn chặn ảo giác (hallucination).
+*   **Input:** `answer`, `payload` (dữ liệu thô).
+*   **Cơ chế:** Một quy trình LLM Verifier độc lập sẽ đối chiếu câu trả lời với dữ liệu thô. Nếu phát hiện sai sót, hệ thống sẽ yêu cầu tái tạo câu trả lời (tối đa 2 lần thử lại).
+*   **Output:** Trạng thái `self_check_passed`.
+
+### 8. Ghi nhật ký và Hoàn tất (Logging & Commit)
+*   **Mô tả:** Lưu trữ lịch sử và giải phóng tài nguyên.
+*   **Input:** Tất cả metadata của quá trình xử lý.
+*   **Output:** 
+    *   Lưu vào bảng `chat_history`.
+    *   Commit giao dịch DB.
+    *   Giải phóng Session Lock.
+    *   Trả kết quả cuối cùng cho người dùng.

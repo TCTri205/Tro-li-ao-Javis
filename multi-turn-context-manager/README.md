@@ -1,92 +1,84 @@
 # Multi-Turn Context Manager (V1.0.0)
 
-An advanced, high-performance system designed to manage complex multi-turn conversations for LLM-based assistants. It acts as an intelligent middleware that bridges the gap between user queries and multiple data sources (SQL, RAG, Web) while maintaining context consistency across sessions.
+Hệ thống quản lý ngữ cảnh đa lượt (Multi-turn Context Management) hiệu năng cao dành cho trợ lý AI (Javis). Đây là lớp trung gian thông minh kết nối truy vấn của người dùng với nhiều nguồn dữ liệu (SQL, RAG, Web) trong khi vẫn duy trì tính nhất quán của ngữ cảnh qua các phiên làm việc.
 
-## 🚀 Key Features
+## 🚀 Tính năng then chốt (Key Features)
 
-- **2-Tier Intelligent Routing:**
-  - **Tier 1 (Fast Path):** Uses Heuristics and Vector Similarity (Embeddings) for sub-20ms resolution of follow-up questions and pronouns (e.g., "he", "it", "that call").
-  - **Tier 2 (Precision Path):** Leverages an LLM-based Router for complex intent detection, query rewriting, and multi-pipeline selection.
-- **Advanced Context Management:**
-  - **Hot/Cold Storage:** Separates lightweight metadata (Hot) from large payloads (Cold) in PostgreSQL to maximize memory efficiency.
-  - **LRU Cache Eviction:** Maintains a lean footprint by keeping only the 3 most relevant topics active per session.
-  - **Entity Indexing:** Automatically tracks mentioned entities (meeting IDs, dates, people) for instant pronoun resolution.
-- **Resilient Execution Engines:**
-  - **SQLEngine:** Translates natural language to SQL for structured data retrieval.
-  - **RAGEngine:** Performs vector searches on unstructured documents using `pgvector`.
-  - **WebEngine:** Simulates real-time web searches for parametric knowledge updates.
-- **Hallucination Prevention:**
-  - **Self-Check Verification:** Every AI response is cross-referenced against the raw retrieved context to ensure 100% factual accuracy.
-- **System Stability:**
-  - **Advisory Locking:** Prevents Race Conditions during concurrent cache updates in the same session.
-  - **Circuit Breakers:** Automatically falls back to safe routing methods during LLM/Embedding timeouts.
+- **Định tuyến thông minh 2 lớp (2-Tier Routing):**
+  - **Tier 1 (Fast Path):** Sử dụng Heuristics, Entity Index và pgvector để giải quyết các câu hỏi tiếp nối và đại từ (ví dụ: "nó", "cuộc gọi đó") với độ trễ < 15ms.
+  - **Tier 2 (Precision Path):** Sử dụng LLM (Groq/Javis Qwen) để phân tích ý định phức tạp, viết lại truy vấn và giải quyết quy chiếu (Co-reference).
+- **Quản lý ngữ cảnh nâng cao:**
+  - **Hot/Cold Storage:** Tách biệt siêu dữ liệu nhẹ (Hot) và dữ liệu tải trọng lớn (Cold) trong PostgreSQL để tối ưu hóa bộ nhớ.
+  - **LRU Cache Eviction:** Duy trì tối đa 3 slot cache nóng nhất cho mỗi phiên.
+  - **Entity Indexing:** Tự động theo dõi các thực thể (mã cuộc gọi, ngày tháng, tên người) để giải quyết đại từ chỉ định ngay lập tức.
+- **Công cụ thực thi linh hoạt (Execution Engines):**
+  - **SQL Engine:** Chuyển đổi ngôn ngữ tự nhiên thành SQL để truy xuất dữ liệu có cấu trúc.
+  - **RAG Engine:** Tìm kiếm vector trên tài liệu phi cấu trúc bằng `pgvector`.
+  - **Web Engine:** Cập nhật kiến thức thời gian thực qua tìm kiếm web.
+- **Ngăn chặn ảo giác (Hallucination Prevention):**
+  - **Self-Check Verification:** Mọi câu trả lời của AI đều được đối chiếu với ngữ cảnh thô đã truy xuất để đảm bảo tính xác thực 100%.
+- **Tính ổn định hệ thống:**
+  - **Advisory Locking:** Sử dụng khóa cố vấn 64-bit để ngăn chặn tình trạng Race Condition.
+  - **Circuit Breakers:** Tự động dự phòng khi gặp sự cố embedding hoặc timeout LLM.
 
-## 🏗️ Technical Architecture (The 8-Step Pipeline)
+## 🏗️ Kiến trúc hệ thống (Vòng đời 8 bước)
 
-1.  **Session Lock:** Acquire a PostgreSQL advisory lock to ensure sequential processing.
-2.  **Metadata Fetch:** Load active session context and entity indexes.
-3.  **Tiered Routing:** Decide between Tier 1 (Fast) or Tier 2 (LLM) routing.
-4.  **Retrieval Execution:** Run the selected engine (SQL/RAG/Web) to fetch data.
-5.  **Entity Indexing:** Update the session's entity index with new findings.
-6.  **Context Update:** Upsert payloads into Hot/Cold storage and refresh LRU timers.
-7.  **Answer Generation:** Generate a response using LLM or a direct template path.
-8.  **Self-Check & Log:** Verify response accuracy and commit chat history.
+1.  **Request Input & Locking:** Nhận truy vấn và lấy khóa Advisory Lock cấp phiên.
+2.  **Routing (Tier 1 & 2):** Xác định mục tiêu (Hit/Shift) và viết lại truy vấn.
+3.  **Execution & Retrieval:** Thực thi các engine (SQL/RAG/Web) để lấy dữ liệu.
+4.  **Metadata Extraction:** Trích xuất thực thể và chuẩn bị tóm tắt ngữ cảnh.
+5.  **Cache Orchestration:** Cập nhật Hot/Cold storage và thực hiện LRU.
+6.  **Answer Generation:** Tạo câu trả lời qua LLM hoặc luồng phản hồi trực tiếp (Direct Path).
+7.  **Self-Check Verification:** Xác minh hiện tượng ảo giác và tính nhất quán.
+8.  **Logging & Commit:** Lưu nhật ký, metadata và commit giao dịch trước khi giải phóng Lock.
 
-## 📥 Input & 📤 Output
+## 📥 Đầu vào & 📤 Đầu ra
 
 ### Input Schema
-| Field | Type | Description |
+| Trường | Kiểu | Mô tả |
 | :--- | :--- | :--- |
-| `session_id` | `String` | Unique identifier for the user session. |
-| `query` | `String` | Natural language query (can be a follow-up or brand new topic). |
+| `session_id` | `String` | Định danh duy nhất của phiên (ví dụ: GT_01). |
+| `query` | `String` | Truy vấn ngôn ngữ tự nhiên (tiếng Việt hoặc tiếng Nhật). |
 
 ### Output Schema
-| Field | Type | Description |
+| Trường | Kiểu | Mô tả |
 | :--- | :--- | :--- |
-| `answer` | `String` | The final synthesized response (in Japanese). |
-| `metadata` | `Object` | Technical metrics: `latency_ms`, `target_pipeline`, `needs_retrieval`, `rewritten_query`, etc. |
+| `answer` | `String` | Câu trả lời cuối cùng (đã qua kiểm tra xác minh). |
+| `metadata` | `Object` | Thông tin kỹ thuật: `latency_ms`, `routing_method`, `target_pipeline`, v.v. |
 
-## 🛠️ Setup & Installation
+## 🛠️ Cài đặt và Thiết lập
 
-### Prerequisites
+### Yêu cầu hệ thống
 - Python 3.11+
-- PostgreSQL 15+ with `pgvector` and `uuid-ossp` extensions.
-- Athena LLM Gateway access.
+- PostgreSQL 15+ (đã cài `pgvector` và `uuid-ossp`).
+- Quyền truy cập API LLM (Groq/Athena).
 
-### Installation
-1.  **Clone the repository:**
+### Các bước cài đặt
+1.  **Clone repository:**
     ```bash
     git clone <repo-url>
     cd multi-turn-context-manager
     ```
-2.  **Setup Virtual Environment:**
+2.  **Thiết lập môi trường ảo:**
     ```bash
     python -m venv .venv
-    source .venv/bin/activate  # Or .venv\Scripts\activate on Windows
+    source .venv/bin/activate  # Hoặc .venv\Scripts\activate trên Windows
     pip install -r requirements.txt
     ```
-3.  **Configure Environment:**
-    Create a `.env` file from the template and provide your database URL and API keys.
-4.  **Initialize Database:**
+3.  **Cấu hình:**
+    Tạo tệp `.env` từ mẫu `.env.example` và cung cấp thông tin kết nối DB cũng như API keys.
+4.  **Khởi tạo cơ sở dữ liệu:**
     ```bash
     python scripts/init_db.py
     python scripts/init_extra_tables.py
     ```
 
-## 🧪 Testing
-The system includes a comprehensive E2E test suite covering 26 scenarios (Standard, Negative, and Recovery).
+## 🧪 Kiểm thử
+Hệ thống đi kèm bộ kiểm thử E2E toàn diện bao gồm các kịch bản Tiêu chuẩn, Tiêu cực và Khôi phục.
 
 ```bash
 python tests/test_suite.py
 ```
-*Current Status: 100% Pass Rate (V1.0.0).*
-
-## 📂 Directory Structure
-- `src/`: Core logic (Orchestrator, Router, Engines).
-- `scripts/`: DB initialization and data migration.
-- `tests/`: E2E test suite.
-- `reports/`: Benchmark and technical logs.
-- `docs/`: In-depth architecture and schema documentation.
 
 ---
-*Developed by Gemini CLI Agent for the Javis Project.*
+*Phát triển bởi Gemini CLI Agent cho dự án Trợ lý ảo Javis.*

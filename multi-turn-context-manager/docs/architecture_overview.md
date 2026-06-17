@@ -8,9 +8,9 @@ Hệ thống bao gồm các thành phần chính sau:
 
 ```mermaid
 graph TD
-    User((Người dùng)) -->|Truy vấn| Orch[1. Bộ điều phối thông minh]
+    User((Người dùng)) -->|1. Truy vấn| Orch[Bộ điều phối thông minh]
     
-    subgraph "Tầng định tuyến (router.py)"
+    subgraph "2. Tầng định tuyến (router.py)"
         Orch --> T1[Tier 1: Heuristic, Entity Index & pgvector Filter]
         T1 -->|Lỗi Embedding / Tin cậy thấp / Mơ hồ| T2[Tier 2: LLM Router & Rewriter]
     end
@@ -18,8 +18,7 @@ graph TD
     T1 -->|Quyết định| Decision[Quyết định định tuyến]
     T2 -->|Viết lại & Phân loại| Decision
     
-    Decision -->|Cache Hit| CacheMgr
-    Decision -->|Gọi Engine| Engines[3. Công cụ thực thi]
+    Decision -->|3. Thực thi & Truy xuất| Engines[Công cụ thực thi]
     
     subgraph "Lớp thực thi (engines.py)"
         Engines --> SQL[SQL Engine]
@@ -27,8 +26,8 @@ graph TD
         Engines --> WEB[Web Search Engine]
     end
     
-    Engines -->|Kết quả| EntityExtractor[2. Trích xuất thực thể]
-    EntityExtractor --> CacheMgr[4. Quản lý Cache]
+    Engines -->|4. Trích xuất metadata| EntityExtractor[Trích xuất thực thể]
+    EntityExtractor --> CacheMgr[5. Quản lý Cache]
     
     subgraph "Lớp lưu trữ (DB)"
         CacheMgr -->|Cập nhật metadata| DB_Hot[(PostgreSQL Hot: Metadata & Embeddings)]
@@ -36,11 +35,12 @@ graph TD
         EntityExtractor --> DB_Entity[(session_entity_index)]
     end
     
-    Engines -->|Dữ liệu thô| LLM[5. Bộ tạo câu trả lời]
+    Engines -->|Dữ liệu thô| LLM[6. Bộ tạo câu trả lời]
     CacheMgr -->|Dữ liệu cache| LLM
     
-    LLM --> Verify{6. Tự kiểm tra xác minh}
-    Verify -->|Đạt| Response((Câu trả lời cuối cùng))
+    LLM --> Verify{7. Tự kiểm tra xác minh}
+    Verify -->|Đạt| Logging[8. Ghi nhật ký & Commit]
+    Logging --> Response((Câu trả lời cuối cùng))
     Verify -->|Thất bại & Thử lại < 2| LLM
     Verify -->|Thất bại & Thử lại >= 2| FallbackResponse([Câu trả lời kèm cảnh báo tin cậy thấp])
 ```
@@ -49,17 +49,18 @@ graph TD
 Đóng vai trò là cổng (gateway) tiếp nhận truy vấn của người dùng (User Query) và quản lý luồng dữ liệu giữa các thành phần.
 
 *   **Direct-Answer Path Routing (Định tuyến phản hồi trực tiếp):** Xác định các kết quả thô từ cache hoặc engine. Nếu kết quả có cấu trúc đơn giản (ví dụ: 1 dòng SQL $\le 3$ cột, hoặc một đoạn trích dẫn Web Search duy nhất với độ liên quan > 0.85) và `needs_retrieval = none`, hệ thống sẽ trả về câu trả lời trực tiếp qua mẫu (template). Nếu `needs_retrieval = partial`, hệ thống bắt buộc phải đi qua luồng LLM để đảm bảo tích hợp ngữ cảnh phù hợp.
-*   **Advisory Lock:** Sử dụng khóa cố vấn giao dịch (transaction advisory lock) cấp PostgreSQL dựa trên ID phiên (session ID) đã được băm 82-bit để ngăn chặn tình trạng tranh chấp (Race Condition) trong cùng một phiên.
+*   **Advisory Lock:** Sử dụng khóa cố vấn giao dịch (transaction advisory lock) cấp PostgreSQL dựa trên ID phiên (session ID) được băm thành số nguyên 64-bit (PostgreSQL `bigint`) để ngăn chặn tình trạng tranh chấp (Race Condition) trong cùng một phiên.
 
 ### 1.2. 2-Tier Hybrid Router (Bộ định tuyến hỗn hợp 2 lớp)
 Tối ưu hóa chi phí token và tính ổn định của hệ thống thông qua hai bước lọc.
 *   **Tier 1 (Fast Filter):** Kết hợp các quy tắc heuristic (Regex) và tìm kiếm thực thể nhanh chóng trong `session_entity_index` bằng cách sử dụng ARRAY và pgvector của PostgreSQL. Quyết định chỉ mất dưới 15ms. Lớp này tích hợp trình bao bọc an toàn `_safe_embed()` với thời gian chờ 1.0s và kiểm tra vector 0. Nếu quá trình nhúng (Embedding) thất bại, hệ thống sẽ tự động chuyển sang Tier 2 thay vì bị dừng hoạt động.
-*   **Tier 2 (LLM Router & Rewriter):** Chỉ được kích hoạt khi Tier 1 nằm trong vùng xám (mơ hồ) hoặc xảy ra lỗi embedding. Sử dụng Groq (llama-3.3-70b) để phân tích sâu lịch sử trò chuyện, phân tích quy chiếu (Co-reference), xác định loại mối quan hệ (`relation_type`), nhu cầu truy xuất (`needs_retrieval: none | partial | full`) và tạo các tham số truy xuất từng phần (`partial_fetch_params`).
+*   **Tier 2 (LLM Router & Rewriter):** Chỉ được kích hoạt khi Tier 1 nằm trong vùng xám (mơ hồ) hoặc xảy ra lỗi embedding. Hỗ trợ đa dạng mô hình thông qua **Groq (llama-3.3-70b)** hoặc **Javis Qwen (với suy nghĩ/thought reasoning)** để phân tích sâu lịch sử trò chuyện, xác định loại mối quan hệ (`relation_type`), nhu cầu truy xuất (`needs_retrieval: none | partial | full`) và viết lại truy vấn giải quyết đại từ.
 
 ### 1.3. Unified Cache Manager (Trình quản lý cache thống nhất)
 Quản lý bộ nhớ đệm bằng cách tách PostgreSQL thành hai bảng: **Hot (Metadata)** và **Cold (Payload)**.
-*   **Bảng Hot (`session_context_cache`):** Lưu trữ siêu dữ liệu (metadata) nhẹ, khóa chủ đề (topic key), vector `query_embedding` đại diện cho tâm điểm ngữ cảnh của mỗi slot và dấu thời gian (timestamp) dùng cho việc giải phóng bộ nhớ theo thuật toán LRU.
+*   **Bảng Hot (`session_context_cache`):** Lưu trữ siêu dữ liệu (metadata) nhẹ, khóa chủ đề (topic key), vector `query_embedding` đại diện cho tâm điểm ngữ cảnh của mỗi slot và dấu thời gian (timestamp).
 *   **Bảng Cold (`session_context_payload`):** Lưu trữ dữ liệu thực tế lớn (JSONB). Dữ liệu này chỉ được tải khi bộ định tuyến xác định là **Cache Hit** (`use_cache = true`).
+*   **LRU Eviction:** Hệ thống giới hạn tối đa 3 slot cache chủ đề cho mỗi phiên để tối ưu tài nguyên, tự động xóa slot cũ nhất khi vượt giới hạn.
 *   **FOR UPDATE Row Locking:** Khóa các hàng trong bảng Cold trong quá trình truy xuất `partial` để ngăn chặn xung đột giữa việc cập nhật payload và việc loại bỏ dữ liệu (LRU eviction).
 
 ### 1.4. Execution Engines (Các công cụ thực thi)
@@ -72,16 +73,13 @@ Tiếp nhận các tham số truy xuất từng phần `partial_fetch_params` v�
 
 ## 2. Quy trình vòng đời (Lifecycle Flow)
 
-1.  **Request Input:** Người dùng nhập truy vấn.
-2.  **Tier 1 Check:** Kiểm tra chỉ mục thực thể phiên và khoảng cách ngữ nghĩa.
-    *   **Tier 1 thành công:** Xác định Hit hoặc Chuyển đổi chủ đề (Topic Shift) với độ tin cậy cao.
-    *   **Tier 1 không chắc chắn:** Lỗi embedding hoặc nằm trong vùng xám.
-3.  **Tier 2 (Fallback):** LLM phân tích lịch sử và metadata cache, viết lại truy vấn và xác định mục tiêu.
-4.  **Retrieval (Truy xuất):**
-    *   **None (Hit):** Tải payload hiện có từ bảng Cold.
-    *   **Partial (Bổ sung):** Giữ lại payload hiện có, đồng thời lấy thêm thông tin bổ sung bằng các bộ lọc cụ thể và hợp nhất chúng.
-    *   **Full (Shift):** Thực thi các engine như một chủ đề mới.
-5.  **Index & Cache Update:** Trích xuất thực thể và cập nhật `session_entity_index`. Đồng thời, cập nhật `query_embedding` bằng vector truy vấn mới nhất để ngăn chặn sự trôi dạt ngữ nghĩa (semantic drift).
-6.  **Answer Generation:** Thực hiện luồng LLM hoặc luồng phản hồi trực tiếp.
-7.  **Self-Check:** Xác minh xem câu trả lời có mâu thuẫn với ngữ cảnh gốc hoặc có hiện tượng ảo giác (hallucination) hay không.
-8.  **Final Response:** Trả về câu trả lời cuối cùng cho người dùng và lưu lịch sử.
+Quy trình xử lý gồm 8 bước nghiêm ngặt:
+
+1.  **Request Input & Locking:** Người dùng nhập truy vấn, hệ thống lấy Advisory Lock cấp phiên.
+2.  **Routing (Tier 1 & Tier 2):** Kiểm tra chỉ mục thực thể phiên và khoảng cách ngữ nghĩa, hoặc gọi LLM để viết lại truy vấn và xác định mục tiêu.
+3.  **Execution & Retrieval:** Thực thi truy xuất mới (Full), lấy thêm thông tin (Partial) hoặc tái sử dụng cache (None/Hit).
+4.  **Metadata Extraction:** Trích xuất thực thể từ payload mới và chuẩn bị `summary_context`.
+5.  **Cache Orchestration:** Upsert dữ liệu vào bảng Hot/Cold, thực hiện giải phóng LRU nếu cần.
+6.  **Answer Generation:** Thực hiện luồng LLM hoặc luồng phản hồi trực tiếp (Direct Path).
+7.  **Self-Check Verification:** Xác minh xem câu trả lời có mâu thuẫn với ngữ cảnh gốc hoặc có hiện tượng ảo giác (hallucination) hay không.
+8.  **Logging & Commit:** Lưu lịch sử chat, metadata và commit giao dịch DB trước khi giải phóng Lock.
