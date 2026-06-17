@@ -1,87 +1,87 @@
-# マルチターン・コンテキスト管理 (Multi-turn Context Management) アーキテクチャ概要
+# Tổng quan Kiến trúc Quản lý Ngữ cảnh Đa lượt (Multi-turn Context Management)
 
-本ドキュメントでは、AIアシスタントのための**高度なコンテキスト調整およびマルチターン管理レイヤー (Intelligent Context Coordination Layer)** の設計について説明します。本システムは、ステートレスなメカニズムから動的なステートフル・コンテキスト・キャッシング (Stateful Context Caching) へと移行することで、パフォーマンスの最適化、レイテンシの低減、モデル呼び出しコストの節約、および回答の一貫性の確保を実現します。
+Tài liệu này mô tả thiết kế của **Lớp Điều phối Ngữ cảnh Thông minh (Intelligent Context Coordination Layer)** dành cho trợ lý AI. Hệ thống này chuyển đổi từ cơ chế không trạng thái (stateless) sang bộ nhớ đệm ngữ cảnh có trạng thái động (Stateful Context Caching), nhằm tối ưu hóa hiệu suất, giảm độ trễ, tiết kiệm chi phí gọi mô hình và đảm bảo tính nhất quán của câu trả lời.
 
-## 1. システム構成要素 (System Components)
+## 1. Các thành phần hệ thống (System Components)
 
-システムは以下の主要コンポーネントで構成されています。
+Hệ thống bao gồm các thành phần chính sau:
 
 ```mermaid
 graph TD
-    User((ユーザー)) -->|クエリ| Orch[1. Intelligent Orchestrator]
+    User((Người dùng)) -->|Truy vấn| Orch[1. Bộ điều phối thông minh]
     
-    subgraph "Routing Tier (router.py)"
+    subgraph "Tầng định tuyến (router.py)"
         Orch --> T1[Tier 1: Heuristic, Entity Index & pgvector Filter]
-        T1 -->|Embedding Fail / 低信頼度 / 曖昧| T2[Tier 2: LLM Router & Rewriter]
+        T1 -->|Lỗi Embedding / Tin cậy thấp / Mơ hồ| T2[Tier 2: LLM Router & Rewriter]
     end
     
-    T1 -->|決定| Decision[Route Decision]
-    T2 -->|書き換え & 分類| Decision
+    T1 -->|Quyết định| Decision[Quyết định định tuyến]
+    T2 -->|Viết lại & Phân loại| Decision
     
     Decision -->|Cache Hit| CacheMgr
-    Decision -->|Engine 呼び出し| Engines[3. Execution Engines]
+    Decision -->|Gọi Engine| Engines[3. Công cụ thực thi]
     
-    subgraph "Execution Layer (engines.py)"
+    subgraph "Lớp thực thi (engines.py)"
         Engines --> SQL[SQL Engine]
         Engines --> RAG[RAG Engine]
         Engines --> WEB[Web Search Engine]
     end
     
-    Engines -->|結果| EntityExtractor[2. Entity Extractor]
-    EntityExtractor --> CacheMgr[4. Cache Manager]
+    Engines -->|Kết quả| EntityExtractor[2. Trích xuất thực thể]
+    EntityExtractor --> CacheMgr[4. Quản lý Cache]
     
-    subgraph "Storage Layer (DB)"
-        CacheMgr -->|メタデータ更新| DB_Hot[(PostgreSQL Hot: Metadata & Embeddings)]
-        CacheMgr -->|ペイロード更新| DB_Cold[(PostgreSQL Cold: Payload Table)]
+    subgraph "Lớp lưu trữ (DB)"
+        CacheMgr -->|Cập nhật metadata| DB_Hot[(PostgreSQL Hot: Metadata & Embeddings)]
+        CacheMgr -->|Cập nhật payload| DB_Cold[(PostgreSQL Cold: Payload Table)]
         EntityExtractor --> DB_Entity[(session_entity_index)]
     end
     
-    Engines -->|生データ| LLM[5. Answer Generator]
-    CacheMgr -->|キャッシュデータ| LLM
+    Engines -->|Dữ liệu thô| LLM[5. Bộ tạo câu trả lời]
+    CacheMgr -->|Dữ liệu cache| LLM
     
-    LLM --> Verify{6. Self-Check Verification}
-    Verify -->|合格| Response((最終回答))
-    Verify -->|失敗 & リトライ < 2| LLM
-    Verify -->|失敗 & リトライ >= 2| FallbackResponse([低信頼度警告付き回答])
+    LLM --> Verify{6. Tự kiểm tra xác minh}
+    Verify -->|Đạt| Response((Câu trả lời cuối cùng))
+    Verify -->|Thất bại & Thử lại < 2| LLM
+    Verify -->|Thất bại & Thử lại >= 2| FallbackResponse([Câu trả lời kèm cảnh báo tin cậy thấp])
 ```
 
-### 1.1. Intelligent Orchestrator (高度なオーケストレーター)
-ユーザーのクエリ (User Query) を受け取るゲートウェイとして機能し、各コンポーネント間のデータフローを管理します。
+### 1.1. Intelligent Orchestrator (Bộ điều phối thông minh)
+Đóng vai trò là cổng (gateway) tiếp nhận truy vấn của người dùng (User Query) và quản lý luồng dữ liệu giữa các thành phần.
 
-*   **Direct-Answer Path Routing (直接回答パス):** キャッシュまたはエンジンからの生の結果を識別します。結果が単純な構造（例：SQL 1行 $\le 3$ 列、relevance > 0.85 の単一 Web Search スニペット）で `needs_retrieval = none` の場合、システムは応答テンプレートを介して直接回答を返します。`needs_retrieval = partial` の場合は、適切なコンテキスト統合を確実にするために必ず LLM パスを経由します。
-*   **アドバイザリー・ロック (Advisory Lock):** 82bitのハッシュ化されたセッションIDに基づき、PostgreSQLレベルのトランザクション・アドバイザリー・ロックを使用して、同一セッションでの競合状態（Race Condition）を防止します。
+*   **Direct-Answer Path Routing (Định tuyến phản hồi trực tiếp):** Xác định các kết quả thô từ cache hoặc engine. Nếu kết quả có cấu trúc đơn giản (ví dụ: 1 dòng SQL $\le 3$ cột, hoặc một đoạn trích dẫn Web Search duy nhất với độ liên quan > 0.85) và `needs_retrieval = none`, hệ thống sẽ trả về câu trả lời trực tiếp qua mẫu (template). Nếu `needs_retrieval = partial`, hệ thống bắt buộc phải đi qua luồng LLM để đảm bảo tích hợp ngữ cảnh phù hợp.
+*   **Advisory Lock:** Sử dụng khóa cố vấn giao dịch (transaction advisory lock) cấp PostgreSQL dựa trên ID phiên (session ID) đã được băm 82-bit để ngăn chặn tình trạng tranh chấp (Race Condition) trong cùng một phiên.
 
-### 1.2. 2-Tier Hybrid Router (2段階ハイブリッド・ルーター)
-2段階のフィルタリングにより、トークンコストとシステムの安定性を最適化します。
-*   **Tier 1 (Fast Filter):** ヒューリスティック・ルール (Regex) と、PostgreSQLの ARRAY および pgvector を使用した `session_entity_index` での高速な実体（エンティティ）検索を組み合わせます。決定には 15ms 未満しかかかりません。タイムアウト 1.0s と 0ベクトルチェックを備えた安全なラッパー `_safe_embed()` を統合しており、埋め込み（Embedding）に失敗した場合はクラッシュせずに自動的に Tier 2 へフォールバックします。
-*   **Tier 2 (LLM Router & Rewriter):** Tier 1 がグレーゾーン（曖昧）であるか、埋め込みエラーが発生した場合にのみ起動します。Groq (llama-3.3-70b) を使用して、チャット履歴の深い分析、共参照解析（Co-reference）、関係性（`relation_type`）の特定、リトリーバル（情報取得）の必要性 (`needs_retrieval: none | partial | full`)、および部分的取得パラメータ (`partial_fetch_params`) の生成を行います。
+### 1.2. 2-Tier Hybrid Router (Bộ định tuyến hỗn hợp 2 lớp)
+Tối ưu hóa chi phí token và tính ổn định của hệ thống thông qua hai bước lọc.
+*   **Tier 1 (Fast Filter):** Kết hợp các quy tắc heuristic (Regex) và tìm kiếm thực thể nhanh chóng trong `session_entity_index` bằng cách sử dụng ARRAY và pgvector của PostgreSQL. Quyết định chỉ mất dưới 15ms. Lớp này tích hợp trình bao bọc an toàn `_safe_embed()` với thời gian chờ 1.0s và kiểm tra vector 0. Nếu quá trình nhúng (Embedding) thất bại, hệ thống sẽ tự động chuyển sang Tier 2 thay vì bị dừng hoạt động.
+*   **Tier 2 (LLM Router & Rewriter):** Chỉ được kích hoạt khi Tier 1 nằm trong vùng xám (mơ hồ) hoặc xảy ra lỗi embedding. Sử dụng Groq (llama-3.3-70b) để phân tích sâu lịch sử trò chuyện, phân tích quy chiếu (Co-reference), xác định loại mối quan hệ (`relation_type`), nhu cầu truy xuất (`needs_retrieval: none | partial | full`) và tạo các tham số truy xuất từng phần (`partial_fetch_params`).
 
-### 1.3. Unified Cache Manager (統合キャッシュマネージャー)
-PostgreSQLを **Hot (Metadata)** と **Cold (Payload)** の2つのテーブルに分離して使用し、キャッシュを管理します。
-*   **Hot テーブル (`session_context_cache`):** 軽量なメタデータ、トピックキー、各スロットのコンテキストの中心を表す `query_embedding` ベクトル、および LRU 解放に使用するタイムスタンプを保存します。
-*   **Cold テーブル (`session_context_payload`):** 実際の大きなデータ（JSONB）を保存します。ルーターが **Cache Hit** (`use_cache = true`) と判断したときにのみ読み込まれます。
-*   **FOR UPDATE Row Locking:** `partial` リトリーバルの際、ペイロードの更新と LRU エビクション（追い出し）の間の競合を防ぐために、Cold テーブルの行をロックします。
+### 1.3. Unified Cache Manager (Trình quản lý cache thống nhất)
+Quản lý bộ nhớ đệm bằng cách tách PostgreSQL thành hai bảng: **Hot (Metadata)** và **Cold (Payload)**.
+*   **Bảng Hot (`session_context_cache`):** Lưu trữ siêu dữ liệu (metadata) nhẹ, khóa chủ đề (topic key), vector `query_embedding` đại diện cho tâm điểm ngữ cảnh của mỗi slot và dấu thời gian (timestamp) dùng cho việc giải phóng bộ nhớ theo thuật toán LRU.
+*   **Bảng Cold (`session_context_payload`):** Lưu trữ dữ liệu thực tế lớn (JSONB). Dữ liệu này chỉ được tải khi bộ định tuyến xác định là **Cache Hit** (`use_cache = true`).
+*   **FOR UPDATE Row Locking:** Khóa các hàng trong bảng Cold trong quá trình truy xuất `partial` để ngăn chặn xung đột giữa việc cập nhật payload và việc loại bỏ dữ liệu (LRU eviction).
 
-### 1.4. Execution Engines (実行エンジン)
-部分的取得パラメータ `partial_fetch_params` を受け取り、最適化された実行（例：追加の SQL WHERE 条件、RAG のドキュメント ID フィルタリング）を行う複数のデータソースパイプライン。タイムアウト制御付きのサーキット・ブレーカーを内蔵しています。
+### 1.4. Execution Engines (Các công cụ thực thi)
+Tiếp nhận các tham số truy xuất từng phần `partial_fetch_params` và thực hiện thực thi tối ưu (ví dụ: thêm điều kiện SQL WHERE, lọc ID tài liệu trong RAG) trên nhiều đường ống dữ liệu (pipeline). Các công cụ này có tích hợp sẵn bộ ngắt mạch (circuit breaker) với kiểm soát thời gian chờ.
 
-*   **SQL:** 定型化されたスキーマから実体を自動抽出（例：`transcript_id`, `speaker`）。
-*   **RAG:** メタデータ（`file_name`）に基づきドキュメント実体を抽出。
-*   **WEB/MODEL:** 構造化されたスキーマがないため、軽量 LLM を使用して主要な実体を抽出。
-*   **インデックス登録:** 各実体に対応する表示名と指示代名詞（例：「それ」、「あれ」、「さっきの通話」など）を `session_entity_index` に UPSERT し、Tier 1 の検索に備えます。
+*   **SQL:** Tự động trích xuất thực thể từ lược đồ có cấu trúc (ví dụ: `transcript_id`, `speaker`).
+*   **RAG:** Trích xuất thực thể tài liệu dựa trên siêu dữ liệu (`file_name`).
+*   **WEB/MODEL:** Do không có lược đồ cấu trúc, lớp này sử dụng LLM nhẹ để trích xuất các thực thể chính.
+*   **Đăng ký chỉ mục (Index Registration):** Thực hiện UPSERT tên hiển thị và các đại từ chỉ định tương ứng (ví dụ: "nó", "cái đó", "cuộc gọi lúc nãy",...) vào `session_entity_index` cho từng thực thể để chuẩn bị cho việc tìm kiếm ở Tier 1.
 
-## 2. ライフサイクル・フロー (Lifecycle Flow)
+## 2. Quy trình vòng đời (Lifecycle Flow)
 
-1.  **Request Input:** ユーザーがクエリを入力。
-2.  **Tier 1 Check:** セッション・エンティティ・インデックスとセマンティック距離をチェック。
-    *   **Tier 1 成功:** 高い信頼性で Hit または Topic Shift を判断。
-    *   **Tier 1 不確実:** 埋め込みエラーまたはグレーゾーン。
-3.  **Tier 2 (Fallback):** LLM が履歴とキャッシュメタデータを分析し、クエリを書き換えてターゲットを決定。
-4.  **Retrieval:**
-    *   **None (Hit):** Cold テーブルから既存のペイロードを読み込む。
-    *   **Partial (補完):** 既存のペイロードを保持しつつ、特定のフィルタで追加情報を取得してマージ。
-    *   **Full (Shift):** 新しいトピックとしてエンジンを実行。
-5.  **Index & Cache Update:** 実体を抽出し、`session_entity_index` を更新。同時に、最新のクエリベクトルで `query_embedding` を更新してセマンティック・ドリフトを防止。
-6.  **Answer Generation:** LLM パスまたは直接回答パスを実行。
-7.  **Self-Check:** 回答が元のコンテキストと矛盾していないか、ハルシネーションがないかを検証。
-8.  **Final Response:** ユーザーへ回答を返し、履歴を保存。
+1.  **Request Input:** Người dùng nhập truy vấn.
+2.  **Tier 1 Check:** Kiểm tra chỉ mục thực thể phiên và khoảng cách ngữ nghĩa.
+    *   **Tier 1 thành công:** Xác định Hit hoặc Chuyển đổi chủ đề (Topic Shift) với độ tin cậy cao.
+    *   **Tier 1 không chắc chắn:** Lỗi embedding hoặc nằm trong vùng xám.
+3.  **Tier 2 (Fallback):** LLM phân tích lịch sử và metadata cache, viết lại truy vấn và xác định mục tiêu.
+4.  **Retrieval (Truy xuất):**
+    *   **None (Hit):** Tải payload hiện có từ bảng Cold.
+    *   **Partial (Bổ sung):** Giữ lại payload hiện có, đồng thời lấy thêm thông tin bổ sung bằng các bộ lọc cụ thể và hợp nhất chúng.
+    *   **Full (Shift):** Thực thi các engine như một chủ đề mới.
+5.  **Index & Cache Update:** Trích xuất thực thể và cập nhật `session_entity_index`. Đồng thời, cập nhật `query_embedding` bằng vector truy vấn mới nhất để ngăn chặn sự trôi dạt ngữ nghĩa (semantic drift).
+6.  **Answer Generation:** Thực hiện luồng LLM hoặc luồng phản hồi trực tiếp.
+7.  **Self-Check:** Xác minh xem câu trả lời có mâu thuẫn với ngữ cảnh gốc hoặc có hiện tượng ảo giác (hallucination) hay không.
+8.  **Final Response:** Trả về câu trả lời cuối cùng cho người dùng và lưu lịch sử.

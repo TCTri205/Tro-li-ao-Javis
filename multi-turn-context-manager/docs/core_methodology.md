@@ -1,51 +1,51 @@
-# 主要設計手法 (Core Methodology)
+# Phương pháp Thiết kế Cốt lõi (Core Methodology)
 
-## マルチターン・コンテキスト管理の設計比較
+## So sánh các phương pháp Quản lý Ngữ cảnh Đa lượt
 
-| 手法 | 説明 | メリット | デメリット | 評価と採用 |
+| Phương pháp | Mô tả | Ưu điểm | Nhược điểm | Đánh giá & Áp dụng |
 | :--- | :--- | :--- | :--- | :--- |
-| **1. Single-pass LLM Rewrite & Route** | チャット履歴とクエリをすべて LLM に送り、一発で判断。 | ・API 呼び出し回数が少ない (1 RTT)。 | ・クエリごとに大量のトークンを消費。<br>・レイテンシが 150-250ms 程度発生。 | Tier 2 のバックアップとしてのみ使用。 |
-| **2. Multi-pass LLM (Split Task)** | 「クエリ書き換え」と「インテント分類」を別々の LLM 呼び出しで行う。 | ・各プロンプトをシンプルに保てる。 | ・RTT が倍増し、遅延が大きくなる。 | **不採用**（レイテンシ最適化のため）。 |
-| **3. Heuristic / Rule-based (Regex)** | 正規表現によるキーワードマッチング。 | ・レイテンシがほぼ 0。<br>・トークンコスト 0。 | ・複雑な自然言語の文脈変化に対応できない。 | Tier 1 の補助フィルタとして採用。 |
-| **4. 2-Tier Hybrid Routing (Fast/Slow Path)** | Tier 1 (Heuristic, Entity Lookup, pgvector) と Tier 2 (LLM Router) を組み合わせる。 | ・ルーティング・トークンを最大 70% 削減。<br>・Fast Path の平均レイテンシは 15ms 未満。 | ・DB 内のエンティティ・インデックス管理が必要。 | **正式採用**（コストと速度の両立のため）。 |
+| **1. Single-pass LLM Rewrite & Route** | Gửi toàn bộ lịch sử chat và truy vấn tới LLM để quyết định trong một lần. | ・Số lần gọi API ít (1 RTT). | ・Tiêu tốn lượng lớn token cho mỗi truy vấn.<br>・Độ trễ phát sinh khoảng 150-250ms. | Chỉ sử dụng như phương án dự phòng cho Tier 2. |
+| **2. Multi-pass LLM (Split Task)** | Thực hiện "Viết lại truy vấn" và "Phân loại ý định" bằng các lần gọi LLM riêng biệt. | ・Giữ cho mỗi prompt đơn giản. | ・Số RTT tăng gấp đôi, độ trễ lớn hơn. | **Không sử dụng** (để tối ưu hóa độ trễ). |
+| **3. Heuristic / Rule-based (Regex)** | Khớp từ khóa bằng biểu thức chính quy (Regular Expression). | ・Độ trễ gần như bằng 0.<br>・Chi phí token bằng 0. | ・Không xử lý được sự thay đổi ngữ cảnh phức tạp của ngôn ngữ tự nhiên. | Sử dụng làm bộ lọc bổ trợ cho Tier 1. |
+| **4. 2-Tier Hybrid Routing (Fast/Slow Path)** | Kết hợp Tier 1 (Heuristic, Entity Lookup, pgvector) và Tier 2 (LLM Router). | ・Giảm tới 70% token định tuyến.<br>・Độ trễ trung bình của Fast Path dưới 15ms. | ・Cần quản lý chỉ mục thực thể (Entity Index) trong DB. | **Áp dụng chính thức** (để cân bằng giữa chi phí và tốc độ). |
 
-## Tier 1: 高速フィルタリングの仕組み
+## Tier 1: Cơ chế Lọc Nhanh (Fast Filtering)
 
-システムは、指示代名詞の照合（Entity Index Match）とセマンティック距離（pgvector Distance）を組み合わせて、ユーザーの新しい質問が「既存の話題の継続（Cache Hit）」か「新しい話題への移行（Topic Shift）」かを判断します。
+Hệ thống kết hợp việc đối chiếu đại từ chỉ định (Entity Index Match) và khoảng cách ngữ nghĩa (pgvector Distance) để xác định câu hỏi mới của người dùng là "tiếp nối chủ đề cũ (Cache Hit)" hay "chuyển sang chủ đề mới (Topic Shift)".
 
-### ステップ 1: 高速実体照合 (Entity linking)
-*   クエリに代名詞（「それ」、「あれ」、「さっきの」、「彼」など）が含まれている場合、`session_entity_index` テーブルに対して ARRAY 検索を実行します。
-*   一意の実体がヒットした場合、埋め込み計算をスキップして即座に該当のキャッシュスロットへルーティングします。
+### Bước 1: Đối chiếu thực thể nhanh (Entity linking)
+*   Nếu truy vấn chứa các đại từ ("nó", "cái đó", "lúc nãy", "anh ấy",...), hệ thống sẽ thực hiện tìm kiếm ARRAY trên bảng `session_entity_index`.
+*   Nếu khớp với một thực thể duy nhất, hệ thống sẽ bỏ qua việc tính toán embedding và định tuyến ngay lập tức đến slot cache tương ứng.
 
-### ステップ 2: セマンティック埋め込み距離 (pgvector Distance)
-*   `multilingual-e5-small` モデルを使用してクエリのベクトル $V_{new}$ を生成します。
-*   **Green Zone (Distance < 0.22):** 同一の話題と確定。キャッシュスロットを起動します。
-*   **Red Zone (Distance > 0.55):** 完全に別の話題と確定。新規リトリーバル (`needs_retrieval = "full"`) を実行します。
-*   **Gray Zone:** Tier 2 (LLM Router) へ転送して詳細な分析を行います。
+### Bước 2: Khoảng cách Embedding ngữ nghĩa (pgvector Distance)
+*   Sử dụng mô hình `multilingual-e5-small` để tạo vector $V_{new}$ cho truy vấn.
+*   **Vùng Xanh (Khoảng cách < 0.22):** Xác định là cùng một chủ đề. Kích hoạt slot cache.
+*   **Vùng Đỏ (Khoảng cách > 0.55):** Xác định là chủ đề hoàn toàn khác. Thực hiện truy xuất mới (`needs_retrieval = "full"`).
+*   **Vùng Xám:** Chuyển sang Tier 2 (LLM Router) để phân tích chi tiết hơn.
 
-## 直接回答パス (Direct-Answer Path)
+## Luồng Phản hồi Trực tiếp (Direct-Answer Path)
 
-単純な情報照合のために巨大な LLM を呼び出す無駄を省くため、オーケストレーターに **Direct-Answer Path** を統合しています。
+Để tránh lãng phí việc gọi các LLM lớn cho các đối chiếu thông tin đơn giản, bộ điều phối được tích hợp **Luồng Phản hồi Trực tiếp**.
 
-| パイプライン | データ形式 | 直接回答の条件 | パス | 例 |
+| Pipeline | Định dạng dữ liệu | Điều kiện phản hồi trực tiếp | Luồng (Path) | Ví dụ |
 | :--- | :--- | :--- | :--- | :--- |
-| **SQL** | 表形式 (Rows) | 結果が 1 行 かつ $\le 3$ 列 | **Direct Path** | 「GT_04の通話時間は？」 -> 「GT_04の通話時間は105秒です。」 |
-| **WEB** | スニペット | 信頼度が高く、`needs_retrieval == "none"` | **Direct Path** | 「今日の三菱の株価は？」 -> 特定の最新数値をそのまま返答。 |
-| **WEB** | スニペット | 情報源が複数、あるいは情報の更新が必要 | **LLM Path** | LLM が内容を比較・要約して回答。 |
-| **RAG** | テキストチャンク | 常に | **LLM Path** | 文脈理解と自然な文章生成が必要なため、常に LLM を使用。 |
+| **SQL** | Dạng bảng (Rows) | Kết quả có 1 dòng và $\le 3$ cột | **Direct Path** | "Thời gian gọi của GT_04?" -> "Thời gian gọi của GT_04 là 105 giây." |
+| **WEB** | Đoạn trích (Snippet) | Độ tin cậy cao và `needs_retrieval == "none"` | **Direct Path** | "Giá cổ phiếu Mitsubishi hôm nay?" -> Trả về giá trị mới nhất cụ thể. |
+| **WEB** | Đoạn trích (Snippet) | Có nhiều nguồn thông tin hoặc cần cập nhật thông tin | **LLM Path** | LLM so sánh, tóm tắt nội dung và trả lời. |
+| **RAG** | Đoạn văn bản | Luôn luôn | **LLM Path** | Cần hiểu ngữ cảnh và tạo câu trả lời tự nhiên, nên luôn dùng LLM. |
 
-## 実体インデックス (Entity Index) による高速解決
+## Giải quyết nhanh bằng Chỉ mục Thực thể (Entity Index)
 
-Neo4j のような複雑な Graph DB を構築する代わりに、PostgreSQL の GIN インデックスと ARRAY 型を使用して、共参照解析（Coreference Resolution）を高速化しています。
+Thay vì xây dựng một Graph DB phức tạp như Neo4j, hệ thống sử dụng GIN Index và kiểu dữ liệu ARRAY của PostgreSQL để tăng tốc độ phân tích quy chiếu (Coreference Resolution).
 
-1.  **抽出:** クエリから「これ」「それ」「あの人」などの日本語の指示語を抽出します。
-2.  **DB検索:** PostgreSQL の `@>` 演算子を使用して、現在のセッションに紐づく `display_names` 配列を高速スキャンします。
-3.  **マッピング:** ヒットしたスロット ID を即座にオーケストレーターへ返し、レイテンシを 3ms 未満に抑えます。
+1.  **Trích xuất:** Trích xuất các từ chỉ định từ truy vấn (ví dụ: "cái này", "việc đó", "người kia").
+2.  **Tìm kiếm DB:** Sử dụng toán tử `@>` của PostgreSQL để quét nhanh mảng `display_names` liên kết với phiên hiện tại.
+3.  **Ánh xạ:** Trả về ID slot khớp ngay lập tức cho bộ điều phối, giữ độ trễ dưới 3ms.
 
-## 自己検証 (Self-Check Verification)
+## Tự kiểm tra (Self-Check Verification)
 
-ハルシネーション（もっともらしい嘘）を防ぐため、回答生成後に軽量な **Self-Check Verification** を実行します。
+Để ngăn chặn hiện tượng ảo giác (hallucination - trả lời sai nhưng nghe có vẻ hợp lý), hệ thống thực hiện **Tự kiểm tra** (Self-Check Verification) nhẹ sau khi tạo câu trả lời.
 
-*   **Passed:** コンテキストと矛盾がない場合、そのままユーザーへ回答。
-*   **Failed:** 矛盾がある場合、最大 2 回まで生成をやり直します。
-*   **Fallback:** それでも解決しない場合、警告メッセージを付加して低信頼度回答として出力します。
+*   **Đạt (Passed):** Nếu không mâu thuẫn với ngữ cảnh, trả lời ngay cho người dùng.
+*   **Thất bại (Failed):** Nếu có mâu thuẫn, thực hiện tạo lại tối đa 2 lần.
+*   **Dự phòng (Fallback):** Nếu vẫn không giải quyết được, thêm thông báo cảnh báo và xuất ra dưới dạng câu trả lời có độ tin cậy thấp.

@@ -1,30 +1,30 @@
-# システム・パイプライン (System Pipeline)
+# Đường ống Hệ thống (System Pipeline)
 
-## 全体フロー
+## Luồng tổng thể
 
-システムは、以下のパイプラインを通じてユーザーのクエリを処理し、最適な回答を生成します。
+Hệ thống xử lý truy vấn của người dùng và tạo ra câu trả lời tối ưu thông qua các đường ống (pipeline) sau:
 
-### 1. 受付とロック (Ingestion & Locking)
-*   ユーザーからのクエリを受信し、セッション ID に基づいてアドバイザリー・ロックを取得します。これにより、同一セッションでの並行処理を防ぎます。
+### 1. Tiếp nhận và Khóa (Ingestion & Locking)
+*   Nhận truy vấn từ người dùng và lấy khóa cố vấn (advisory lock) dựa trên ID phiên. Việc này giúp ngăn chặn xử lý song song trong cùng một phiên.
 
-### 2. ルーティング (Routing)
-*   **Tier 1:** 高速な正規表現マッチ、エンティティ検索、またはベクトル類似度によってキャッシュを特定します。
-*   **Tier 2:** 複雑な文脈や曖昧なクエリの場合、LLM が履歴を分析してクエリを書き換え、適切なパイプラインを選択します。
+### 2. Định tuyến (Routing)
+*   **Tier 1:** Xác định bộ nhớ đệm (cache) thông qua khớp biểu thức chính quy nhanh, tìm kiếm thực thể hoặc độ tương đồng vector.
+*   **Tier 2:** Trong trường hợp ngữ cảnh phức tạp hoặc truy vấn mơ hồ, LLM sẽ phân tích lịch sử, viết lại truy vấn và chọn đường ống phù hợp.
 
-### 3. 実行と取得 (Execution & Retrieval)
-*   **Cache Hit:** 既存のキャッシュからデータを取得します。
-*   **Partial Fetch:** 既存の文脈に加えて、追加の特定の情報を取得してマージします。
-*   **Full Retrieval:** 新しいトピックとして、SQL、RAG、または WEB からデータを取得します。
+### 3. Thực thi và Truy xuất (Execution & Retrieval)
+*   **Cache Hit:** Lấy dữ liệu từ bộ nhớ đệm hiện có.
+*   **Partial Fetch:** Lấy thêm các thông tin cụ thể bổ sung vào ngữ cảnh hiện có và hợp nhất chúng.
+*   **Full Retrieval:** Truy xuất dữ liệu từ SQL, RAG hoặc WEB như một chủ đề mới.
 
-### 4. 実体抽出 (Entity Extraction)
-*   取得したデータから主要な実体（人名、ドキュメント、通話セッションなど）を抽出し、日本語の指示代名詞と関連付けてインデックス化します。
+### 4. Trích xuất thực thể (Entity Extraction)
+*   Trích xuất các thực thể chính (tên người, tài liệu, phiên gọi điện, v.v.) từ dữ liệu đã lấy và lập chỉ mục chúng bằng cách liên kết với các đại từ chỉ định.
 
-### 5. 回答生成 (Answer Generation)
-*   **Direct Path:** 単純なデータの場合、事前定義されたテンプレートを用いて回答を即座に生成します。
-*   **LLM Path:** 複雑なデータの場合、LLM がコンテキストを読み解き、自然な日本語で回答を生成します。
+### 5. Tạo câu trả lời (Answer Generation)
+*   **Direct Path:** Đối với dữ liệu đơn giản, câu trả lời được tạo ngay lập tức bằng các mẫu đã định nghĩa trước.
+*   **LLM Path:** Đối với dữ liệu phức tạp, LLM sẽ đọc hiểu ngữ cảnh và tạo câu trả lời bằng tiếng Việt tự nhiên.
 
-### 6. 検証 (Verification)
-*   生成された回答が提供されたデータに基づいているか、嘘が含まれていないかを LLM が自己検証します。
+### 6. Xác minh (Verification)
+*   LLM tự kiểm tra xem câu trả lời được tạo ra có dựa trên dữ liệu đã cung cấp hay không và có chứa thông tin sai lệch nào không.
 
-### 7. 返答と記録 (Response & Logging)
-*   ユーザーへ回答を送信し、ルーティングの統計情報や履歴をデータベースに保存してトランザクションを完了します。
+### 7. Phản hồi và Ghi nhật ký (Response & Logging)
+*   Gửi câu trả lời cho người dùng, lưu trữ thông tin thống kê định tuyến và lịch sử vào cơ sở dữ liệu để hoàn tất giao dịch.

@@ -1,25 +1,25 @@
-# 導入計画 (Implementation Plan)
+# Kế hoạch Triển khai (Implementation Plan)
 
-## フェーズ 1: 基盤の構築とスキーマの初期化
+## Giai đoạn 1: Xây dựng nền tảng và Khởi tạo lược đồ
 
-1.  **PostgreSQL 環境のセットアップ:** `pgvector` エクステンションを有効化した PostgreSQL インスタンスを用意します。
-2.  **スキーマの適用:** `init_db.py` を実行して、キャッシュ、エンティティ・インデックス、チャット履歴テーブルを構築します。
-3.  **データ移行:** `migrate_transcripts.py` を使用して、既存の `session_id` を正規化された形式 (`GT_01` など) に変換します。
+1.  **Thiết lập môi trường PostgreSQL:** Chuẩn bị một thực thể PostgreSQL đã kích hoạt tiện ích mở rộng `pgvector`.
+2.  **Áp dụng lược đồ:** Chạy tệp `init_db.py` để xây dựng các bảng cho bộ nhớ đệm, chỉ mục thực thể và lịch sử trò chuyện.
+3.  **Di chuyển dữ liệu:** Sử dụng `migrate_transcripts.py` để chuyển đổi các `session_id` hiện có sang định dạng chuẩn hóa (ví dụ: `GT_01`).
 
-## フェーズ 2: 日本語ルーティング・ロジックの実装
+## Giai đoạn 2: Triển khai logic định tuyến (Routing)
 
-1.  **Tier 1 ルーターの構築:** 日本語の正規表現と `_safe_embed` ラッパーを含む `router.py` を実装します。
-2.  **代名詞リストの整備:** 日本語のビジネス文脈で頻出する指示語（「その件」、「先ほど」、「彼」など）を PRONOUNS リストに追加します。
-3.  **Tier 2 の調整:** 日本語の文脈理解に強い LLM プロンプトを配置し、指示代名詞の補完を強化します。
+1.  **Xây dựng bộ định tuyến Tier 1:** Triển khai `router.py` bao gồm các biểu thức chính quy (Regex) và trình bao bọc `_safe_embed`.
+2.  **Chuẩn bị danh sách đại từ:** Thêm các từ chỉ định thường gặp trong ngữ cảnh kinh doanh (ví dụ: "vụ đó", "lúc nãy", "anh ấy",...) vào danh sách PRONOUNS.
+3.  **Điều chỉnh Tier 2:** Thiết lập prompt cho LLM có khả năng hiểu ngữ cảnh tốt để tăng cường bổ sung các đại từ chỉ định.
 
-## フェーズ 3: 実行エンジンとオーケストレーション
+## Giai đoạn 3: Engine thực thi và Điều phối (Orchestration)
 
-1.  **Engines の実装:** SQL, RAG, Web Search エンジンを構築し、日本語のシステムプロンプトを設定します。
-2.  **Orchestrator の統合:** 8ステップのライフサイクルを制御する `orchestrator.py` を構築し、アドバイザリー・ロックを組み込みます。
-3.  **直接回答パスの定義:** 日本語の回答テンプレートを設定し、高速な応答を可能にします。
+1.  **Triển khai các Engine:** Xây dựng các công cụ SQL, RAG, Web Search và thiết lập system prompt tương ứng.
+2.  **Tích hợp Orchestrator:** Xây dựng `orchestrator.py` để kiểm soát vòng đời 8 bước và tích hợp cơ chế khóa cố vấn (advisory lock).
+3.  **Xác định luồng phản hồi trực tiếp:** Thiết lập các mẫu phản hồi để cho phép trả lời nhanh chóng.
 
-## フェーズ 4: 検証と評価
+## Giai đoạn 4: Kiểm chứng và Đánh giá
 
-1.  **テストスイートの構築:** `test_suite.py` に日本語のテストシナリオを実装します。
-2.  **自己検証の有効化:** 回答生成後のハルシネーション・チェック・プロンプトを日本語で実装します。
-3.  **ベンチマークの実行:** レイテンシとキャッシュ・ヒット率を測定し、閾値の微調整を行います。
+1.  **Xây dựng bộ kiểm thử (Test Suite):** Triển khai các kịch bản kiểm thử trong `test_suite.py`.
+2.  **Kích hoạt tính năng tự kiểm tra:** Triển khai prompt kiểm tra hiện tượng ảo giác (hallucination check) sau khi tạo câu trả lời.
+3.  **Thực hiện Benchmark:** Đo lường độ trễ và tỷ lệ hit cache, đồng thời thực hiện các tinh chỉnh nhỏ đối với các ngưỡng (threshold).

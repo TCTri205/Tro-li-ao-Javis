@@ -1,35 +1,35 @@
-# テストと評価 (Testing & Evaluation)
+# Kiểm thử và Đánh giá (Testing & Evaluation)
 
-## 日本語ベンチマーク・テストの構成
+## Cấu trúc bài kiểm tra Benchmark
 
-システムの性能を客観的に評価するため、`test_suite.py` を用いた自動テストを実行します。
+Để đánh giá khách quan hiệu năng của hệ thống, chúng tôi thực hiện các bài kiểm tra tự động bằng `test_suite.py`.
 
-### 1. 評価カテゴリ
+### 1. Danh mục đánh giá
 
-*   **Standard (標準シナリオ):** 自然な会話の流れでのトピック継続、切り替え、および復帰をテストします。
-*   **NEG (ネガティブ・複雑シナリオ):**
-    *   曖昧な代名詞の解決。
-    *   急な話題転換。
-    *   ルーターや埋め込みのタイムアウト。
-    *   LRU キャッシュの追い出し挙動の確認。
-*   **FIX (リカバリ・修正シナリオ):**
-    *   埋め込み失敗時の自動フォールバック。
-    *   自己検証（Self-Check）によるハルシネーションの修正。
-    *   並列リクエスト時のアドバイザリー・ロックの挙動。
+*   **Standard (Kịch bản tiêu chuẩn):** Kiểm tra việc tiếp tục, chuyển đổi và quay lại chủ đề trong luồng trò chuyện tự nhiên.
+*   **NEG (Kịch bản tiêu cực/phức tạp):**
+    *   Giải quyết các đại từ mơ hồ.
+    *   Chuyển đổi chủ đề đột ngột.
+    *   Thời gian chờ (timeout) của bộ định tuyến hoặc embedding.
+    *   Kiểm tra hành vi loại bỏ dữ liệu của LRU cache.
+*   **FIX (Kịch bản khôi phục/sửa lỗi):**
+    *   Tự động dự phòng (fallback) khi thất bại embedding.
+    *   Sửa lỗi ảo giác thông qua tự kiểm tra (Self-Check).
+    *   Hành vi của khóa cố vấn (advisory lock) khi có các yêu cầu song song.
 
-### 2. 主要評価指標 (KPI)
+### 2. Các chỉ số đánh giá chính (KPI)
 
-*   **平均レイテンシ (Average Latency):** リクエストから回答までの時間。Fast Path (Tier 1) の割合が増えるほど低下します。
-*   **キャッシュ・ヒット率 (Cache Hit Rate):** `needs_retrieval = none` となった割合。
-*   **回答精度 (Answer Accuracy):** 自己検証（Self-Check）を通過した割合。
-*   **ルーティング・ブレイクダウン:** 各ルーティング手法（Heuristics, Embeddings, LLM Router）が使用された割合。
+*   **Độ trễ trung bình (Average Latency):** Thời gian từ khi yêu cầu đến khi có câu trả lời. Chỉ số này sẽ giảm khi tỷ lệ Fast Path (Tier 1) tăng lên.
+*   **Tỷ lệ Hit Cache (Cache Hit Rate):** Tỷ lệ các trường hợp đạt `needs_retrieval = none`.
+*   **Độ chính xác câu trả lời (Answer Accuracy):** Tỷ lệ các trường hợp vượt qua bước tự kiểm tra (Self-Check).
+*   **Phân tích định tuyến (Routing Breakdown):** Tỷ lệ sử dụng của từng phương pháp định tuyến (Heuristics, Embeddings, LLM Router).
 
-### 3. テストの実行方法
+### 3. Cách thực hiện kiểm thử
 
-以下のコマンドを実行して、ベンチマーク・レポートを生成します。
+Chạy lệnh sau để tạo báo cáo benchmark:
 
 ```bash
 python tests/test_suite.py
 ```
 
-出力されるレポートには、p95/p99 レイテンシ、キャッシュ使用率、失敗したテストケースの詳細が含まれます。
+Báo cáo xuất ra sẽ bao gồm chi tiết về độ trễ p95/p99, tỷ lệ sử dụng cache và chi tiết các trường hợp kiểm thử bị thất bại.
