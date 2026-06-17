@@ -196,17 +196,44 @@ def is_date_mismatch(query: str, summary_context) -> bool:
         
     return True # Mismatch
 
-def is_gt_mismatch(query: str, topic_key: str) -> bool:
+def is_gt_mismatch(query: str, topic_key: str, summary_context=None) -> bool:
     """
-    Returns True if a GT referenced in the query doesn't match the cache slot's topic key.
+    Returns True if a GT referenced in the query doesn't match the cache slot's topic key or summary_context.
     """
     if not topic_key:
         return False
     query_gts = re.findall(r'GT_\d+', query, re.IGNORECASE)
     if not query_gts:
         return False
+
+    # Parse summary_context if it's a string
+    context_dict = {}
+    if summary_context:
+        if isinstance(summary_context, str):
+            try:
+                context_dict = json.loads(summary_context)
+            except Exception:
+                pass
+        elif isinstance(summary_context, dict):
+            context_dict = summary_context
+
+    gt_sessions = []
+    if isinstance(context_dict, dict):
+        key_attrs = context_dict.get("key_attributes") or {}
+        gt_sessions = key_attrs.get("gt_sessions") or []
+        # Fallback to checking entity_id
+        entity_id = context_dict.get("entity_id")
+        if entity_id and entity_id not in gt_sessions:
+            gt_sessions.append(entity_id)
+
+    # Normalize sessions to uppercase
+    gt_sessions_upper = [s.upper() for s in gt_sessions if isinstance(s, str)]
+
     for gt in query_gts:
-        if gt.upper() in topic_key.upper():
+        gt_upper = gt.upper()
+        if gt_upper in topic_key.upper():
+            return False
+        if gt_upper in gt_sessions_upper:
             return False
     return True
 
@@ -358,7 +385,54 @@ class Router:
             logger.info("Tier 1: Multiple GTs detected in query. Bypassing to Tier 2 for comparison/parallel routing.")
             return await self._route_tier_2(session_id, query, routing_reason="multiple_entities", embedding_failed=embedding_failed)
 
-        if (has_pronoun or is_ellipsis) and len(unique_matches) == 0:
+        # Heuristic optimization: Explicit single GT query that is not in index -> topic shift Tier 1
+        if len(query_gts) == 1 and len(unique_matches) == 0:
+            explicit_gt = query_gts[0].upper()
+            guessed_p = heuristic_pipeline_guess(query)
+            if guessed_p in ["SQL", "RAG"]:
+                logger.info(f"Tier 1: Explicit new GT {explicit_gt} detected. Routing as new topic shift in Tier 1.")
+                gt_num = re.findall(r'\d+', explicit_gt)
+                suffix = gt_num[0] if gt_num else "123"
+                topic_key = f"new_topic_{suffix}"
+                return {
+                    "is_follow_up": False,
+                    "relation_type": "topic_shift",
+                    "use_cache": False,
+                    "needs_retrieval": "full",
+                    "context_reuse_type": "none",
+                    "rewritten_query": query,
+                    "target_topic_key": topic_key,
+                    "target_pipeline": guessed_p,
+                    "partial_fetch_params": None,
+                    "routing_tier": "tier_1",
+                    "routing_method": "heuristics",
+                    "embedding_failed": embedding_failed
+                }
+
+        # Heuristic optimization: Date-only query -> topic shift Tier 1
+        has_date_pattern = bool(re.search(r'\d+年\d+月\d+日', query) or re.search(r'\d+月\d+日', query) or re.search(r'\d+/\d+', query))
+        if has_date_pattern and len(unique_matches) == 0:
+            guessed_p = heuristic_pipeline_guess(query)
+            if guessed_p in ["SQL", "RAG"]:
+                logger.info("Tier 1: Date query detected. Routing as topic shift in Tier 1.")
+                topic_key = f"new_topic_{int(time.time())}"
+                return {
+                    "is_follow_up": False,
+                    "relation_type": "topic_shift",
+                    "use_cache": False,
+                    "needs_retrieval": "full",
+                    "context_reuse_type": "none",
+                    "rewritten_query": query,
+                    "target_topic_key": topic_key,
+                    "target_pipeline": guessed_p,
+                    "partial_fetch_params": None,
+                    "routing_tier": "tier_1",
+                    "routing_method": "heuristics",
+                    "embedding_failed": embedding_failed
+                }
+
+        has_explicit_gt = len(query_gts) > 0
+        if (has_pronoun or is_ellipsis) and len(unique_matches) == 0 and not has_explicit_gt:
             logger.info("Tier 1: Query contains pronoun or ellipsis but no entity matches in DB. Bypassing to Tier 2.")
             return await self._route_tier_2(session_id, query, routing_reason="unresolved_pronoun", embedding_failed=embedding_failed)
             
@@ -366,7 +440,7 @@ class Router:
             matched_ent = list(unique_matches.values())[0]
             
             # Even if we matched one entity in index, if the query mentions a DIFFERENT GT or Date, it's a mismatch
-            if is_gt_mismatch(query, matched_ent['topic_key']) or is_date_mismatch(query, matched_ent['summary_context']):
+            if is_gt_mismatch(query, matched_ent['topic_key'], matched_ent['summary_context']) or is_date_mismatch(query, matched_ent['summary_context']):
                 logger.info("Tier 1: Detected GT or Date mismatch vs matched entity. Forwarding to Tier 2.")
                 return await self._route_tier_2(session_id, query, routing_reason="metadata_mismatch", embedding_failed=embedding_failed)
 
@@ -378,6 +452,9 @@ class Router:
                 if pron in query:
                     rewritten_query = rewritten_query.replace(pron, matched_ent['entity_id'])
             
+            guessed_pipeline = heuristic_pipeline_guess(query)
+            target_pipeline = guessed_pipeline if guessed_pipeline != "MODEL" else matched_ent['last_pipeline']
+
             return {
                 "is_follow_up": True,
                 "relation_type": "same_entity",
@@ -386,7 +463,7 @@ class Router:
                 "context_reuse_type": "full_data_reuse",
                 "rewritten_query": rewritten_query,
                 "target_topic_key": matched_ent['topic_key'],
-                "target_pipeline": matched_ent['last_pipeline'],
+                "target_pipeline": target_pipeline,
                 "partial_fetch_params": None,
                 "routing_tier": "tier_1",
                 "routing_method": "heuristics",
@@ -427,7 +504,36 @@ class Router:
             # Check Metadata mismatches
             # If query mentions a specific date or GT session, but it doesn't match the closest slot, bypass to Tier 2
             query_gts = re.findall(r'GT_\d+', query, re.IGNORECASE)
-            if is_gt_mismatch(query, closest_slot['topic_key']) or is_date_mismatch(query, closest_slot['summary_context']) or len(query_gts) > 1:
+            
+            # Check if the query mentions a brand new GT session not present in the session entities
+            is_new_gt = False
+            if query_gts:
+                indexed_gts = set()
+                for ent in entities:
+                    gts_in_ent = re.findall(r'GT_\d+', ent['entity_id'], re.IGNORECASE)
+                    indexed_gts.update([g.upper() for g in gts_in_ent])
+                if not any(g.upper() in indexed_gts for g in query_gts):
+                    is_new_gt = True
+
+            if is_new_gt:
+                logger.info("Tier 1: Detected brand new GT session in query. Routing as topic shift.")
+                guessed_pipeline = heuristic_pipeline_guess(query)
+                return {
+                    "is_follow_up": False,
+                    "relation_type": "topic_shift",
+                    "use_cache": False,
+                    "needs_retrieval": "full",
+                    "context_reuse_type": "none",
+                    "rewritten_query": query,
+                    "target_topic_key": None,
+                    "target_pipeline": guessed_pipeline,
+                    "partial_fetch_params": None,
+                    "routing_tier": "tier_1",
+                    "routing_method": "heuristics",
+                    "embedding_failed": embedding_failed
+                }
+
+            if is_gt_mismatch(query, closest_slot['topic_key'], closest_slot['summary_context']) or is_date_mismatch(query, closest_slot['summary_context']) or len(query_gts) > 1:
                 logger.info("Tier 1: Detected GT or Date mismatch. Forwarding to Tier 2.")
                 return await self._route_tier_2(session_id, query, routing_reason="metadata_mismatch", embedding_failed=embedding_failed)
                 
@@ -529,6 +635,7 @@ class Router:
             "1. **代名詞の解決とクエリの書き換え (rewritten_query)**:\n"
             "   - クエリに「彼」「彼女」「彼ら」「その人」「先ほどの担当者」などの代名詞や指示語が含まれている場合、チャット履歴を参照して、それらを**具体的な名前や名詞（例：中原さん、島田さん）に置き換えた完全なクエリ**を `rewritten_query` に作成してください。\n"
             "   - 特に「彼らは〜」のように複数の人物を指す場合、履歴から該当する全ての人物を特定して書き換えてください。\n"
+            "   - 「先ほどの通話」「その通話」「それ」などの指示対象についても、チャット履歴とアクティブキャッシュを参照して、具体的な通話セッションID（例：GT_04、GT_03）に置き換えてください（例：「先ほどの通話」を「GT_04の通話」に書き換える）。\n"
             "2. **トピックの切り替え (topic_shift)**:\n"
             "   - クエリが既存のキャッシュ（[アクティブキャッシュ]）と異なるトピックである場合、必ず `target_topic_key` を**新しく作成**（例: 'new_topic_123'）し、`needs_retrieval: \"full\"` にしてください。\n"
             "   - **既存のトピックキーを別の種類の情報（例：GT_04の通話にWEB検索の結果を入れる）で上書きしないでください。**\n"
@@ -603,12 +710,60 @@ class Router:
                         if result.get("needs_retrieval") == "none":
                             result["needs_retrieval"] = "full"
             
+            # Post-processing: Ensure GT session ID is in rewritten_query if target_topic_key points to a GT session
+            target_key = result.get("target_topic_key", "")
+            rewritten = result.get("rewritten_query", query)
+            if target_key:
+                gts_in_key = re.findall(r'GT_\d+', target_key, re.IGNORECASE)
+                gt_id = None
+                if gts_in_key:
+                    gt_id = gts_in_key[0].upper()
+                else:
+                    # Look up in database session_entity_index for this topic_key
+                    try:
+                        ent_row = await self.db_pool.fetchrow("""
+                            SELECT e.entity_id 
+                            FROM session_entity_index e
+                            JOIN session_context_cache c ON e.cache_slot_id = c.id
+                            WHERE c.session_id = $1 AND c.topic_key = $2 AND e.entity_id LIKE 'GT_%'
+                            LIMIT 1
+                        """, session_id, target_key)
+                        if ent_row:
+                            gt_id = ent_row['entity_id'].upper()
+                    except Exception as db_ex:
+                        logger.error(f"Error looking up entity for post-processing: {db_ex}")
+                
+                if gt_id and gt_id not in rewritten.upper():
+                    has_pronoun = any(re.search(re.escape(p), rewritten.lower()) for p in PRONOUNS)
+                    if has_pronoun:
+                        # Sort pronouns by length descending to replace the longest matching pronoun first
+                        sorted_pronouns = sorted(PRONOUNS, key=len, reverse=True)
+                        for pron in sorted_pronouns:
+                            if pron in rewritten:
+                                rewritten = rewritten.replace(pron, gt_id)
+                                break
+                        result["rewritten_query"] = rewritten
+
+            # Force needs_retrieval to none for same_entity cache hits, EXCEPT when multiple GTs are involved
+            query_gts_count = len(re.findall(r'GT_\d+', query, re.IGNORECASE))
+            if query_gts_count > 1:
+                result["needs_retrieval"] = "full"
+                result["use_cache"] = False
+                result["relation_type"] = "topic_shift"
+            elif result.get("relation_type") == "same_entity" and result.get("use_cache"):
+                result["needs_retrieval"] = "none"
+
             # Heuristic Override: If query mentions GT session, never allow MODEL or WEB pipeline
             if any(re.search(r'GT_\d+', q, re.IGNORECASE) for q in [query, result.get("rewritten_query", "")]):
                 if result.get("target_pipeline") in ["MODEL", "WEB"]:
                     guessed = heuristic_pipeline_guess(query)
                     result["target_pipeline"] = guessed if guessed in ["SQL", "RAG"] else "RAG"
                     logger.info(f"Router override: GT session detected in query. Forcing target_pipeline to '{result['target_pipeline']}'.")
+            
+            # Heuristic Override: If query contains web search keywords, force pipeline to WEB
+            if any(k in query.lower() for k in ["ネットで", "検索して", "グーグルで"]):
+                result["target_pipeline"] = "WEB"
+                logger.info("Router override: Web search keyword detected. Forcing target_pipeline to 'WEB'.")
         except Exception as e:
             logger.error(f"Error calling LLM Router: {e}. Activating fallback routing.")
             query_emb = await _safe_embed(query, self.embedding_model)

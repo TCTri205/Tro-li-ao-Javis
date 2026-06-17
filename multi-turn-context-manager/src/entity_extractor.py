@@ -100,7 +100,8 @@ class EntityExtractor:
                                 p_clean = str(p).strip()
                                 if p_clean:
                                     p_id = f"{canonical_session}_{p_clean}"
-                                    p_names = [p_clean, "彼", "彼女", "その人", "あの人", "彼ら", "彼女ら"]
+                                    p_base = re.sub(r'(さん|様|さま|君|くん|ちゃん|氏|殿)$', '', p_clean)
+                                    p_names = [p_clean, p_base, f"{p_base}さん", f"{p_base}様", "彼", "彼女", "その人", "あの人"]
                                     entities_to_upsert.append((p_id, "person", p_names))
                                     
                 entities_to_upsert.append((canonical_session, "meeting_transcript", display_names))
@@ -150,7 +151,20 @@ class EntityExtractor:
                         "さっきの通話",
                         "先ほどの通話"
                     ]
-                    
+                    if re.match(r'^GT_\d+$', entity_id):
+                        display_names.extend([
+                            "さっき",
+                            "先ほど",
+                            "さっきの会話",
+                            "先ほどの会話",
+                            "そのcall",
+                            "このcall",
+                            "あのcall",
+                            "さっきのcall",
+                            "先ほどのcall",
+                            "その件"
+                        ])
+                        
                     if re.match(r'^GT_\d+$', entity_id):
                         t_row = await conn.fetchrow("""
                             SELECT meeting_date, participants FROM transcripts WHERE session_id = $1
@@ -178,7 +192,7 @@ class EntityExtractor:
                                         if p_clean:
                                             p_id = f"{entity_id}_{p_clean}"
                                             p_base = re.sub(r'(さん|様|さま|君|くん|ちゃん|氏|殿)$', '', p_clean)
-                                            p_names = [p_clean, p_base, f"{p_base}さん", f"{p_base}様", "彼", "彼女", "その人", "あの人", "彼ら", "彼女ら"]
+                                            p_names = [p_clean, p_base, f"{p_base}さん", f"{p_base}様", "彼", "彼女", "その人", "あの人"]
                                             entities_to_upsert.append((p_id, "person", p_names))
                                             
                     entities_to_upsert.append((entity_id, "document" if not re.match(r'^GT_\d+$', entity_id) else "meeting_transcript", display_names))
@@ -256,7 +270,6 @@ class EntityExtractor:
                     VALUES ($1, $2, $3, $4, $5)
                     ON CONFLICT (session_id, entity_id) 
                     DO UPDATE SET 
-                        cache_slot_id = EXCLUDED.cache_slot_id,
                         display_names = ARRAY(
                             SELECT DISTINCT x 
                             FROM unnest(session_entity_index.display_names || EXCLUDED.display_names) AS x

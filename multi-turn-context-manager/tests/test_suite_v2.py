@@ -477,6 +477,11 @@ async def main():
         await suite.run_fix_scenarios()
         await suite.run_stress_test()
         suite.print_report()
+        
+        # Save results for extraction
+        with open("test_results_v2.json", "w", encoding="utf-8") as f:
+            json.dump(suite.results, f, ensure_ascii=False, indent=2)
+            
     except Exception as e:
         logger.error(f"Test suite execution failed: {e}", exc_info=True)
     finally:

@@ -94,11 +94,12 @@ class TestSuite:
                 await conn.execute("DELETE FROM session_context_cache")
                 await conn.execute("DELETE FROM session_entity_index")
 
-    async def record_result(self, category: str, test_id: str, query: str, metadata: dict, passed: bool, error: str = None):
+    async def record_result(self, category: str, test_id: str, query: str, answer: str, metadata: dict, passed: bool, error: str = None):
         self.results.append({
             "category": category,
             "test_id": test_id,
             "query": query,
+            "answer": str(answer),
             "metadata": metadata,
             "passed": passed,
             "error": error
@@ -118,28 +119,28 @@ class TestSuite:
         logger.info(f"Q1: {q1}")
         ans1, meta1 = await self.orchestrator.handle(session_id, q1)
         passed1 = meta1["needs_retrieval"] == "full" and meta1["target_pipeline"] == "SQL"
-        await self.record_result("Standard", "SCENARIO_1_T1", q1, meta1, passed1)
+        await self.record_result("Standard", "SCENARIO_1_T1", q1, ans1, meta1, passed1)
 
         # Turn 2: Follow-up
         q2 = "誰がその通話を行いましたか？"
         logger.info(f"Q2: {q2}")
         ans2, meta2 = await self.orchestrator.handle(session_id, q2)
         passed2 = meta2["needs_retrieval"] == "none" and meta2["target_topic_key"] is not None
-        await self.record_result("Standard", "SCENARIO_1_T2", q2, meta2, passed2)
+        await self.record_result("Standard", "SCENARIO_1_T2", q2, ans2, meta2, passed2)
 
         # Turn 3: Topic switch
         q3 = "2026年5月3日に内見に関する通話はありますか？"
         logger.info(f"Q3: {q3}")
         ans3, meta3 = await self.orchestrator.handle(session_id, q3)
         passed3 = meta3["needs_retrieval"] == "full" and meta3["target_pipeline"] in ["SQL", "RAG"]
-        await self.record_result("Standard", "SCENARIO_2_T3", q3, meta3, passed3)
+        await self.record_result("Standard", "SCENARIO_2_T3", q3, ans3, meta3, passed3)
 
         # Turn 4: Switch Back
         q4 = "では、先ほどの通話を受けたのは誰ですか？"
         logger.info(f"Q4: {q4}")
         ans4, meta4 = await self.orchestrator.handle(session_id, q4)
         passed4 = meta4["needs_retrieval"] == "none" and "GT_04" in str(meta4["rewritten_query"])
-        await self.record_result("Standard", "SCENARIO_4_T4", q4, meta4, passed4)
+        await self.record_result("Standard", "SCENARIO_4_T4", q4, ans4, meta4, passed4)
 
     # =========================================================================
     # DIRTY & COMPLEX SCENARIOS (NEG)
@@ -170,14 +171,14 @@ class TestSuite:
         # Bypasses Tier 1 due to ambiguous entities
         ans, meta = await self.orchestrator.handle(session_neg, q_neg1)
         passed = meta["routing_tier"] == "tier_2"
-        await self.record_result("NEG", "NEG_001", q_neg1, meta, passed)
+        await self.record_result("NEG", "NEG_001", q_neg1, ans, meta, passed)
 
         # NEG_002: Unexpected Topic Shift
         q_neg2 = "あ、やっぱり、ネットで歌手A of 情報を検索してください。"
         logger.info(f"NEG_002: {q_neg2}")
         ans, meta = await self.orchestrator.handle(session_neg, q_neg2)
         passed = meta["needs_retrieval"] == "full" and meta["target_pipeline"] == "WEB"
-        await self.record_result("NEG", "NEG_002", q_neg2, meta, passed)
+        await self.record_result("NEG", "NEG_002", q_neg2, ans, meta, passed)
 
         # NEG_003: Brand new conversation
         session_new = "session_new"
@@ -186,7 +187,7 @@ class TestSuite:
         logger.info(f"NEG_003: {q_neg3}")
         ans, meta = await self.orchestrator.handle(session_new, q_neg3)
         passed = meta["needs_retrieval"] == "full" and meta["target_pipeline"] == "SQL"
-        await self.record_result("NEG", "NEG_003", q_neg3, meta, passed)
+        await self.record_result("NEG", "NEG_003", q_neg3, ans, meta, passed)
 
         # NEG_004: LLM Router Timeout
         # Use a fresh session to ensure it doesn't match anything in Tier 1 and goes to Tier 2
@@ -207,8 +208,9 @@ class TestSuite:
             passed = False
             logger.error(f"NEG_004 failed: {e}")
             meta = {}
+            ans = "Error"
         self.llm_manager.generate_chat_completion = orig_gen
-        await self.record_result("NEG", "NEG_004", q_neg4, meta, passed)
+        await self.record_result("NEG", "NEG_004", q_neg4, ans, meta, passed)
 
         # NEG_005: Bad JSON response
         async def mock_bad_json(*args, **kwargs):
@@ -219,28 +221,28 @@ class TestSuite:
         ans, meta = await self.orchestrator.handle(session_neg, q_neg5)
         passed = meta["rewritten_query"] is not None # fallback worked
         self.llm_manager.generate_chat_completion = orig_gen
-        await self.record_result("NEG", "NEG_005", q_neg5, meta, passed)
+        await self.record_result("NEG", "NEG_005", q_neg5, ans, meta, passed)
 
         # NEG_006: Typos and abbreviations
         q_neg6 = "GT_04のつうわ時間はどれくらい"
         logger.info(f"NEG_006: {q_neg6}")
         ans, meta = await self.orchestrator.handle(session_neg, q_neg6)
         passed = meta["target_pipeline"] == "SQL"
-        await self.record_result("NEG", "NEG_006", q_neg6, meta, passed)
+        await self.record_result("NEG", "NEG_006", q_neg6, ans, meta, passed)
 
         # NEG_007: Code-mixing
         q_neg7 = "そのcallはいつendしましたか？"
         logger.info(f"NEG_007: {q_neg7}")
         ans, meta = await self.orchestrator.handle(session_neg, q_neg7)
         passed = meta["rewritten_query"] is not None
-        await self.record_result("NEG", "NEG_007", q_neg7, meta, passed)
+        await self.record_result("NEG", "NEG_007", q_neg7, ans, meta, passed)
 
         # NEG_008: Parallel queries for multiple entities
         q_neg8 = "GT_04とGT_06の通話を比較してください。"
         logger.info(f"NEG_008: {q_neg8}")
         ans, meta = await self.orchestrator.handle(session_neg, q_neg8)
         passed = meta["needs_retrieval"] == "full"
-        await self.record_result("NEG", "NEG_008", q_neg8, meta, passed)
+        await self.record_result("NEG", "NEG_008", q_neg8, ans, meta, passed)
 
         # NEG_009: Changing mind (LRU test)
         session_lru = "session_lru"
@@ -261,7 +263,7 @@ class TestSuite:
             active_keys = [r["topic_key"] for r in active_slots]
             logger.info(f"Active keys after eviction: {active_keys}")
             passed = len(active_keys) == 3 and not any("gt_04" in k.lower() for k in active_keys)
-        await self.record_result("NEG", "NEG_009", "LRU Eviction Test", {}, passed)
+        await self.record_result("NEG", "NEG_009", "LRU Eviction Test", str(active_keys), {}, passed)
 
         # NEG_010: Web Cache TTL Expired
         session_ttl = "session_ttl"
@@ -277,7 +279,7 @@ class TestSuite:
         logger.info(f"NEG_010: {q_neg10}")
         ans, meta = await self.orchestrator.handle(session_ttl, q_neg10)
         passed = meta["needs_retrieval"] == "full" # Forced retrieval due to TTL
-        await self.record_result("NEG", "NEG_010", q_neg10, meta, passed)
+        await self.record_result("NEG", "NEG_010", q_neg10, ans, meta, passed)
 
         # NEG_013: Entity index quick match
         session_ent = "session_ent"
@@ -293,7 +295,7 @@ class TestSuite:
         logger.info(f"NEG_013: {q_neg13}")
         ans, meta = await self.orchestrator.handle(session_ent, q_neg13)
         passed = meta["routing_tier"] == "tier_1" and meta["needs_retrieval"] == "none"
-        await self.record_result("NEG", "NEG_013", q_neg13, meta, passed)
+        await self.record_result("NEG", "NEG_013", q_neg13, ans, meta, passed)
 
         # NEG_014: Ambiguous pronoun resolution
         session_amb = "session_ambiguity"
@@ -315,13 +317,13 @@ class TestSuite:
         logger.info(f"NEG_014: {q_neg14}")
         ans, meta = await self.orchestrator.handle(session_amb, q_neg14)
         passed = meta["routing_tier"] == "tier_2" # Should bypass Tier 1 due to ambiguity
-        await self.record_result("NEG", "NEG_014", q_neg14, meta, passed)
+        await self.record_result("NEG", "NEG_014", q_neg14, ans, meta, passed)
 
         # NEG_015: 3 Topics Switch Back (No Eviction)
         session_switch = "session_switch"
         await self.clear_db(session_switch)
         await self.orchestrator.handle(session_switch, "今日の三菱はどうですか？")
-        await self.orchestrator.handle(session_switch, "GT_04の通話時間はどれくらいですか？")
+        await self.orchestrator.handle(session_switch, "GT_04의通話時間はどれくらいですか？")
         await self.orchestrator.handle(session_switch, "GT_06の通話の要約は？")
         # Now 3 slots are active. Switch back to Mitsubishi
         q_neg15 = "三菱に関する新しいニュースはありますか？"
@@ -331,7 +333,7 @@ class TestSuite:
         async with self.db_pool.acquire() as conn:
             cnt = await conn.fetchval("SELECT COUNT(*) FROM session_context_cache WHERE session_id = $1", session_switch)
             passed = cnt <= 3
-        await self.record_result("NEG", "NEG_015", q_neg15, meta, passed)
+        await self.record_result("NEG", "NEG_015", q_neg15, ans, meta, passed)
 
         # NEG_016: SQL Schema Change
         # We simulate a broken query that fails the SQL engine
@@ -340,7 +342,7 @@ class TestSuite:
         # The SQL engine will fail to execute, circuit breaker opens and falls back to parametric model response
         ans, meta = await self.orchestrator.handle(session_neg, q_neg16)
         passed = "fallback" in str(ans).lower() or meta["target_pipeline"] == "MODEL" or meta["answer_confidence"] == "high"
-        await self.record_result("NEG", "NEG_016", q_neg16, meta, passed)
+        await self.record_result("NEG", "NEG_016", q_neg16, ans, meta, passed)
 
         # NEG_017: Token Bloat (Big RAG PDF)
         # Checked via fast metadata access timing
@@ -348,7 +350,7 @@ class TestSuite:
         logger.info(f"NEG_017: {q_neg17}")
         ans, meta = await self.orchestrator.handle(session_neg, q_neg17)
         passed = meta["latency_ms"] < 6000  # fast metadata lookup with fallback tolerance
-        await self.record_result("NEG", "NEG_017", q_neg17, meta, passed)
+        await self.record_result("NEG", "NEG_017", q_neg17, ans, meta, passed)
 
         # NEG_019: Code-mixing pronoun match
         # Insert entity
@@ -362,7 +364,7 @@ class TestSuite:
         logger.info(f"NEG_019: {q_neg19}")
         ans, meta = await self.orchestrator.handle(session_ent, q_neg19)
         passed = meta["needs_retrieval"] == "none"
-        await self.record_result("NEG", "NEG_019", q_neg19, meta, passed)
+        await self.record_result("NEG", "NEG_019", q_neg19, ans, meta, passed)
 
     # =========================================================================
     # RECOVERY & FIX SCENARIOS (FIX)
@@ -388,7 +390,7 @@ class TestSuite:
         self.orchestrator = IntelligentOrchestrator(self.db_pool, self.llm_manager, self.embedding_model)
         ans, meta = await self.orchestrator.handle(session_fix, q_fix1)
         passed = meta["embedding_failed"] == True and meta["routing_tier"] == "tier_2"
-        await self.record_result("FIX", "FIX_001", q_fix1, meta, passed)
+        await self.record_result("FIX", "FIX_001", q_fix1, ans, meta, passed)
         
         router._safe_embed = orig_safe_embed
         self.orchestrator = IntelligentOrchestrator(self.db_pool, self.llm_manager, self.embedding_model)
@@ -398,7 +400,7 @@ class TestSuite:
         logger.info(f"FIX_002: spaces query")
         ans, meta = await self.orchestrator.handle(session_fix, q_fix2)
         passed = meta["rewritten_query"] is not None
-        await self.record_result("FIX", "FIX_002", "Spaces query", meta, passed)
+        await self.record_result("FIX", "FIX_002", "Spaces query", ans, meta, passed)
 
         # FIX_003: Row Lock prevents concurrent delete
         # Tested as part of transaction integrity
@@ -414,7 +416,7 @@ class TestSuite:
         logger.info(f"FIX_005: {q_fix5}")
         ans, meta = await self.orchestrator.handle(session_fix, q_fix5)
         passed = meta["answer_confidence"] == "low" and "注意" in ans
-        await self.record_result("FIX", "FIX_005", q_fix5, meta, passed)
+        await self.record_result("FIX", "FIX_005", q_fix5, ans, meta, passed)
         
         self.orchestrator._verify_hallucination = orig_verify
 
@@ -426,7 +428,7 @@ class TestSuite:
         async with self.db_pool.acquire() as conn:
             ent_rows = await conn.fetch("SELECT entity_id FROM session_entity_index WHERE session_id = $1", session_fix)
             passed = len(ent_rows) > 0
-        await self.record_result("FIX", "FIX_006", q_fix6, meta, passed)
+        await self.record_result("FIX", "FIX_006", q_fix6, ans, meta, passed)
 
         # FIX_007: Web TTL Refresh
         # Handled in NEG_010
@@ -439,7 +441,7 @@ class TestSuite:
             start = time.perf_counter()
             ans, meta = await self.orchestrator.handle(session_fix, f"{q_con} {idx}", lock_timeout=120.0)
             end = time.perf_counter()
-            return idx, (end - start) * 1000
+            return idx, (end - start) * 1000, ans
 
         # Run them in parallel
         tasks = [call_handle(i) for i in range(3)]
@@ -449,7 +451,7 @@ class TestSuite:
         latencies = [r[1] for r in con_results]
         logger.info(f"Concurrent request latencies: {latencies}")
         passed = max(latencies) > sum(latencies)/3 # shows sequential execution timing delay
-        await self.record_result("FIX", "FIX_008", "Concurrent advisory locks", {}, passed)
+        await self.record_result("FIX", "FIX_008", "Concurrent advisory locks", str(latencies), {}, passed)
 
         # FIX_009: Advisory Lock Timeout
         logger.info("FIX_009: Simulating Advisory Lock Timeout...")
@@ -472,6 +474,7 @@ class TestSuite:
         conn2 = await self.db_pool.acquire()
         lm = SessionLockManager()
         
+        ans_lock = "N/A"
         try:
             start_wait = time.perf_counter()
             # Try lock with timeout 1.5s
@@ -483,15 +486,17 @@ class TestSuite:
             wait_time = end_wait - start_wait
             logger.info(f"Advisory lock timed out correctly after {wait_time:.2f}s")
             passed = 1.0 <= wait_time <= 2.5
+            ans_lock = "TimeoutError triggered"
         except Exception as e:
             logger.error(f"Unexpected error in lock timeout: {e}")
             passed = False
+            ans_lock = str(e)
             
         stop_event.set()
         await holder_task
         await self.db_pool.release(conn1)
         await self.db_pool.release(conn2)
-        await self.record_result("FIX", "FIX_009", "Lock timeout", {}, passed)
+        await self.record_result("FIX", "FIX_009", "Lock timeout", ans_lock, {}, passed)
 
         # FIX_010: Update vector prevents drift
         # Handled in cache update pipeline.
@@ -568,6 +573,11 @@ async def main():
         await suite.run_neg_scenarios()
         await suite.run_fix_scenarios()
         suite.print_report()
+        
+        # Save results for extraction
+        with open("test_results_v1.json", "w", encoding="utf-8") as f:
+            json.dump(suite.results, f, ensure_ascii=False, indent=2)
+            
     except Exception as e:
         logger.error(f"Test suite execution failed: {e}", exc_info=True)
     finally:
