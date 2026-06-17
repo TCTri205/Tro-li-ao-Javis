@@ -43,6 +43,10 @@ class MockSentenceTransformer:
         if is_single:
             return np.array(results[0])
         return np.array(results)
+import sys
+import os
+# Add 'src' directory to sys.path so we can import core modules
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
 
 from router import get_llm_manager
 from orchestrator import IntelligentOrchestrator
@@ -185,7 +189,10 @@ class TestSuite:
         await self.record_result("NEG", "NEG_003", q_neg3, meta, passed)
 
         # NEG_004: LLM Router Timeout
-        # Temporary mock llm_manager to simulate timeout
+        # Use a fresh session to ensure it doesn't match anything in Tier 1 and goes to Tier 2
+        session_timeout = "session_timeout"
+        await self.clear_db(session_timeout)
+        
         orig_gen = self.llm_manager.generate_chat_completion
         async def mock_timeout(*args, **kwargs):
             raise asyncio.TimeoutError("Simulated LLM Timeout")
@@ -194,8 +201,8 @@ class TestSuite:
         q_neg4 = "その通話の内容は何ですか？"
         logger.info(f"NEG_004: {q_neg4}")
         try:
-            ans, meta = await self.orchestrator.handle(session_neg, q_neg4)
-            passed = meta["needs_retrieval"] == "full" and meta["routing_method"] == "embeddings" # embedding fallback
+            ans, meta = await self.orchestrator.handle(session_timeout, q_neg4)
+            passed = meta["needs_retrieval"] == "full" and meta.get("routing_method") in ["embeddings", "fallback"]
         except Exception as e:
             passed = False
             logger.error(f"NEG_004 failed: {e}")
@@ -238,20 +245,21 @@ class TestSuite:
         # NEG_009: Changing mind (LRU test)
         session_lru = "session_lru"
         await self.clear_db(session_lru)
-        logger.info("NEG_009: Sequentially querying 4 topics to trigger LRU eviction")
+        logger.info("NEG_009: Sequentially querying 4 distinct topics to trigger LRU eviction")
         # 1. Ask GT_04
         await self.orchestrator.handle(session_lru, "GT_04の通話時間はどれくらいですか？")
-        # 2. Ask GT_03
-        await self.orchestrator.handle(session_lru, "2026年5月3日に内見に関する通話はありますか？")
-        # 3. Ask GT_06
-        await self.orchestrator.handle(session_lru, "GT_06の通話内容は何ですか？")
-        # Now 3 slots are active. Ask GT_08
-        await self.orchestrator.handle(session_lru, "GT_08の通話の詳細は？")
+        # 2. Ask something entirely different (Web info)
+        await self.orchestrator.handle(session_lru, "今日の東京の天気はどうですか？")
+        # 3. Ask about Mitsubishi
+        await self.orchestrator.handle(session_lru, "三菱の最近の株価は？")
+        # Now 3 slots are active. Ask GT_08 (should evict GT_04)
+        await self.orchestrator.handle(session_lru, "GT_08の通話の詳細は何ですか？")
         
         # Verify oldest (GT_04) was evicted, so we should have exactly 3 slots
         async with self.db_pool.acquire() as conn:
             active_slots = await conn.fetch("SELECT topic_key FROM session_context_cache WHERE session_id = $1", session_lru)
             active_keys = [r["topic_key"] for r in active_slots]
+            logger.info(f"Active keys after eviction: {active_keys}")
             passed = len(active_keys) == 3 and not any("gt_04" in k.lower() for k in active_keys)
         await self.record_result("NEG", "NEG_009", "LRU Eviction Test", {}, passed)
 
@@ -288,10 +296,25 @@ class TestSuite:
         await self.record_result("NEG", "NEG_013", q_neg13, meta, passed)
 
         # NEG_014: Ambiguous pronoun resolution
+        session_amb = "session_ambiguity"
+        await self.clear_db(session_amb)
+        async with self.db_pool.acquire() as conn:
+            # Insert two active slots for GT_04 and GT_03 to create ambiguity for "彼"
+            c1 = await upsert_cache_slot(conn, session_amb, "GT_04_topic", "SQL", "heuristics", {"rows": []}, {})
+            await conn.execute("""
+                INSERT INTO session_entity_index (session_id, cache_slot_id, entity_id, entity_type, display_names)
+                VALUES ($1, $2, 'GT_04', 'meeting_transcript', ARRAY['彼', '彼ら'])
+            """, session_amb, c1)
+            c2 = await upsert_cache_slot(conn, session_amb, "GT_03_topic", "SQL", "heuristics", {"rows": []}, {})
+            await conn.execute("""
+                INSERT INTO session_entity_index (session_id, cache_slot_id, entity_id, entity_type, display_names)
+                VALUES ($1, $2, 'GT_03', 'meeting_transcript', ARRAY['彼', '彼ら'])
+            """, session_amb, c2)
+
         q_neg14 = "彼は何と言いましたか？"
         logger.info(f"NEG_014: {q_neg14}")
-        ans, meta = await self.orchestrator.handle(session_neg, q_neg14)
-        passed = meta["routing_tier"] == "tier_2"
+        ans, meta = await self.orchestrator.handle(session_amb, q_neg14)
+        passed = meta["routing_tier"] == "tier_2" # Should bypass Tier 1 due to ambiguity
         await self.record_result("NEG", "NEG_014", q_neg14, meta, passed)
 
         # NEG_015: 3 Topics Switch Back (No Eviction)

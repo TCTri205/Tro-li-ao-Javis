@@ -18,7 +18,17 @@ logger = logging.getLogger(__name__)
 SWITCH_KEYWORDS_PATTERN = re.compile(r'(やっぱり|別の話|キャンセル|スキップ|忘れて)', re.IGNORECASE)
 
 # Japanese pronouns / indicator words to look for in query
-PRONOUNS = ["それ", "あれ", "これ", "彼", "彼女", "彼ら", "さっき", "先ほど", "このファイル", "その通話", "あの通話", "このドキュメント", "そのドキュメント", "先ほどの通話", "さっきの通話", "その件", "そのcall", "このcall", "あのcall", "さっきのcall", "先ほどのcall", "call", "通話"]
+PRONOUNS = [
+    "それ", "あれ", "これ", "そちら", "あちら", "こちら", 
+    "彼", "彼女", "彼ら", "彼女ら", "その人", "あの人", "この人",
+    "さっき", "先ほど", "さきほど", "先程", "前回の", "さっきの", "先ほどの",
+    "このファイル", "そのファイル", "あのファイル",
+    "このドキュメント", "そのドキュメント", "あのドキュメント",
+    "この通話", "その通話", "あの通話", "先ほどの通話", "さっきの通話",
+    "この会話", "その会話", "あの会話", "先ほどの会話", "さっきの会話",
+    "その件", "あの件", "この件", "その話", "あの話", "この話",
+    "そのcall", "このcall", "あのcall", "さっきのcall", "先ほどのcall", "call", "通話"
+]
 
 
 async def _safe_embed(query: str, model: SentenceTransformer) -> list:
@@ -310,9 +320,10 @@ class Router:
             
         # 2. Lightweight Entity Index Lookup
         entities = await self.db_pool.fetch("""
-            SELECT e.cache_slot_id, e.entity_id, e.entity_type, e.display_names, c.topic_key, c.last_pipeline
+            SELECT e.cache_slot_id, e.entity_id, e.entity_type, e.display_names, c.topic_key, c.last_pipeline, p.summary_context
             FROM session_entity_index e
             JOIN session_context_cache c ON e.cache_slot_id = c.id
+            LEFT JOIN session_context_payload p ON c.id = p.cache_id
             WHERE e.session_id = $1
         """, session_id)
         
@@ -329,12 +340,26 @@ class Router:
         # Unresolved pronoun check: if query has pronouns but they aren't matched in the Entity Index,
         # bypass to Tier 2 to resolve it via chat history.
         has_pronoun = any(re.search(re.escape(p), query.lower()) for p in PRONOUNS)
+        
+        # Check for multiple GTs in query (e.g. comparison)
+        query_gts = re.findall(r'GT_\d+', query, re.IGNORECASE)
+        
+        if len(query_gts) > 1:
+            logger.info("Tier 1: Multiple GTs detected in query. Bypassing to Tier 2 for comparison/parallel routing.")
+            return await self._route_tier_2(session_id, query, routing_reason="multiple_entities", embedding_failed=embedding_failed)
+
         if has_pronoun and len(unique_matches) == 0:
             logger.info("Tier 1: Query contains pronoun but no entity matches in DB. Bypassing to Tier 2.")
             return await self._route_tier_2(session_id, query, routing_reason="unresolved_pronoun", embedding_failed=embedding_failed)
             
         if len(unique_matches) == 1:
             matched_ent = list(unique_matches.values())[0]
+            
+            # Even if we matched one entity in index, if the query mentions a DIFFERENT GT or Date, it's a mismatch
+            if is_gt_mismatch(query, matched_ent['topic_key']) or is_date_mismatch(query, matched_ent['summary_context']):
+                logger.info("Tier 1: Detected GT or Date mismatch vs matched entity. Forwarding to Tier 2.")
+                return await self._route_tier_2(session_id, query, routing_reason="metadata_mismatch", embedding_failed=embedding_failed)
+
             logger.info(f"Tier 1: Entity lookup matched exactly one entity: {matched_ent['entity_id']} (slot: {matched_ent['topic_key']})")
             
             # Rewrite pronoun in query
@@ -640,6 +665,13 @@ class Router:
                     "routing_method": "fallback"
                 }
             
+            result["routing_tier"] = "tier_2"
+            # Do not overwrite routing_method if it was set by fallback
+            if "routing_method" not in result:
+                result["routing_method"] = "llm_router"
+            result["embedding_failed"] = embedding_failed
+            return result
+
         result["routing_tier"] = "tier_2"
         result["routing_method"] = "llm_router"
         result["embedding_failed"] = embedding_failed

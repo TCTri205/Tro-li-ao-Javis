@@ -177,7 +177,8 @@ class EntityExtractor:
                                         p_clean = str(p).strip()
                                         if p_clean:
                                             p_id = f"{entity_id}_{p_clean}"
-                                            p_names = [p_clean, "彼", "彼女", "その人", "あの人", "彼ら", "彼女ら"]
+                                            p_base = re.sub(r'(さん|様|さま|君|くん|ちゃん|氏|殿)$', '', p_clean)
+                                            p_names = [p_clean, p_base, f"{p_base}さん", f"{p_base}様", "彼", "彼女", "その人", "あの人", "彼ら", "彼女ら"]
                                             entities_to_upsert.append((p_id, "person", p_names))
                                             
                     entities_to_upsert.append((entity_id, "document" if not re.match(r'^GT_\d+$', entity_id) else "meeting_transcript", display_names))
