@@ -180,7 +180,7 @@ class IntelligentOrchestrator:
             else:
                 logger.info(f"LLM Path activated. Generating response using {self.llm_manager.__class__.__name__}...")
                 answer, answer_confidence, self_check_passed, self_check_retries = await self._generate_llm_answer_with_self_check(
-                    query, rewritten_query, target_pipeline, payload
+                    query, rewritten_query, target_pipeline, payload, summary_context=summary_context
                 )
                 
             # Step 8: Log and Commit
@@ -332,10 +332,17 @@ class IntelligentOrchestrator:
                     }
                 }
 
-        # Parse dates and GTs from rewritten_query if available to prevent metadata staleness
+        # Parse dates, GTs, and key entities from rewritten_query if available to prevent metadata staleness
         if rewritten_query:
             gts = re.findall(r'GT_\d+', rewritten_query, re.IGNORECASE)
             dates = re.findall(r'\b(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?\b', rewritten_query)
+            
+            # Basic keyword extraction (proper nouns, companies, etc.)
+            words = re.findall(r'[\u4e00-\u9fff]{2,}|[A-Z][a-z]+|[A-Z]{2,}', rewritten_query)
+            # Remove common Japanese stop words from keywords
+            stop_words = {"通話", "会話", "詳細", "内容", "要約", "目的", "担当", "名前", "連絡"}
+            entities = [w for w in words if w not in stop_words]
+
             if gts:
                 gts_upper = [gt.upper() for gt in gts]
                 summary["entity_type"] = "meeting_transcript"
@@ -360,13 +367,19 @@ class IntelligentOrchestrator:
                     summary["key_attributes"] = {}
                 summary["key_attributes"]["date"] = dt_str
                 
+            if entities:
+                if "key_attributes" not in summary:
+                    summary["key_attributes"] = {}
+                summary["key_attributes"]["detected_entities"] = list(set(entities))
+                
         return summary
 
-    async def _generate_llm_answer_with_self_check(self, original_query: str, rewritten_query: str, pipeline: str, payload: dict) -> tuple[str, str, bool, int]:
+    async def _generate_llm_answer_with_self_check(self, original_query: str, rewritten_query: str, pipeline: str, payload: dict, summary_context: dict = None) -> tuple[str, str, bool, int]:
         """
         Generates final answer using the LLM and performs Self-Check Verification.
         """
         context_str = json.dumps(payload, ensure_ascii=False, indent=2)
+        summary_str = json.dumps(summary_context, ensure_ascii=False) if summary_context else ""
         
         # Determine if context is likely empty or error
         context_empty = False
@@ -376,13 +389,16 @@ class IntelligentOrchestrator:
         system_prompt = (
             "あなたはスマートで親切なAIアシスタントのJavisです。\n"
             "あなたの任務は、提供されたコンテキスト（Context）に基づいて、ユーザーの質問に答えることです。\n\n"
+            "[TOPIC SUMMARY]\n"
+            f"{summary_str}\n\n"
             "[CONTEXT]\n"
             f"{context_str}\n\n"
             "【重要なルール】\n"
             "1. コンテキスト内の情報のみに基づいて答えてください。コンテキストにない情報を付け加えたり、データを捏造（ハルシネーション）したりしないでください。\n"
             "2. コンテキストに情報が含まれていない場合、または不十分な場合は、正直に「申し訳ありませんが、提供された資料からはその情報を確認できませんでした」という旨を伝えてください。\n"
-            "3. 自分の知識（学習データ）を使って勝手に補完しないでください。\n"
-            "4. 回答は日本語で行ってください。"
+            "3. [TOPIC SUMMARY] に記載されているエンティティ名や日付などの背景情報を、代名詞（「先ほどの担当者」など）の解決に役立ててください。\n"
+            "4. 自分の知識（学習データ）を使って勝手に補完しないでください。\n"
+            "5. 回答は日本語で行ってください。"
         )
         
         messages = [

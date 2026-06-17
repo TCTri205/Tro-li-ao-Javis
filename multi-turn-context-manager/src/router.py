@@ -27,7 +27,9 @@ PRONOUNS = [
     "この通話", "その通話", "あの通話", "先ほどの通話", "さっきの通話",
     "この会話", "その会話", "あの会話", "先ほどの会話", "さっきの会話",
     "その件", "あの件", "この件", "その話", "あの話", "この話",
-    "そのcall", "このcall", "あのcall", "さっきのcall", "先ほどのcall", "call", "通話"
+    "そのcall", "このcall", "あのcall", "さっきのcall", "先ほどのcall", "call", "通話",
+    "その", "この", "あの", "その物件", "この物件", "あの物件",
+    "同物件", "同通話", "同氏", "同社"
 ]
 
 
@@ -259,8 +261,9 @@ class JavisQwenManager(LLMManager):
             raise ValueError("Javis Qwen API key or Base URL missing in environment variables.")
         
         # Disable keep-alive to prevent hangs on Windows when endpoint closes connection
+        timeout_val = float(os.getenv("JAVIS_QWEN_TIMEOUT", "15.0"))
         limits = httpx.Limits(max_keepalive_connections=0, max_connections=20)
-        timeout = httpx.Timeout(8.0, connect=3.0, read=8.0, write=3.0, pool=3.0)
+        timeout = httpx.Timeout(timeout_val, connect=3.0, read=timeout_val, write=3.0, pool=3.0)
         self.http_client = httpx.AsyncClient(limits=limits, timeout=timeout)
         self.client = AsyncOpenAI(
             api_key=self.api_key,
@@ -280,7 +283,13 @@ class JavisQwenManager(LLMManager):
                     kwargs["response_format"] = response_format
                 
                 completion = await self.client.chat.completions.create(**kwargs, timeout=timeout_val)
-                return completion.choices[0].message.content
+                content = completion.choices[0].message.content
+                if content and ("<think>" in content or "</think>" in content):
+                    if "</think>" in content:
+                        content = content.split("</think>")[-1].strip()
+                    else:
+                        content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL).strip()
+                return content
             except Exception as e:
                 logger.error(f"Error calling Javis Qwen API (attempt {attempt+1}): {e}")
                 if attempt == max_retries - 1:
@@ -337,9 +346,10 @@ class Router:
         for m in matched_slots:
             unique_matches[m['cache_slot_id']] = m
             
-        # Unresolved pronoun check: if query has pronouns but they aren't matched in the Entity Index,
+        # Unresolved pronoun check: if query has pronouns or is an ellipsis follow-up but they aren't matched in the Entity Index,
         # bypass to Tier 2 to resolve it via chat history.
         has_pronoun = any(re.search(re.escape(p), query.lower()) for p in PRONOUNS)
+        is_ellipsis = query.strip().endswith(("は？", "は", "も？", "も"))
         
         # Check for multiple GTs in query (e.g. comparison)
         query_gts = re.findall(r'GT_\d+', query, re.IGNORECASE)
@@ -348,8 +358,8 @@ class Router:
             logger.info("Tier 1: Multiple GTs detected in query. Bypassing to Tier 2 for comparison/parallel routing.")
             return await self._route_tier_2(session_id, query, routing_reason="multiple_entities", embedding_failed=embedding_failed)
 
-        if has_pronoun and len(unique_matches) == 0:
-            logger.info("Tier 1: Query contains pronoun but no entity matches in DB. Bypassing to Tier 2.")
+        if (has_pronoun or is_ellipsis) and len(unique_matches) == 0:
+            logger.info("Tier 1: Query contains pronoun or ellipsis but no entity matches in DB. Bypassing to Tier 2.")
             return await self._route_tier_2(session_id, query, routing_reason="unresolved_pronoun", embedding_failed=embedding_failed)
             
         if len(unique_matches) == 1:
@@ -516,10 +526,13 @@ class Router:
             "[アクティブキャッシュ]\n"
             f"{active_caches_str if active_caches else '[]'}\n\n"
             "【最重要ルール】\n"
-            "1. **トピックの切り替え (topic_shift)**:\n"
+            "1. **代名詞の解決とクエリの書き換え (rewritten_query)**:\n"
+            "   - クエリに「彼」「彼女」「彼ら」「その人」「先ほどの担当者」などの代名詞や指示語が含まれている場合、チャット履歴を参照して、それらを**具体的な名前や名詞（例：中原さん、島田さん）に置き換えた完全なクエリ**を `rewritten_query` に作成してください。\n"
+            "   - 特に「彼らは〜」のように複数の人物を指す場合、履歴から該当する全ての人物を特定して書き換えてください。\n"
+            "2. **トピックの切り替え (topic_shift)**:\n"
             "   - クエリが既存のキャッシュ（[アクティブキャッシュ]）と異なるトピックである場合、必ず `target_topic_key` を**新しく作成**（例: 'new_topic_123'）し、`needs_retrieval: \"full\"` にしてください。\n"
             "   - **既存のトピックキーを別の種類の情報（例：GT_04の通話にWEB検索の結果を入れる）で上書きしないでください。**\n"
-            "2. **Pipeline の厳格な使い分け**:\n"
+            "3. **Pipeline の厳格な使い分け**:\n"
             "   - **SQL**: 通話時間（duration）、日付（meeting_date）、参加者（participants）、件数、通話の有無など、データベースの**数値や構造化データ**が必要な場合。\n"
             "   - **RAG**: 会話の具体的な内容、発言の詳細、要約、特定の話題（例: 内見(ないけん・物件の内覧)、契約、物件情報、顧客情報、交渉内容など）について何を話したかなど、通話録音やテキストの**読解・要約**が必要な場合。\n"
             "   - **WEB**: データベースにない外部情報（最新の株価、一般ニュース、社外の一般知識など）が必要な場合。\n"
@@ -589,6 +602,13 @@ class Router:
                         result["use_cache"] = False
                         if result.get("needs_retrieval") == "none":
                             result["needs_retrieval"] = "full"
+            
+            # Heuristic Override: If query mentions GT session, never allow MODEL or WEB pipeline
+            if any(re.search(r'GT_\d+', q, re.IGNORECASE) for q in [query, result.get("rewritten_query", "")]):
+                if result.get("target_pipeline") in ["MODEL", "WEB"]:
+                    guessed = heuristic_pipeline_guess(query)
+                    result["target_pipeline"] = guessed if guessed in ["SQL", "RAG"] else "RAG"
+                    logger.info(f"Router override: GT session detected in query. Forcing target_pipeline to '{result['target_pipeline']}'.")
         except Exception as e:
             logger.error(f"Error calling LLM Router: {e}. Activating fallback routing.")
             query_emb = await _safe_embed(query, self.embedding_model)

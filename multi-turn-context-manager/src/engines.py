@@ -216,13 +216,14 @@ class RAGEngine:
         if rag_doc_ids:
             # Query specific documents by UUID
             rows_turn = await conn.fetch("""
-                SELECT id, transcript_id AS doc_id, text, speaker, 'chunks_turn' AS source_table
-                FROM chunks_turn
-                WHERE transcript_id = ANY($1::uuid[])
+                SELECT c.id, c.transcript_id AS doc_id, t.session_id, c.text, c.speaker, c.turn_index, 'chunks_turn' AS source_table
+                FROM chunks_turn c
+                JOIN transcripts t ON c.transcript_id = t.id
+                WHERE c.transcript_id = ANY($1::uuid[])
             """, rag_doc_ids)
             
             rows_company = await conn.fetch("""
-                SELECT id, document_id AS doc_id, text, NULL AS speaker, 'company_chunks' AS source_table
+                SELECT id, document_id AS doc_id, NULL AS session_id, text, NULL AS speaker, 0 AS turn_index, 'company_chunks' AS source_table
                 FROM company_chunks
                 WHERE document_id = ANY($1::uuid[])
             """, rag_doc_ids)
@@ -230,36 +231,44 @@ class RAGEngine:
             chunks.extend([dict(r) for r in rows_turn])
             chunks.extend([dict(r) for r in rows_company])
         else:
-            # No specific doc IDs, filter by current session transcript if possible
-            transcript_id = None
+            # Check for GT sessions in query
+            gt_matches = re.findall(r'GT_\d+', query, re.IGNORECASE)
+            target_ids = []
+            if gt_matches:
+                rows = await conn.fetch("""
+                    SELECT id FROM transcripts WHERE session_id = ANY($1::varchar[])
+                """, [gt.upper() for gt in gt_matches])
+                target_ids = [r["id"] for r in rows]
+            
+            # Also check if session_id matches a transcript
             if session_id:
-                transcript_id = await conn.fetchval(
+                t_id = await conn.fetchval(
                     "SELECT id FROM transcripts WHERE session_id = $1", session_id
                 )
-                
-            if transcript_id:
+                if t_id and t_id not in target_ids:
+                    target_ids.append(t_id)
+                    
+            if target_ids:
                 rows_turn = await conn.fetch("""
-                    SELECT id, transcript_id AS doc_id, text, speaker, 'chunks_turn' AS source_table
-                    FROM chunks_turn
-                    WHERE transcript_id = $1
-                """, transcript_id)
+                    SELECT c.id, c.transcript_id AS doc_id, t.session_id, c.text, c.speaker, c.turn_index, 'chunks_turn' AS source_table
+                    FROM chunks_turn c
+                    JOIN transcripts t ON c.transcript_id = t.id
+                    WHERE c.transcript_id = ANY($1::uuid[])
+                """, target_ids)
                 chunks.extend([dict(r) for r in rows_turn])
             else:
-                # Fallback to general company documents
+                # General search: fetch all chunks from chunks_turn and company_chunks
+                rows_turn = await conn.fetch("""
+                    SELECT c.id, c.transcript_id AS doc_id, t.session_id, c.text, c.speaker, c.turn_index, 'chunks_turn' AS source_table
+                    FROM chunks_turn c
+                    JOIN transcripts t ON c.transcript_id = t.id
+                """)
                 rows_company = await conn.fetch("""
-                    SELECT id, document_id AS doc_id, text, NULL AS speaker, 'company_chunks' AS source_table
+                    SELECT id, document_id AS doc_id, NULL AS session_id, text, NULL AS speaker, 0 AS turn_index, 'company_chunks' AS source_table
                     FROM company_chunks
                 """)
+                chunks.extend([dict(r) for r in rows_turn])
                 chunks.extend([dict(r) for r in rows_company])
-                
-        # If still no chunks, fetch a sample from chunks_turn
-        if not chunks:
-            rows_turn = await conn.fetch("""
-                SELECT id, transcript_id AS doc_id, text, speaker, 'chunks_turn' AS source_table
-                FROM chunks_turn
-                LIMIT 50
-            """)
-            chunks.extend([dict(r) for r in rows_turn])
 
         logger.info(f"RAGEngine: Found {len(chunks)} candidate chunks. Computing similarities...")
 
@@ -288,15 +297,52 @@ class RAGEngine:
         chunk_norms[chunk_norms == 0] = 1e-9
         similarities = dot_products / (query_norm * chunk_norms)
         
+        # Extract keywords for boosting keyword match
+        keywords = []
+        words = re.findall(r'[\u4e00-\u9fff]+|[\u30a0-\u30ff]+|[a-zA-Z0-9_]+', query)
+        stop_words = {"query", "passage", "の", "は", "と", "を", "が", "に", "で", "も", "した", "ですか", "でした", "について", "同じ", "目的", "電話"}
+        keywords = [w for w in words if w.lower() not in stop_words and len(w) >= 2]
+        logger.info(f"RAGEngine: Extracted keywords for boosting: {keywords}")
+        
         # 3. Sort and select top results
         for idx, sim in enumerate(similarities):
-            chunks[idx]["score"] = float(sim)
+            # Apply keyword boost
+            boost = 0.0
+            chunk_text = chunks[idx]["text"]
+            for kw in keywords:
+                if kw in chunk_text:
+                    boost += 0.35  # Boost score by 0.35 for each matching keyword
+            
+            chunks[idx]["score"] = float(sim) + boost
             # Make ID and doc_id JSON serializable (str)
             chunks[idx]["id"] = str(chunks[idx]["id"])
             chunks[idx]["doc_id"] = str(chunks[idx]["doc_id"])
             
-        chunks.sort(key=lambda x: x["score"], reverse=True)
-        top_chunks = chunks[:5]  # Top 5 chunks
+        if rag_doc_ids or (not rag_doc_ids and gt_matches):
+            # Targeted retrieval: group by doc_id to ensure we get chunks from each document
+            docs_map = {}
+            for c in chunks:
+                d_id = c["doc_id"]
+                if d_id not in docs_map:
+                    docs_map[d_id] = []
+                docs_map[d_id].append(c)
+            
+            balanced_chunks = []
+            per_doc_limit = 15 if len(docs_map) > 1 else 45
+            for d_id in docs_map:
+                doc_chunks = docs_map[d_id]
+                # Sort doc_chunks by similarity score first to get most relevant for that doc, 
+                # but then return them chronologically for natural reading
+                doc_chunks.sort(key=lambda x: x["score"], reverse=True)
+                top_for_doc = doc_chunks[:per_doc_limit]
+                top_for_doc.sort(key=lambda x: x.get("turn_index", 0))
+                balanced_chunks.extend(top_for_doc)
+            
+            top_chunks = balanced_chunks[:45]
+        else:
+            # General retrieval: sort by boosted similarity score
+            chunks.sort(key=lambda x: x["score"], reverse=True)
+            top_chunks = chunks[:15]  # Retrieve top 15 instead of 5 to improve recall in general semantic queries!
         
         formatted_docs = []
         for c in top_chunks:
@@ -306,6 +352,7 @@ class RAGEngine:
                 "score": c["score"],
                 "metadata": {
                     "doc_id": c["doc_id"],
+                    "session_id": c.get("session_id"),
                     "speaker": c["speaker"],
                     "source_table": c["source_table"]
                 }
