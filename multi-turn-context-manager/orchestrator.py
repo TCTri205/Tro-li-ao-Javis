@@ -124,7 +124,7 @@ class IntelligentOrchestrator:
                     
                     # Run target engine with partial filter params
                     engine_res = await self._run_engine(
-                        target_pipeline, query, session_id=session_id, partial_params=partial_params
+                        target_pipeline, query, session_id=session_id, partial_params=partial_params, conn=conn
                     )
                     payload = engine_res.payload
                     

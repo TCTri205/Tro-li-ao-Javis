@@ -39,6 +39,6 @@ class SessionLockManager:
             
             elapsed = time.perf_counter() - start_time
             if elapsed >= timeout:
-                raise TimeoutError(f"Failed to acquire lock for session {session_id} within {timeout} seconds")
+                raise asyncio.TimeoutError(f"Failed to acquire lock for session {session_id} within {timeout} seconds")
             
             await asyncio.sleep(self.check_interval)
