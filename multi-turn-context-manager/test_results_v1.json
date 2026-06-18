@@ -3,13 +3,13 @@
     "category": "Standard",
     "test_id": "SCENARIO_1_T1",
     "query": "GT_04の2026年5月4日の通話時間はどれくらいですか？",
-    "answer": "通話時間: 105秒。",
+    "answer": "Id: 1e029dc3-e08c-4cc6-90fb-4ceca28f6591, Session Id: GT_04, 日付: 2026-05-04, 参加者: [\"横堀\", \"中原凛花\", \"凛花\", \"中原\"], 話者: None, 通話時間: 105秒, Raw Text: Nữ: はい、ありがとうございます。アセットジャパンです。\nNam: お忙しいところ恐れ入ります。私、三菱UFJ銀行の横堀(yokobori)と申します。\nNữ: はい。お世話になっております。\nNam: お世話になっております。貴社でアルバイトとしてお勤めと聞きでおります、中原凛花（なかはら りんか）様にご案内したいことがございまして、お電話いたしました。ご出勤でお取り次ぎが可能でしたらお願いしたいと思いまして、お電話した次第なんですが。\nNữ: えっと……、今は出勤……今日はお休みみですね。まだ、出勤してないので……。\nNam: あ、本日お休みで。失礼いたしました。そうした、ご出勤されてからで結構なんですけども、当行の方にお電話いただきたい、伝言をお願いすることはできるのでしょうか？\nNữ: はい、受けたまおります。\nNam: ありがとうございます。では、改めて私、三菱UFJ銀行の横堀と申します。\nNữ: 横堀様、はい。\nNam: はい。こちらの電話番号なんですけども、実は中原様の携帯電話の方にも何度かお電話しておりまして、留守番電話に銀行名と電話番号などは吹き込みさせていただいているので、番号自体はご存じでいらっしゃいます。\nNữ: あ、はい、承知いたしました。はい。\nNam: 営業。。。あの、受付の時間が、平日朝9時から21時まで。\nNữ: 21時、はい。\nNam: あと、土日祝日が朝9時から17時まで。\nNữ: 17時、はい。\nNam: 私以外の者でも案内できるんしておりますので、お電話いただきたいの伝言、お願いしてもよろしいでしょうか？\nNữ: はい、かしこまりました。申し伝えます。\nNam: 大変お手数ですが、よろしくお願いいたします。失礼いたします。\nNữ: 失礼いたします。, 要約: Summary for GT_04。",
     "metadata": {
       "rewritten_query": "GT_04の2026年5月4日の通話時間はどれくらいですか？",
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "SQL",
-      "target_topic_key": "new_topic_04",
+      "target_topic_key": "new_topic_1781774638",
       "routing_tier": "tier_1",
       "routing_method": "heuristics",
       "embedding_failed": false,
@@ -17,7 +17,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 293.6009999993985
+      "latency_ms": 207.02760000131093
     },
     "passed": true,
     "error": null
@@ -26,21 +26,21 @@
     "category": "Standard",
     "test_id": "SCENARIO_1_T2",
     "query": "誰がその通話を行いましたか？",
-    "answer": "通話時間: 105秒。",
+    "answer": "Id: 1e029dc3-e08c-4cc6-90fb-4ceca28f6591, 要約: Summary for GT_04, Raw Text: Nữ: はい、ありがとうございます。アセットジャパンです。\nNam: お忙しいところ恐れ入ります。私、三菱UFJ銀行の横堀(yokobori)と申します。\nNữ: はい。お世話になっております。\nNam: お世話になっております。貴社でアルバイトとしてお勤めと聞きでおります、中原凛花（なかはら りんか）様にご案内したいことがございまして、お電話いたしました。ご出勤でお取り次ぎが可能でしたらお願いしたいと思いまして、お電話した次第なんですが。\nNữ: えっと……、今は出勤……今日はお休みみですね。まだ、出勤してないので……。\nNam: あ、本日お休みで。失礼いたしました。そうした、ご出勤されてからで結構なんですけども、当行の方にお電話いただきたい、伝言をお願いすることはできるのでしょうか？\nNữ: はい、受けたまおります。\nNam: ありがとうございます。では、改めて私、三菱UFJ銀行の横堀と申します。\nNữ: 横堀様、はい。\nNam: はい。こちらの電話番号なんですけども、実は中原様の携帯電話の方にも何度かお電話しておりまして、留守番電話に銀行名と電話番号などは吹き込みさせていただいているので、番号自体はご存じでいらっしゃいます。\nNữ: あ、はい、承知いたしました。はい。\nNam: 営業。。。あの、受付の時間が、平日朝9時から21時まで。\nNữ: 21時、はい。\nNam: あと、土日祝日が朝9時から17時まで。\nNữ: 17時、はい。\nNam: 私以外の者でも案内できるんしておりますので、お電話いただきたいの伝言、お願いしてもよろしいでしょうか？\nNữ: はい、かしこまりました。申し伝えます。\nNam: 大変お手数ですが、よろしくお願いいたします。失礼いたします。\nNữ: 失礼いたします。, Session Id: GT_04, 日付: 2026-05-04, 参加者: [\"横堀\", \"中原凛花\", \"凛花\", \"中原\"], 話者: None, 通話時間: 105秒。",
     "metadata": {
-      "rewritten_query": "誰がGT_04を行いましたか？",
+      "rewritten_query": "GT_04の通話は誰が行いましたか？",
       "needs_retrieval": "none",
       "relation_type": "same_entity",
       "target_pipeline": "SQL",
-      "target_topic_key": "new_topic_04",
-      "routing_tier": "tier_1",
-      "routing_method": "heuristics",
+      "target_topic_key": "new_topic_1781774638",
+      "routing_tier": "tier_2",
+      "routing_method": "llm_router",
       "embedding_failed": false,
       "direct_answer_used": true,
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 35.75770000134071
+      "latency_ms": 2739.3814000006387
     },
     "passed": true,
     "error": null
@@ -55,7 +55,7 @@
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "SQL",
-      "target_topic_key": "new_topic_1781772270",
+      "target_topic_key": "new_topic_1781774641",
       "routing_tier": "tier_1",
       "routing_method": "heuristics",
       "embedding_failed": false,
@@ -63,7 +63,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 78.75910000075237
+      "latency_ms": 56.6698999991786
     },
     "passed": true,
     "error": null
@@ -72,21 +72,21 @@
     "category": "Standard",
     "test_id": "SCENARIO_4_T4",
     "query": "では、先ほどの通話を受けたのは誰ですか？",
-    "answer": "通話時間: 105秒。",
+    "answer": "Id: 1e029dc3-e08c-4cc6-90fb-4ceca28f6591, 要約: Summary for GT_04, Raw Text: Nữ: はい、ありがとうございます。アセットジャパンです。\nNam: お忙しいところ恐れ入ります。私、三菱UFJ銀行の横堀(yokobori)と申します。\nNữ: はい。お世話になっております。\nNam: お世話になっております。貴社でアルバイトとしてお勤めと聞きでおります、中原凛花（なかはら りんか）様にご案内したいことがございまして、お電話いたしました。ご出勤でお取り次ぎが可能でしたらお願いしたいと思いまして、お電話した次第なんですが。\nNữ: えっと……、今は出勤……今日はお休みみですね。まだ、出勤してないので……。\nNam: あ、本日お休みで。失礼いたしました。そうした、ご出勤されてからで結構なんですけども、当行の方にお電話いただきたい、伝言をお願いすることはできるのでしょうか？\nNữ: はい、受けたまおります。\nNam: ありがとうございます。では、改めて私、三菱UFJ銀行の横堀と申します。\nNữ: 横堀様、はい。\nNam: はい。こちらの電話番号なんですけども、実は中原様の携帯電話の方にも何度かお電話しておりまして、留守番電話に銀行名と電話番号などは吹き込みさせていただいているので、番号自体はご存じでいらっしゃいます。\nNữ: あ、はい、承知いたしました。はい。\nNam: 営業。。。あの、受付の時間が、平日朝9時から21時まで。\nNữ: 21時、はい。\nNam: あと、土日祝日が朝9時から17時まで。\nNữ: 17時、はい。\nNam: 私以外の者でも案内できるんしておりますので、お電話いただきたいの伝言、お願いしてもよろしいでしょうか？\nNữ: はい、かしこまりました。申し伝えます。\nNam: 大変お手数ですが、よろしくお願いいたします。失礼いたします。\nNữ: 失礼いたします。, Session Id: GT_04, 日付: 2026-05-04, 参加者: [\"横堀\", \"中原凛花\", \"凛花\", \"中原\"], 話者: None, 通話時間: 105秒。",
     "metadata": {
-      "rewritten_query": "では、GT_04を受けたのは誰ですか？",
+      "rewritten_query": "では、GT_04の通話を受けたのは誰ですか？",
       "needs_retrieval": "none",
       "relation_type": "same_entity",
       "target_pipeline": "SQL",
-      "target_topic_key": "new_topic_04",
-      "routing_tier": "tier_1",
-      "routing_method": "heuristics",
+      "target_topic_key": "new_topic_1781774638",
+      "routing_tier": "tier_2",
+      "routing_method": "llm_router",
       "embedding_failed": false,
       "direct_answer_used": true,
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 35.649699999339646
+      "latency_ms": 1823.2466000008571
     },
     "passed": true,
     "error": null
@@ -95,13 +95,13 @@
     "category": "NEG",
     "test_id": "NEG_001",
     "query": "彼は何と言いましたか？",
-    "answer": "GT_04の通話に参加した人物は2名います。それぞれの発言は以下の通りです：\n\n1. **女性（アセットジャパン所属）**  \n   - 「はい、ありがとうございます。アセットジャパンです。」  \n   - 「はい。お世話になっております。」  \n   - 「えっと……、今は出勤……今日はお休みですね。まだ、出勤してないので……。」  \n   - 「はい、受けたまおります。」  \n   - 「横堀様、はい。」  \n   - 「あ、はい、承知いたしました。はい。」  \n   - 「はい、かしこまりました。申し伝えます。」  \n   - 「失礼いたします。」  \n\n2. **男性（三菱UFJ銀行 横堀氏）**  \n   - 「お忙しいところ恐れ入ります。私、三菱UFJ銀行の横堀と申します。」  \n   - 「お世話になっております。貴社でアルバイトとしてお勤めと聞いております、中原凛花様にご案内したいことがございまして、お電話いたしました。ご出勤でお取り次ぎが可能でしたらお願いしたいと思いまして、お電話した次第なんですが。」  \n   - 「あ、本日お休みで。失礼いたしました。そうした、ご出勤されてからで結構なんですけども、当行の方にお電話いただきたい、伝言をお願いすることはできるのでしょうか？」  \n   - 「ありがとうございます。では、改めて私、三菱UFJ銀行の横堀と申します。」  \n   - 「こちらの電話番号なんですけども、実は中原様の携帯電話の方にも何度かお電話しておりまして、留守番電話に銀行名と電話番号などは吹き込みさせていただいているので、番号自体はご存じでいらっしゃいます。」  \n   - 「営業。。。あの、受付の時間が、平日朝9時から21時まで。」  \n   - 「あと、土日祝日が朝9時から17時まで。」  \n   - 「私以外の者でも案内できるんしておりますので、お電話いただきたいの伝言、お願いしてもよろしいでしょうか？」  \n   - 「大変お手数ですが、よろしくお願いいたします。失礼いたします。」  \n\n**立場の確認**：  \n- **発信側（電話をかけた側）**：三菱UFJ銀行の横堀氏（男性）。  \n- **受信側（電話を受けた側）**：アセットジャパン所属の女性（名前は明記されていない）。  \n\n※「中原凛花様」はアセットジャパンのアルバイト社員で、通話の相手（受信側）の上司または関係者と推定されます。",
+    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。",
     "metadata": {
-      "rewritten_query": "GT_04の通話で、GT_04の参加者は何と言いましたか？",
+      "rewritten_query": "彼は何と言いましたか？",
       "needs_retrieval": "full",
-      "relation_type": "same_entity",
-      "target_pipeline": "RAG",
-      "target_topic_key": "GT_04_topic",
+      "relation_type": "topic_shift",
+      "target_pipeline": "MODEL",
+      "target_topic_key": "default_topic_1781774644",
       "routing_tier": "tier_2",
       "routing_method": "llm_router",
       "embedding_failed": false,
@@ -109,7 +109,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 17947.756100000333
+      "latency_ms": 3365.772900000593
     },
     "passed": true,
     "error": null
@@ -118,9 +118,9 @@
     "category": "NEG",
     "test_id": "NEG_002",
     "query": "あ、やっぱり、ネットで歌手A of 情報を検索してください。",
-    "answer": "歌手Aに関する情報は以下の通りです：  \n\n1. **最新アルバムのチャート1位**  \n   歌手Aの最新アルバム『光』は、2023年10月15日にオリコン週間アルバムチャートで初登場1位を記録しました。初動売上は5万枚を突破し、2023年の注目アーティストとして認知されています（[詳細はこちら](https://www.oricon.co.jp/news/20231015/001225.html)）。  \n\n2. **2023年12月の東京ドームコンサート**  \n   歌手Aは2023年12月15日に東京ドームでコンサートを開催します。チケットは10月20日に発売され、即日完売するなど大好評です（[詳細はこちら](https://www.nikkei.com/article/DGXMZOU7144120R3A62023120100012.html)）。  \n\n3. **プロフィールと代表曲**  \n   歌手Aは1995年に生まれ、2015年にデビューした日本のポップ歌手です。代表曲には『明日へ』『夢の続き』などがあります（[公式プロフィール](https://www.singer-a-official.com/profile)）。  \n\n以上が現在の情報です。",
+    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。コンテキストには「ネットで歌手A of 情報を検索してください」という検索リクエストが記録されていますが、具体的な検索結果や歌手Aに関する情報は含まれていません。",
     "metadata": {
-      "rewritten_query": "ネットで歌手Aの情報を検索してください。",
+      "rewritten_query": "ネットで歌手A of 情報を検索してください。",
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "WEB",
@@ -132,7 +132,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 13836.282700000083
+      "latency_ms": 6842.391700000007
     },
     "passed": true,
     "error": null
@@ -147,7 +147,7 @@
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "SQL",
-      "target_topic_key": "new_topic_1781772302",
+      "target_topic_key": "new_topic_1781774654",
       "routing_tier": "tier_1",
       "routing_method": "heuristics",
       "embedding_failed": false,
@@ -155,7 +155,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 82.03700000012759
+      "latency_ms": 172.2364999986894
     },
     "passed": true,
     "error": null
@@ -170,7 +170,7 @@
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "SQL",
-      "target_topic_key": "fallback_1781772302",
+      "target_topic_key": "fallback_1781774654",
       "routing_tier": "tier_2",
       "routing_method": "fallback",
       "embedding_failed": false,
@@ -178,7 +178,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 79.34940000086499
+      "latency_ms": 463.4329999989859
     },
     "passed": true,
     "error": null
@@ -189,19 +189,19 @@
     "query": "その通話の内容は何ですか？",
     "answer": "該当するデータが見つかりませんでした。",
     "metadata": {
-      "rewritten_query": "その通話の内容は何ですか？",
+      "rewritten_query": "GT_03の内容は何ですか？",
       "needs_retrieval": "full",
-      "relation_type": "topic_shift",
+      "relation_type": "same_entity",
       "target_pipeline": "SQL",
-      "target_topic_key": "fallback_1781772302",
-      "routing_tier": "tier_2",
-      "routing_method": "embeddings",
+      "target_topic_key": "GT_03_topic",
+      "routing_tier": "tier_1",
+      "routing_method": "heuristics",
       "embedding_failed": false,
       "direct_answer_used": true,
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 130.79409999954805
+      "latency_ms": 233.24420000062673
     },
     "passed": true,
     "error": null
@@ -216,15 +216,15 @@
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "SQL",
-      "target_topic_key": "new_topic_04",
+      "target_topic_key": "sql_1781774654",
       "routing_tier": "tier_1",
-      "routing_method": "heuristics",
+      "routing_method": "embeddings",
       "embedding_failed": false,
       "direct_answer_used": true,
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 112.5620999991952
+      "latency_ms": 5003.193500000634
     },
     "passed": true,
     "error": null
@@ -233,21 +233,21 @@
     "category": "NEG",
     "test_id": "NEG_007",
     "query": "そのcallはいつendしましたか？",
-    "answer": "通話時間: 105秒。",
+    "answer": "日付: 2026-05-04, End Time Seconds: 105。",
     "metadata": {
-      "rewritten_query": "GT_04はいつendしましたか？",
-      "needs_retrieval": "none",
+      "rewritten_query": "GT_04の通話はいつ終了しましたか？",
+      "needs_retrieval": "full",
       "relation_type": "same_entity",
       "target_pipeline": "SQL",
-      "target_topic_key": "new_topic_04",
-      "routing_tier": "tier_1",
-      "routing_method": "heuristics",
+      "target_topic_key": "GT_03_topic",
+      "routing_tier": "tier_2",
+      "routing_method": "llm_router",
       "embedding_failed": false,
       "direct_answer_used": true,
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 59.91069999981846
+      "latency_ms": 15013.566799998443
     },
     "passed": true,
     "error": null
@@ -256,13 +256,13 @@
     "category": "NEG",
     "test_id": "NEG_008",
     "query": "GT_04とGT_06の通話を比較してください。",
-    "answer": "GT_04とGT_06の通話の比較は以下の通りです：\n\n### **1. 通話の目的と内容**\n- **GT_04**  \n  - **目的**: 三菱UFJ銀行の横堀（発信側）が、アセットジャパンの中原凛花（受信側）に何かを伝えるための連絡を試みている。  \n  - **内容**:  \n    - 中原凛花が「今日は出勤していない」と回答し、代わりに伝言を残すよう依頼。  \n    - 銀行の営業時間（平日9:00〜21:00、土日祝日9:00〜17:00）や、既に中原さんの携帯に電話をかけていることを説明。  \n    - 伝言を残すことで、後日中原さんが確認できるようにする。  \n\n- **GT_06**  \n  - **目的**: AJテクノロジーズの山下（発信側）が、建設のエスタ（受信側）のカセさん（別の人物）の出勤状況を確認する。  \n  - **内容**:  \n    - カセさんが「外出中」であることを知らされ、山下が「改めて連絡する」と約束。  \n    - 通話は簡潔で、具体的な営業時間や過去の連絡履歴の説明はなし。  \n\n---\n\n### **2. 発信側・受信側の立場**\n- **GT_04**  \n  - **発信側**: 三菱UFJ銀行の横堀（男性）  \n  - **受信側**: アセットジャパンの中原凛花（女性）  \n  - **特徴**:  \n    - 発信側が「伝言を残す」ことを依頼し、受信側がその依頼を承諾。  \n    - 受信側は「出勤していない」と明言し、発信側が柔軟に対応（後日連絡を依頼）。  \n\n- **GT_06**  \n  - **発信側**: AJテクノロジーズの山下（男性）  \n  - **受信側**: 建設のエスタ（女性）  \n  - **特徴**:  \n    - 発信側が「カセさん」の出勤状況を確認し、受信側が「外出中」であることを伝える。  \n    - 通話は「再連絡」を目的とした簡潔なやり取りに終始。  \n\n---\n\n### **3. 通話の形式と詳細性**\n- **GT_04**  \n  - 詳細な情報（営業時間、過去の連絡履歴）が含まれ、発信側が受信側に「伝言を残す」ことを丁寧に依頼。  \n  - 受信側が「かしこまりました」と明確に承諾。  \n\n- **GT_06**  \n  - 簡潔で、具体的な情報（営業時間や過去の連絡）はなし。  \n  - 「再連絡」を目的とした一言交換に終始。  \n\n---\n\n### **4. 通話の結果**\n- **GT_04**: 伝言を残すことで、中原凛花が後日確認できるようにする。  \n- **GT_06**: 山下が「改めて連絡する」と約束し、通話はその場で終了。  \n\n---\n\n### **まとめ**\n- **GT_04**は、**伝言を残すための丁寧な依頼**が目的で、営業時間や過去の連絡履歴が詳細に述べられている。  \n- **GT_06**は、**特定人物の出勤状況確認**が目的で、簡潔なやり取りに終始。  \n- 両通話とも「再連絡」や「伝言」を目的としているが、**GT_04の方が形式的・詳細性が高く、GT_06の方が簡潔**である。",
+    "answer": "GT_04とGT_06の通話を比較すると、以下の点で違いが確認されます：\n\n1. **目的と内容**  \n   - **GT_04**（2026年5月4日）:  \n     三菱UFJ銀行の横堀が、アセットジャパンの中原凛花（アルバイト）に業務連絡を伝えるための**伝言依頼**を目的とした通話です。  \n     - 通話時間は**105秒**と長く、中原凛花が当日出勤していないことを確認した上で、伝言の可否を確認し、受付時間（平日9:00〜21:00、土日祝日9:00〜17:00）や連絡先の確認など、**詳細な業務内容**が議論されています。  \n     - 通話の流れは「挨拶→目的の説明→出勤状況の確認→伝言依頼→受付時間の確認→了承」など、**複数の段階**を経ています。  \n\n   - **GT_06**（2026年5月6日）:  \n     AJテクノロジーズの山下が、カセに**出勤状況の確認**と再連絡依頼を目的とした通話です。  \n     - 通話時間は**25秒**と非常に短く、カセが外出中であることを確認した上で、**即座に再連絡を約束**する簡潔な会話です。  \n     - 内容は「挨拶→出勤状況の確認→再連絡の了承」の**3段階**にとどまり、業務内容の詳細は含まれていません。\n\n2. **参加者と立場**  \n   - **GT_04**:  \n     - **発信側**（通話をかけた側）: 三菱UFJ銀行の**横堀**（男性名）。  \n     - **受信側**（通話を受けていた側）: アセットジャパンの**中原凛花**（女性名）。  \n     - 会話の内容から、横堀が「業務連絡の伝言依頼」を目的として中原凛花に連絡していることが読み取れます。  \n\n   - **GT_06**:  \n     - **発信側**: AJテクノロジーズの**山下**（男性名）。  \n     - **受信側**: **カセ**（性別不明）。  \n     - 山下がカセに「出勤状況の確認」を目的として連絡しており、カセが外出中であることを確認した上で再連絡を約束しています。\n\n3. **会話の形式と丁寧さ**  \n   - **GT_04**:  \n     - 会話は**ビジネスフォーマル**な形式で行われており、挨拶や丁寧な表現（例: 「お世話になっております」「大変お手数ですが」）が多用されています。  \n     - 伝言依頼の際、具体的な業務内容（受付時間の確認）や連絡先の確認が行われています。  \n\n   - **GT_06**:  \n     - 会話は**簡潔でカジュアル**な形式で行われており、丁寧さはGT_04に比べてやや低めです（例: 「すいません」や「かしこまりました」など）。  \n     - 内容は「出勤状況の確認」に限定されており、業務内容の詳細は含まれていません。\n\n4. **通話の結果**  \n   - **GT_04**:  \n     - 中原凛花が伝言依頼を**了承**し、横堀が「伝言を依頼する」という合意が成立しています。  \n   - **GT_06**:  \n     - カセが外出中であることを確認した上で、山下が**再連絡を約束**し、通話は終了しています。\n\n**まとめ**  \nGT_04は、業務連絡の伝言依頼を目的とした**詳細な会話**であり、GT_06は出勤状況の確認と再連絡の簡潔な依頼にとどまる**短い通話**です。参加者の立場や目的、会話の形式・内容に明確な違いがあります。",
     "metadata": {
       "rewritten_query": "GT_04とGT_06の通話を比較してください。",
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
-      "target_pipeline": "RAG",
-      "target_topic_key": "new_topic_1234",
+      "target_pipeline": "SQL",
+      "target_topic_key": "new_topic_456",
       "routing_tier": "tier_2",
       "routing_method": "llm_router",
       "embedding_failed": false,
@@ -270,7 +270,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 21589.757399999144
+      "latency_ms": 45634.46079999994
     },
     "passed": true,
     "error": null
@@ -279,7 +279,7 @@
     "category": "NEG",
     "test_id": "NEG_009",
     "query": "LRU Eviction Test",
-    "answer": "['new_topic_05', 'new_topic_08', 'web_1781772325']",
+    "answer": "['new_topic_123', 'new_topic_456', 'sql_1781774744']",
     "metadata": {},
     "passed": true,
     "error": null
@@ -288,13 +288,13 @@
     "category": "NEG",
     "test_id": "NEG_010",
     "query": "今日の三菱の株価はどうですか？",
-    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。",
+    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。株価のリアルタイム情報は、金融情報サイトや証券会社のウェブサイトなどでご確認ください。",
     "metadata": {
       "rewritten_query": "今日の三菱の株価はどうですか？",
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "MODEL",
-      "target_topic_key": "default_topic_1781772345",
+      "target_topic_key": "default_topic_1781774750",
       "routing_tier": "tier_2",
       "routing_method": "llm_router",
       "embedding_failed": false,
@@ -302,7 +302,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 6308.997199999794
+      "latency_ms": 5079.4781999993575
     },
     "passed": true,
     "error": null
@@ -325,7 +325,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 23.53179999954591
+      "latency_ms": 56.07190000046103
     },
     "passed": true,
     "error": null
@@ -334,9 +334,9 @@
     "category": "NEG",
     "test_id": "NEG_014",
     "query": "彼は何と言いましたか？",
-    "answer": "申し訳ありませんが、提供された資料からは「彼」が指す人物の特定や、その人物が何と言ったかに関する情報を確認できませんでした。GT_04の通話では、男性（Nam）が三菱UFJ銀行の横堀として電話をかけ、女性（Nữ）がアセットジャパンの担当者として応対しています。ただし、「彼」がどちらを指すかは、文脈に明示的な情報が含まれていないため判断できません。",
+    "answer": "申し訳ありませんが、提供された資料からは「彼」が誰を指しているか、または「Nữ」が女性であるという情報、および「発信側の男性スピーカー」というラベル付けは明示されていません。コンテキストには以下のみ記載されています：\n\n- **GT_04**の会議録に登場するスピーカーは「Nam」と「Nữ」の2名です。  \n- 「Nam」の発言内容は、中原凛花様への連絡依頼や伝言依頼に関するもの。  \n- 「Nữ」の発言内容は、承知した旨の簡潔な返答。  \n\n**結論**：  \n「彼」が誰を指しているか、または「Nữ」の性別や立場（発信側/受信側）について、コンテキストに明確な情報はありません。そのため、この質問については**情報不足**と判断し、回答できません。",
     "metadata": {
-      "rewritten_query": "GT_04の通話で「彼」は何と言いましたか？",
+      "rewritten_query": "GT_04の会議録で「彼」は何と言いましたか？",
       "needs_retrieval": "full",
       "relation_type": "same_entity",
       "target_pipeline": "RAG",
@@ -346,9 +346,9 @@
       "embedding_failed": false,
       "direct_answer_used": false,
       "self_check_passed": true,
-      "self_check_retries": 0,
+      "self_check_retries": 1,
       "answer_confidence": "high",
-      "latency_ms": 13854.594700000234
+      "latency_ms": 28094.79839999949
     },
     "passed": true,
     "error": null
@@ -357,13 +357,13 @@
     "category": "NEG",
     "test_id": "NEG_015",
     "query": "三菱に関する新しいニュースはありますか？",
-    "answer": "はい、三菱グループに関する最新ニュースは以下の通りです：\n\n1. **三菱重工**  \n   - **日付**: 2023年10月15日  \n   - **内容**: 次世代ジェットエンジン「MEL-5000」の開発を発表。従来モデルと比較して燃料効率を25%向上させ、排出ガスを30%削減。2025年までの実用化を目指す。  \n   - **出典**: [三菱重工公式ニュース](https://www.mitsubishi-heavy.com/news/2023/10/15/engine-development.html)\n\n2. **三菱自動車**  \n   - **日付**: 2023年10月12日  \n   - **内容**: 新型電気自動車「eXceed」を2024年春に発売。最大航続距離500kmを実現し、新開発のバッテリーテクノロジーを採用。価格は350万円から。  \n   - **出典**: [三菱自動車公式ニュース](https://www.mitsubishi-motors.com/press/2023/10/12/eXceed-release.html)\n\n3. **三菱商事**  \n   - **日付**: 2023年10月14日  \n   - **内容**: インドネシアで再生可能エネルギー事業を拡大。地元企業と提携し、太陽光発電所の建設を開始。初期投資額は1,200億円で、年間発電量10億kWhを目指す。  \n   - **出典**: [三菱商事公式ニュース](https://www.mitsubishi-corp.com/news/2023/10/14/renewable-energy.html)\n\n以上が、提供された情報に基づく三菱グループに関する最新ニュースです。",
+    "answer": "はい、三菱グループに関する最新ニュースが3件あります。以下に要約します：\n\n1. **三菱重工**  \n   2023年10月15日に次世代ジェットエンジン「MEL-5000」の開発を発表。従来モデルと比較して燃料効率を25%向上させ、排出ガスを30%削減。2025年までの実用化を目指す。\n\n2. **三菱自動車**  \n   2023年10月12日に新型電気自動車「eXceed」の2024年春発売を決定。最大航続距離500kmを実現し、新開発のバッテリーテクノロジーを搭載。価格は350万円から。\n\n3. **三菱商事**  \n   2023年10月14日に東南アジア市場における再生可能エネルギー事業の投資拡大を発表。今後3年間で太陽光・風力発電プロジェクトに約500億円を投資する予定。\n\nすべて2023年10月に発表されたニュースです。特定の企業やニュースについてさらに詳しく知りたい場合はお知らせください。",
     "metadata": {
       "rewritten_query": "三菱に関する新しいニュースはありますか？",
       "needs_retrieval": "full",
       "relation_type": "same_entity",
       "target_pipeline": "WEB",
-      "target_topic_key": "default_topic_1781772366",
+      "target_topic_key": "default_topic_1781774783",
       "routing_tier": "tier_1",
       "routing_method": "heuristics",
       "embedding_failed": false,
@@ -371,7 +371,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 16039.560700000948
+      "latency_ms": 13105.135199999495
     },
     "passed": true,
     "error": null
@@ -380,13 +380,13 @@
     "category": "NEG",
     "test_id": "NEG_016",
     "query": "データベースに存在しない情報を表示してください",
-    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。コンテキストによると、このクエリに対して具体的なデータベース検索は行われていないため、データベースに存在しない情報の内容や例は記載されていません。",
+    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。コンテキストには「データベースに存在しない情報を表示する」というクエリが記録されていますが、具体的なデータベース検索は行われていません。そのため、表示すべき情報の内容や結果についての記述はございません。",
     "metadata": {
       "rewritten_query": "データベースに存在しない情報を表示してください",
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "MODEL",
-      "target_topic_key": "model_1781772386",
+      "target_topic_key": "model_1781774813",
       "routing_tier": "tier_1",
       "routing_method": "embeddings",
       "embedding_failed": false,
@@ -394,7 +394,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 4284.283799999685
+      "latency_ms": 3869.8037000012846
     },
     "passed": true,
     "error": null
@@ -403,30 +403,30 @@
     "category": "NEG",
     "test_id": "NEG_017",
     "query": "GT_06の通話の詳細",
-    "answer": "GT_06の通話に関する情報は以下の通りです：\n- **日付**: 2026-05-06\n- **参加者**: 山下, カセ\n- **通話内容の概要 / 詳細**:\n  1: お電話ありがとうございます。建設のエスタと申します。\n  2: あ、いつもお世話になってます。AJテクノロジーズの山下です。\n  1: はい、お世話になっております。\n  2: お世話になります。すいません、カセさんってお戻りになられてますか？\n  1: あ、ちょっと今外出しちゃってるんですけども。\n  2: あ、かしこまりました。じゃあまた改めてご連絡させていただきます。\n  1: あ、はい、かしこまりました。\n  2: すいません、どうもありがとうございます。\n  1: はい、失礼いたします。\n  2: 失礼いたします。",
+    "answer": "GT_06の通話内容は以下の通りです（発信側・受信側の立場を明記）：\n\n**発信側（電話をかけた側）**：建設のエスタ（speaker 1）  \n**受信側（電話を受けた側）**：AJテクノロジーズの山下（speaker 2）  \n\n**通話の流れ**：\n1. **エスタ（発信側）**：「お電話ありがとうございます。（聞き取り不能）建設のエスタと申します。」  \n2. **山下（受信側）**：「あ、いつもお世話になってます。AJテクノロジーズの山下です。」  \n3. **エスタ（発信側）**：「はい、お世話になっております。」  \n4. **山下（受信側）**：「お世話になります。すいません、カセさんってお戻りになられてますか？」  \n5. **エスタ（発信側）**：「あ、ちょっと今外出しちゃってるんですけども。」  \n6. **山下（受信側）**：「あ、かしこまりました。じゃあまた改めてご連絡させていただきます。」  \n7. **エスタ（発信側）**：「あ、はい、かしこまりました。」  \n8. **山下（受信側）**：「すいません、どうもありがとうございます。」  \n9. **エスタ（発信側）**：「はい、失礼いたします。」  \n10. **山下（受信側）**：「失礼いたします。」  \n\n**追加情報**：  \n- **日時**：2026年5月6日  \n- **通話時間**：25秒  \n- **関係者**：エスタ（建設業界関係者）、山下（AJテクノロジーズ所属）、カセさん（山下が確認したい人物）  \n\n発信側のエスタは、受信側の山下に対してカセさんの出勤状況を確認する目的で電話をかけ、カセさんが外出中であることを知らされ、改めて連絡を約束しています。",
     "metadata": {
       "rewritten_query": "GT_06の通話の詳細",
-      "needs_retrieval": "full",
-      "relation_type": "topic_shift",
-      "target_pipeline": "SQL",
-      "target_topic_key": "new_topic_06",
-      "routing_tier": "tier_1",
-      "routing_method": "heuristics",
+      "needs_retrieval": "none",
+      "relation_type": "same_entity",
+      "target_pipeline": "RAG",
+      "target_topic_key": "new_topic_456",
+      "routing_tier": "tier_2",
+      "routing_method": "llm_router",
       "embedding_failed": false,
-      "direct_answer_used": true,
+      "direct_answer_used": false,
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 86.53980000053707
+      "latency_ms": 21988.16369999986
     },
-    "passed": true,
+    "passed": false,
     "error": null
   },
   {
     "category": "NEG",
     "test_id": "NEG_019",
     "query": "それとそのドキュメント",
-    "answer": "申し訳ありませんが、提供された資料からは「GT_04」に関する情報を確認できませんでした。コンテキストに記載されている内容（横堀と中原凛花の会話）と関連する記述は見つからないため、追加の情報が必要です。",
+    "answer": "申し訳ありませんが、提供された資料からは「GT_04」に関する情報を確認できませんでした。コンテキストに記載されている内容（横堀と中原凛花の会話）と関連する情報は含まれていません。他の資料や背景情報が必要な場合は、ご提供いただけますか？",
     "metadata": {
       "rewritten_query": "それとGT_04",
       "needs_retrieval": "none",
@@ -440,7 +440,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 4375.250699999015
+      "latency_ms": 4162.174400000367
     },
     "passed": true,
     "error": null
@@ -449,7 +449,7 @@
     "category": "FIX",
     "test_id": "FIX_001",
     "query": "AJ Technologiesの通話を検索してください",
-    "answer": "申し訳ありませんが、提供された資料からは「AJ Technologiesの通話」に関する具体的な情報を確認できませんでした。コンテキストに含まれる内容は、検索クエリの記録（\"AJ Technologiesの通話を検索してください\"）とJSON形式のエラーメッセージのみです。実際の通話内容や検索結果については、この資料からは判断できません。",
+    "answer": "申し訳ありませんが、提供された資料からは「AJ Technologiesの通話」に関する具体的な情報や検索結果を確認できませんでした。コンテキストにはJSON形式のエラーメッセージと検索クエリの記録のみが含まれており、実際の通話内容や検索結果に関するデータは含まれていません。",
     "metadata": {
       "rewritten_query": "AJ Technologiesの通話を検索してください",
       "needs_retrieval": "full",
@@ -463,7 +463,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 9455.268700001398
+      "latency_ms": 8447.892500000307
     },
     "passed": true,
     "error": null
@@ -472,13 +472,13 @@
     "category": "FIX",
     "test_id": "FIX_002",
     "query": "Spaces query",
-    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。質問内容や必要な情報を教えていただけますか？",
+    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。",
     "metadata": {
       "rewritten_query": "   ",
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "MODEL",
-      "target_topic_key": "model_1781772404",
+      "target_topic_key": "model_1781774852",
       "routing_tier": "tier_1",
       "routing_method": "embeddings",
       "embedding_failed": false,
@@ -486,7 +486,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 5663.171100000909
+      "latency_ms": 3406.5692000003764
     },
     "passed": true,
     "error": null
@@ -495,21 +495,21 @@
     "category": "FIX",
     "test_id": "FIX_005",
     "query": "GT_04の通話の詳細",
-    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。  \nコンテキストに記載されている情報は、GT_04の会議録の抽出データ（発言内容、参加者名、日付など）に限られ、企業名や役職、会議の目的などについての明確な記述はありません。  \nしたがって、発信側・受信側の所属や会議の目的などについての補足は行えません。  \nご了承ください。\n\n*(注意: この回答は自己検証で完全に一致しなかったため、信頼性が低くなっています。)*",
+    "answer": "申し訳ありませんが、提供された資料からは以下の情報を確認できませんでした：  \n\n1. **参加者の明確な所属・役割**  \n   - 「横堀（Yokobori）」が三菱UFJ銀行の担当者であることは明記されていますが、「中原凛花（Nakahara Rinka）」がアセットジャパンのアルバイトであることは、通話内容の文脈（例：「アセットジャパンです」）から**推測**されている点に注意が必要です。  \n   - 「凛花」「中原」という名前の人物が別個の参加者であるか、同一人物の別称であるかは明記されていません。  \n\n2. **通話の詳細内容**  \n   - テキストの要約（`Summary for GT_04`）は「Summary for GT_04」とのみ記載されており、具体的な通話内容や目的の詳細は含まれていません。  \n\n3. **発信側・受信側の明確な区別**  \n   - 横堀氏が「三菱UFJ銀行」所属であることは明記されていますが、中原凛花様が「アセットジャパン」のアルバイトであることは、通話内容の文脈（例：「アセットジャパンです」）から**推測**されている点に注意が必要です。  \n\n4. **その他**  \n   - 通話の時間（105秒）や参加者名のリストは記載されていますが、それ以外の情報（例：通話の結果、具体的な業務内容）はコンテキストにありません。  \n\n以上のように、コンテキストに明確な情報が不足しているため、正確な回答を提供できません。\n\n*(注意: この回答は自己検証で完全に一致しなかったため、信頼性が低くなっています。)*",
     "metadata": {
       "rewritten_query": "GT_04の通話の詳細",
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "SQL",
-      "target_topic_key": "new_topic_04",
+      "target_topic_key": "sql_1781774855",
       "routing_tier": "tier_1",
-      "routing_method": "heuristics",
+      "routing_method": "embeddings",
       "embedding_failed": false,
       "direct_answer_used": false,
       "self_check_passed": false,
       "self_check_retries": 2,
       "answer_confidence": "low",
-      "latency_ms": 31359.01350000131
+      "latency_ms": 52274.12209999966
     },
     "passed": true,
     "error": null
@@ -518,7 +518,7 @@
     "category": "FIX",
     "test_id": "FIX_006",
     "query": "AJ Technologiesに関する情報",
-    "answer": "AJ Technologiesに関する情報は以下の通りです：  \n\n1. **会社概要**  \n   - 1995年に設立され、産業用ロボットと自動化ソリューションの分野で25年以上の実績を持つ企業です。  \n   - 2023年の売上高は12億ドルに達し、世界15か国に拠点を構えています（[公式サイト](https://www.ajtech.com/about)）。  \n\n2. **最新技術動向**  \n   - 2024年4月、次世代AIロボット『Aurora-7』を発表。従来の製品と比較して30%の生産性向上を実現し、現在は試作段階です（[TechNews記事](https://www.technews.com/ajtech)）。  \n\n3. **環境への取り組み**  \n   - 2022年から再生可能エネルギー100%使用を宣言。2023年度のCO2排出量は前年比で40%削減し、2030年までにネットゼロを達成する目標を掲げています（[GreenBiz記事](https://www.greenbiz.com/ajtech)）。  \n\n以上が、提供された資料に基づくAJ Technologiesの主な情報です。",
+    "answer": "AJ Technologiesに関する情報は以下の通りです：\n\n1. **企業概要**  \n   - **設立年**：1995年（アメリカの本社を拠点とするグローバル企業）  \n   - **事業内容**：産業用ロボティクスおよびオートメーションソリューションの開発・提供。  \n   - **2023年の売上高**：12億ドル。  \n   - **事業展開地域**：北米、ヨーロッパ、アジアの15か国。  \n\n2. **日本関連情報**  \n   - **AJ Technologies株式会社**（東京都本社）：  \n     - **設立年**：2008年（日本法人）。  \n     - **事業内容**：産業用ソフトウェア開発。  \n     - **2023年の売上高**：80億円。  \n     - **従業員数**：450名。  \n\n3. **最新技術動向**  \n   - **2024年4月発表**：次世代AIビジョンシステムを導入し、製造業の検査精度を**99.98%**に向上。  \n   - **導入実績**：ドイツの自動車メーカー3社で採用中。  \n\n※注意点：「AJ Technologies」という名称は、グローバル企業（1995年設立）と日本法人（2008年設立）の両方を指す可能性があります。事業内容や設立年が異なるため、文脈に応じて区別する必要があります。",
     "metadata": {
       "rewritten_query": "AJ Technologiesに関する情報",
       "needs_retrieval": "full",
@@ -532,7 +532,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 12030.211600000257
+      "latency_ms": 15494.009100000767
     },
     "passed": true,
     "error": null
@@ -541,7 +541,7 @@
     "category": "FIX",
     "test_id": "FIX_008",
     "query": "Concurrent advisory locks",
-    "answer": "[4094.445099999575, 12357.942499998899, 8296.70790000091]",
+    "answer": "[132.92050000018207, 281.7591999992146, 423.74199999903794]",
     "metadata": {},
     "passed": true,
     "error": null

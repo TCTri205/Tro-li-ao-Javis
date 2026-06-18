@@ -1,28 +1,33 @@
 import re
 
-# Session Pattern (GT_XX)
-SESSION_PATTERN = r'GT_\d+'
+# Session Pattern (Supports GT, SESSION, SESS, RECORD, TR, etc.)
+SESSION_PATTERN = r'\b(?:GT|SESSION|SESS|RECORD|TR)[-_]?\d+\b'
 SESSION_REGEX = re.compile(SESSION_PATTERN, re.IGNORECASE)
 
-# Pipeline Keywords (Real Estate Focus)
-SQL_KEYWORDS = [
+# Pipeline Keywords (Decoupled System & Domain keywords)
+SQL_SYSTEM_KEYWORDS = [
     "選択", "カウント", "平均", "時間", "通話", "日付", "何時", "誰", "秒", "分", "通話時間", 
     "だれ", "何秒", "何分", "件数", "何件", "いつ", "何日", "伝言", "メンバ", "メンバー", "参加者",
     "担当者", "名前", "会社", "企業"
 ]
+SQL_DOMAIN_KEYWORDS = []
 
-RAG_KEYWORDS = [
+RAG_SYSTEM_KEYWORDS = [
     "要約", "内容", "詳細", "発言", "翻訳", "ドキュメント", "ファイル", "テキスト", "何を話した", 
-    "訳", "内見", "契約", "相談", "面談", "打ち合わせ", "議事録", "ログ", "物件", "管理", "入居",
-    "目的", "理由", "共通", "比較", "重説", "重要事項", "IT重説", "重要事項説明", "仲介", 
-    "媒介", "登記", "抵当", "賃貸", "売買", "敷金", "礼金", "管理費", "修繕", "告知事項"
+    "訳", "相談", "面談", "打ち合わせ", "議事録", "ログ", "目的", "理由", "共通", "比較"
+]
+RAG_DOMAIN_KEYWORDS = [
+    "内見", "契約", "物件", "管理", "入居", "重説", "重要事項", "IT重説", "重要事項説明", 
+    "仲介", "媒介", "登記", "抵当", "賃貸", "売買", "敷金", "礼金", "管理費", "修繕", "告知事項"
 ]
 
 WEB_KEYWORDS = [
     "天気", "株価", "ニュース", "ネット", "検索", "グーグル", "株"
 ]
 
-# Note: "三菱" (Mitsubishi) removed from WEB_KEYWORDS to avoid conflict with GT_04 (Mitsubishi UFJ Bank).
+# Combined keyword lists exported to the rest of the application
+SQL_KEYWORDS = SQL_SYSTEM_KEYWORDS + SQL_DOMAIN_KEYWORDS
+RAG_KEYWORDS = RAG_SYSTEM_KEYWORDS + RAG_DOMAIN_KEYWORDS
 
 # SQL Response Formatting
 SQL_FRIENDLY_KEYS = {

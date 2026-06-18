@@ -319,7 +319,7 @@ class RAGEngine:
                     if len(kw) >= 2:
                         ent_rows = await conn.fetch("""
                             SELECT entity_id FROM session_entity_index 
-                            WHERE session_id = $1 AND (entity_id LIKE 'GT_%' OR entity_id = $1)
+                            WHERE session_id = $1 AND (entity_type = 'meeting_transcript' OR entity_id = $1)
                               AND array_to_string(display_names, ' ') LIKE $2
                         """, session_id, f"%{kw}%")
                         for er in ent_rows:

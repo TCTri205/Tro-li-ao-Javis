@@ -514,7 +514,79 @@ class Router:
                 is_he = "彼" in query and "彼女" not in query
                 is_she = "彼女" in query
                 
-                female_names = ["中原", "凛花", "石田", "志保"]
+                # Dynamically classify gender of person names from the database
+                female_names = {"凛花", "志保", "さくら", "ひなた", "ゆき", "めぐみ", "あい", "まみ", "みき", "しほ", "りんか"}
+                male_names = {"シカズ"}
+                try:
+                    # Run DB query on self.db_pool to get all known participants
+                    rows = await self.db_pool.fetch("SELECT DISTINCT participants FROM transcripts WHERE participants IS NOT NULL")
+                    all_participants = set()
+                    for r in rows:
+                        p_val = r['participants']
+                        if p_val:
+                            if isinstance(p_val, str):
+                                try:
+                                    p_list = json.loads(p_val)
+                                except Exception:
+                                    p_list = []
+                            else:
+                                p_list = p_val
+                            for p in p_list:
+                                if p:
+                                    all_participants.add(p)
+                    
+                    female_suffixes = (
+                        "子", "美", "香", "花", "華", "奈", "菜", "乃", "莉", "里", 
+                        "理", "梨", "咲", "織", "恵", "絵", "江", "穂", "沙", "紗", 
+                        "羽", "和", "音", "凛", "杏", "楓", "葵"
+                    )
+                    male_suffixes = (
+                        "郎", "朗", "夫", "男", "雄", "介", "助", "佑", "佐", "人", 
+                        "斗", "翔", "登", "太", "也", "哉", "弥", "樹", "輝", "木", 
+                        "司", "嗣", "馬", "吾", "悟", "将", "正", "雅", "洋", "博", 
+                        "宏", "浩"
+                    )
+                    
+                    for name in all_participants:
+                        clean_name = re.sub(r'(さん|様|さま|君|くん|ちゃん|氏|殿)$', '', name)
+                        if not clean_name:
+                            continue
+                        if clean_name.endswith(female_suffixes):
+                            female_names.add(clean_name)
+                            female_names.add(name)
+                        elif clean_name.endswith(male_suffixes):
+                            male_names.add(clean_name)
+                            male_names.add(name)
+                            
+                    # Propagate to substrings/related family/given names
+                    for name in all_participants:
+                        clean_name = re.sub(r'(さん|様|さま|君|くん|ちゃん|氏|殿)$', '', name)
+                        if not clean_name:
+                            continue
+                        if clean_name in female_names or name in female_names:
+                            continue
+                        if clean_name in male_names or name in male_names:
+                            continue
+                            
+                        is_female_sub = False
+                        is_male_sub = False
+                        for f_name in list(female_names):
+                            if clean_name in f_name or f_name in clean_name:
+                                is_female_sub = True
+                                break
+                        for m_name in list(male_names):
+                            if clean_name in m_name or m_name in clean_name:
+                                is_male_sub = True
+                                break
+                                
+                        if is_female_sub and not is_male_sub:
+                            female_names.add(clean_name)
+                            female_names.add(name)
+                        elif is_male_sub and not is_female_sub:
+                            male_names.add(clean_name)
+                            male_names.add(name)
+                except Exception as db_ex:
+                    logger.error(f"Error dynamically classifying names: {db_ex}")
                 
                 if s_id:
                     if person_names:
@@ -938,7 +1010,7 @@ class Router:
                             SELECT e.entity_id 
                             FROM session_entity_index e
                             JOIN session_context_cache c ON e.cache_slot_id = c.id
-                            WHERE c.session_id = $1 AND c.topic_key = $2 AND e.entity_id LIKE 'GT_%'
+                            WHERE c.session_id = $1 AND c.topic_key = $2 AND e.entity_type = 'meeting_transcript'
                             LIMIT 1
                         """, session_id, target_key)
                         if ent_row:

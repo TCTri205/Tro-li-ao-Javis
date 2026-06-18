@@ -67,9 +67,6 @@ def update_existing_summary():
             tech_val = row[9]
             func_val = row[10]
             
-            # We enforce Status = PASS
-            status = "PASS"
-            
             # Select target JSON results
             target_results = v1_results if version == "V1" else v2_results
             
@@ -80,6 +77,7 @@ def update_existing_summary():
             turns = japanese_flow.split(" | ")
             actual_parts = []
             has_new_data = False
+            scenario_passed = True
             
             for turn in turns:
                 match = re.match(r'(T\d+|Q\d+):\s*(.*)', turn)
@@ -87,6 +85,18 @@ def update_existing_summary():
                     turn_id = match.group(1)
                     query = match.group(2)
                     ans = find_answer(target_results, query)
+                    
+                    # Check if this specific turn passed
+                    turn_passed = False
+                    norm_text = re.sub(r'[\s\?\？\！\!]', '', query).lower()
+                    for r in target_results:
+                        norm_r_query = re.sub(r'[\s\?\？\！\!]', '', r['query']).lower()
+                        if norm_text in norm_r_query or norm_r_query in norm_text:
+                            turn_passed = r.get('passed', False)
+                            break
+                    if not turn_passed:
+                        scenario_passed = False
+                        
                     if ans:
                         ans_clean = ans.replace("\n", "  ").replace('"', "'")
                         actual_parts.append(f"{turn_id}: {ans_clean}")
@@ -108,6 +118,8 @@ def update_existing_summary():
             elif actual_parts:
                 actual = " | ".join(actual_parts)
                 
+            status = "PASS" if scenario_passed else "FAIL"
+            
             rows_out.append([
                 version, category, scenario_id, total_turns, 
                 japanese_flow, vietnamese_flow, status, expected, 
@@ -226,6 +238,7 @@ def get_v3_rows():
         japanese_parts = []
         vietnamese_parts = []
         actual_parts = []
+        scenario_passed = True
         
         for idx, (jp_q, vi_q) in enumerate(sc["queries"]):
             turn_id = f"T{idx+1}"
@@ -233,6 +246,18 @@ def get_v3_rows():
             vietnamese_parts.append(f"{turn_id}: {vi_q}")
             
             ans = find_answer(v3_results, jp_q)
+            
+            # Check if this specific turn passed
+            turn_passed = False
+            norm_text = re.sub(r'[\s\?\？\！\!]', '', jp_q).lower()
+            for r in v3_results:
+                norm_r_query = re.sub(r'[\s\?\？\！\!]', '', r['query']).lower()
+                if norm_text in norm_r_query or norm_r_query in norm_text:
+                    turn_passed = r.get('passed', False)
+                    break
+            if not turn_passed:
+                scenario_passed = False
+                
             if ans:
                 ans_clean = ans.replace("\n", "  ").replace('"', "'")
                 actual_parts.append(f"{turn_id}: {ans_clean}")
@@ -243,9 +268,11 @@ def get_v3_rows():
         vietnamese_flow = " | ".join(vietnamese_parts)
         actual = " | ".join(actual_parts)
         
+        status = "PASS" if scenario_passed else "FAIL"
+        
         v3_rows.append([
             "V3", sc["category"], sc["scenario_id"], str(sc["total_turns"]),
-            japanese_flow, vietnamese_flow, "PASS", sc["expected"],
+            japanese_flow, vietnamese_flow, status, sc["expected"],
             actual, sc["tech_val"], sc["tech_val"]
         ])
         
