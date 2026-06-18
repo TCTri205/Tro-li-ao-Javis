@@ -11,6 +11,7 @@ from groq import AsyncGroq
 from openai import AsyncOpenAI
 import httpx
 from session_lock import get_lock_id
+from config import SESSION_PATTERN, SESSION_REGEX, SQL_KEYWORDS, RAG_KEYWORDS, WEB_KEYWORDS
 
 logger = logging.getLogger(__name__)
 
@@ -94,24 +95,11 @@ def heuristic_pipeline_guess(query: str) -> str:
     """
     query_lower = query.lower()
     
-    # Check Japanese SQL keywords
-    sql_keywords = [
-        "選択", "カウント", "平均", "時間", "通話", "日付", "何時", "誰", "秒", "分", "通話時間", 
-        "だれ", "何秒", "何分", "件数", "何件", "いつ", "何日"
-    ]
-    # Check Japanese RAG keywords
-    rag_keywords = [
-        "要約", "内容", "詳細", "発言", "翻訳", "ドキュメント", "ファイル", "テキスト", "何を話した", 
-        "訳", "内見", "契約", "相談", "面談", "打ち合わせ", "議事録", "ログ"
-    ]
-    # Check Japanese WEB keywords
-    web_keywords = ["天気", "株価", "三菱", "ニュース", "ネット", "検索", "グーグル", "株"]
-    
-    if any(k in query_lower for k in web_keywords):
+    if any(k in query_lower for k in WEB_KEYWORDS):
         return "WEB"
-    elif any(k in query_lower for k in sql_keywords):
+    elif any(k in query_lower for k in SQL_KEYWORDS):
         return "SQL"
-    elif any(k in query_lower for k in rag_keywords):
+    elif any(k in query_lower for k in RAG_KEYWORDS):
         return "RAG"
     return "MODEL"
 
@@ -202,7 +190,7 @@ def is_gt_mismatch(query: str, topic_key: str, summary_context=None) -> bool:
     """
     if not topic_key:
         return False
-    query_gts = re.findall(r'GT_\d+', query, re.IGNORECASE)
+    query_gts = SESSION_REGEX.findall(query)
     if not query_gts:
         return False
 
@@ -379,7 +367,7 @@ class Router:
         is_ellipsis = query.strip().endswith(("は？", "は", "も？", "も"))
         
         # Check for multiple GTs in query (e.g. comparison)
-        query_gts = re.findall(r'GT_\d+', query, re.IGNORECASE)
+        query_gts = SESSION_REGEX.findall(query)
         
         if len(query_gts) > 1:
             logger.info("Tier 1: Multiple GTs detected in query. Bypassing to Tier 2 for comparison/parallel routing.")
@@ -503,14 +491,14 @@ class Router:
             
             # Check Metadata mismatches
             # If query mentions a specific date or GT session, but it doesn't match the closest slot, bypass to Tier 2
-            query_gts = re.findall(r'GT_\d+', query, re.IGNORECASE)
+            query_gts = SESSION_REGEX.findall(query)
             
             # Check if the query mentions a brand new GT session not present in the session entities
             is_new_gt = False
             if query_gts:
                 indexed_gts = set()
                 for ent in entities:
-                    gts_in_ent = re.findall(r'GT_\d+', ent['entity_id'], re.IGNORECASE)
+                    gts_in_ent = SESSION_REGEX.findall(ent['entity_id'])
                     indexed_gts.update([g.upper() for g in gts_in_ent])
                 if not any(g.upper() in indexed_gts for g in query_gts):
                     is_new_gt = True
@@ -714,7 +702,7 @@ class Router:
             target_key = result.get("target_topic_key", "")
             rewritten = result.get("rewritten_query", query)
             if target_key:
-                gts_in_key = re.findall(r'GT_\d+', target_key, re.IGNORECASE)
+                gts_in_key = SESSION_REGEX.findall(target_key)
                 gt_id = None
                 if gts_in_key:
                     gt_id = gts_in_key[0].upper()
@@ -745,7 +733,7 @@ class Router:
                         result["rewritten_query"] = rewritten
 
             # Force needs_retrieval to none for same_entity cache hits, EXCEPT when multiple GTs are involved
-            query_gts_count = len(re.findall(r'GT_\d+', query, re.IGNORECASE))
+            query_gts_count = len(SESSION_REGEX.findall(query))
             if query_gts_count > 1:
                 result["needs_retrieval"] = "full"
                 result["use_cache"] = False
@@ -754,7 +742,7 @@ class Router:
                 result["needs_retrieval"] = "none"
 
             # Heuristic Override: If query mentions GT session, never allow MODEL or WEB pipeline
-            if any(re.search(r'GT_\d+', q, re.IGNORECASE) for q in [query, result.get("rewritten_query", "")]):
+            if any(SESSION_REGEX.search(q) for q in [query, result.get("rewritten_query", "")]):
                 if result.get("target_pipeline") in ["MODEL", "WEB"]:
                     guessed = heuristic_pipeline_guess(query)
                     result["target_pipeline"] = guessed if guessed in ["SQL", "RAG"] else "RAG"

@@ -8,6 +8,7 @@ from router import Router, LLMManager, _safe_embed, extract_json
 from cache_manager import get_cache_slot, touch_cache_slot, upsert_cache_slot, update_cache_slot, check_cache_ttl
 from entity_extractor import EntityExtractor
 from engines import SQLEngine, RAGEngine, WebEngine, EngineCircuitBreaker, EngineResult
+from config import SESSION_REGEX, SQL_FRIENDLY_KEYS
 
 logger = logging.getLogger(__name__)
 
@@ -34,17 +35,14 @@ def format_direct_sql_response(payload: dict) -> str:
     items = []
     for k, v in row.items():
         friendly_key = k.replace("_", " ").title()
+        # Look for partial matches in config mapping
+        for key_pattern, label in SQL_FRIENDLY_KEYS.items():
+            if key_pattern in k:
+                friendly_key = label
+                break
+        
         if "duration" in k:
-            friendly_key = "通話時間"
             v = f"{v}秒"
-        elif "meeting_date" in k or "date" in k:
-            friendly_key = "日付"
-        elif "summary" in k:
-            friendly_key = "要約"
-        elif "speaker" in k:
-            friendly_key = "話者"
-        elif "participants" in k:
-            friendly_key = "参加者"
         items.append(f"{friendly_key}: {v}")
     return ", ".join(items) + "。"
 
@@ -293,7 +291,7 @@ class IntelligentOrchestrator:
                 # Check if it has GT_XX session format
                 session_id = None
                 for val in rows[0].values():
-                    if isinstance(val, str) and re.match(r'^GT_\d+$', val):
+                    if isinstance(val, str) and SESSION_REGEX.match(val):
                         session_id = val
                         break
                 if session_id:
@@ -334,7 +332,7 @@ class IntelligentOrchestrator:
 
         # Parse dates, GTs, and key entities from rewritten_query if available to prevent metadata staleness
         if rewritten_query:
-            gts = re.findall(r'GT_\d+', rewritten_query, re.IGNORECASE)
+            gts = SESSION_REGEX.findall(rewritten_query)
             dates = re.findall(r'\b(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?\b', rewritten_query)
             
             # Basic keyword extraction (proper nouns, companies, etc.)

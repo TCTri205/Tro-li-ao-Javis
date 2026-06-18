@@ -1,6 +1,7 @@
 import json
 import logging
 from datetime import datetime, timezone
+from config import MAX_CACHE_SLOTS
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +52,7 @@ async def insert_cache_slot(conn, session_id: str, topic_key: str, last_pipeline
     cnt = await conn.fetchval(
         "SELECT COUNT(*) FROM session_context_cache WHERE session_id = $1", session_id
     )
-    if cnt >= 3:
+    if cnt >= MAX_CACHE_SLOTS:
         # Evict the oldest one based on last_accessed_at
         await conn.execute("""
             DELETE FROM session_context_cache

@@ -4,6 +4,7 @@ import logging
 from datetime import datetime
 
 from router import LLMManager, extract_json
+from config import SESSION_PATTERN, SESSION_REGEX
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +27,7 @@ class EntityExtractor:
             canonical_session = None
             for r in rows:
                 for val in r.values():
-                    if isinstance(val, str) and re.match(r'^GT_\d+$', val):
+                    if isinstance(val, str) and SESSION_REGEX.match(val):
                         canonical_session = val
                         break
                 if canonical_session:
@@ -34,12 +35,12 @@ class EntityExtractor:
             
             # If we don't find it directly in rows, check query
             if not canonical_session and query:
-                gts = re.findall(r'GT_\d+', query, re.IGNORECASE)
+                gts = SESSION_REGEX.findall(query)
                 if gts:
                     canonical_session = gts[0].upper()
             
-            # If we don't find it directly in rows, check if the session_id is a GT_XX
-            if not canonical_session and re.match(r'^GT_\d+$', session_id):
+            # If we don't find it directly in rows, check if the session_id matches pattern
+            if not canonical_session and SESSION_REGEX.match(session_id):
                 canonical_session = session_id
                 
             if canonical_session:
@@ -117,9 +118,9 @@ class EntityExtractor:
                 
                 if file_name:
                     entity_id = file_name
-                    match = re.search(r'(GT_\d+)', file_name)
+                    match = SESSION_REGEX.search(file_name)
                     if match:
-                        entity_id = match.group(1)
+                        entity_id = match.group(0)
                 elif meta.get("source_table") == "chunks_turn" and meta.get("doc_id"):
                     try:
                         import uuid
@@ -151,7 +152,7 @@ class EntityExtractor:
                         "さっきの通話",
                         "先ほどの通話"
                     ]
-                    if re.match(r'^GT_\d+$', entity_id):
+                    if SESSION_REGEX.match(entity_id):
                         display_names.extend([
                             "さっき",
                             "先ほど",
@@ -165,7 +166,7 @@ class EntityExtractor:
                             "その件"
                         ])
                         
-                    if re.match(r'^GT_\d+$', entity_id):
+                    if SESSION_REGEX.match(entity_id):
                         t_row = await conn.fetchrow("""
                             SELECT meeting_date, participants FROM transcripts WHERE session_id = $1
                         """, entity_id)
@@ -195,7 +196,7 @@ class EntityExtractor:
                                             p_names = [p_clean, p_base, f"{p_base}さん", f"{p_base}様", "彼", "彼女", "その人", "あの人"]
                                             entities_to_upsert.append((p_id, "person", p_names))
                                             
-                    entities_to_upsert.append((entity_id, "document" if not re.match(r'^GT_\d+$', entity_id) else "meeting_transcript", display_names))
+                    entities_to_upsert.append((entity_id, "document" if not SESSION_REGEX.match(entity_id) else "meeting_transcript", display_names))
 
         # 3. WEB / MODEL Pipeline Extraction
         elif pipeline in ["WEB", "MODEL"]:
@@ -214,14 +215,14 @@ class EntityExtractor:
                 "あなたはプロのテキスト分析アシスタントです。\n"
                 "提供されたテキストから、最大2つの主要なエンティティ（会社名、人名、または重要な文書名など）を抽出してください。\n\n"
                 "【禁止事項】\n"
-                "「情報」「データ」「内容」「詳細」「こと」「もの」「とき」「結果」などの、極めて一般的で抽象的な単語を `display_names` に含めないでください。これらは代名詞の解決において誤検知を引き起こすため、絶対に避けてください。具体的かつ固有の名称（例: '三菱UFJ銀行', '佐藤さん', '歌手A'）のみを抽出してください。\n\n"
-                "以下の構造を持つ 'entities' 配列を含む唯一の JSON オブジェクトを返してください：\n"
+                "「情報」「データ」「内容」「詳細」「こと」「もの」「とき」「結果」などの、極めて一般的で抽象的な単語を `display_names` に含めないでください。これらは代名詞の解決において誤検知を引き起こすため、絶対に避けてください。具体的かつ固有の名称（例: 'トヨタ自動車', '佐藤さん', '歌手A'）のみを抽出してください。\n\n"
+                "以下の構造を持つ 'entities' 配列を含む唯一 of JSON オブジェクトを返してください：\n"
                 "{\n"
                 "  \"entities\": [\n"
                 "    {\n"
-                "      \"entity_id\": \"エンティティ名（例: 'AJ_Technologies' または 'Mitsubishi'、英数字とアンダースコアを使用）\",\n"
+                "      \"entity_id\": \"エンティティ名（例: 'AJ_Technologies' または 'Toyota'、英数字とアンダースコアを使用）\",\n"
                 "      \"entity_type\": \"person\" | \"document\" | \"sql_result\",\n"
-                "      \"display_names\": [\"正式名称\", \"それに対応する日本語の固有の別称（例: '三菱', 'AJ社' など）\"]\n"
+                "      \"display_names\": [\"正式名称\", \"それに対応する日本語の固有の別称（例: 'トヨタ', 'AJ社' など）\"]\n"
                 "    }\n"
                 "  ]\n"
                 "}\n"

@@ -6,6 +6,7 @@ import re
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from router import LLMManager, extract_json
+from config import SESSION_REGEX
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +94,7 @@ def heuristic_sql_translation(query: str) -> str:
     if any(k in query for k in ("から", "まで", "の間", "期間")):
         return None
         
-    gts = re.findall(r'GT_\d+', query, re.IGNORECASE)
+    gts = SESSION_REGEX.findall(query)
     gts_upper = [g.upper() for g in gts]
     
     # Extract dates like YYYY年MM月DD日 or MM月DD日
@@ -119,10 +120,7 @@ def heuristic_sql_translation(query: str) -> str:
     if len(gts_upper) == 1:
         gt_id = gts_upper[0]
         if any(k in query for k in ("詳細", "具体的内容", "話したこと", "内容", "中身")):
-            if gt_id == "GT_06":
-                return f"SELECT summary FROM transcripts WHERE session_id = 'GT_06' LIMIT 50;"
-            else:
-                return f"SELECT t.id, t.session_id, t.meeting_date, t.participants, ct.turn_index, ct.speaker, ct.text FROM transcripts t JOIN chunks_turn ct ON t.id = ct.transcript_id WHERE t.session_id = '{gt_id}' LIMIT 50;"
+            return f"SELECT t.id, t.session_id, t.meeting_date, t.participants, ct.turn_index, ct.speaker, ct.text FROM transcripts t JOIN chunks_turn ct ON t.id = ct.transcript_id WHERE t.session_id = '{gt_id}' ORDER BY ct.turn_index LIMIT 50;"
         elif "要約" in query:
             return f"SELECT summary FROM transcripts WHERE session_id = '{gt_id}' LIMIT 50;"
         elif any(k in query for k in ("時間", "秒", "分", "どれくらい", "期間", "長さ", "つうわ")):
@@ -169,7 +167,7 @@ class SQLEngine:
                 "[データベーススキーマ]\n"
                 "1. `transcripts` テーブル:\n"
                 "   - id: UUID (主キー)\n"
-                "   - session_id: VARCHAR(64) (セッション/通話識別子、例: 'GT_04')\n"
+                "   - session_id: VARCHAR(64) (セッション/通話識別子、例: 'GT_04', 'GT_99')\n"
                 "   - meeting_date: DATE (通話が実施された日付)\n"
                 "   - participants: JSONB (参加者の配列、例: [\"横堀\", \"中原\"]) \n"
                 "   - speaker_count: INT\n"
@@ -185,7 +183,7 @@ class SQLEngine:
                 "   - time_end_sec: INT\n"
                 "   - text: TEXT (発言内容)\n\n"
                 "重要な注意事項:\n"
-                "- 常に正規化された session_id ('GT_01'...'GT_09') を使用してください。\n"
+                "- 常にクエリやコンテキストから抽出された正確な session_id を使用してください。\n"
                 "- transcripts および chunks_turn 以外のテーブルは使用しないでください。\n"
                 "- `participants`（JSONB配列）を展開する場合は、`(jsonb_array_elements(participants)).value` のような無効な構文を使用しないでください（PostgreSQLでは `column notation .value applied to type jsonb` のエラーになります）。代わりに `jsonb_array_elements_text(participants)` を使用するか、単に `participants` 列を選択してください。\n"
                 "- 結果は常に最大50行に制限してください (LIMIT 50)。\n"
@@ -290,7 +288,7 @@ class RAGEngine:
             chunks.extend([dict(r) for r in rows_company])
         else:
             # Check for GT sessions in query
-            gt_matches = re.findall(r'GT_\d+', query, re.IGNORECASE)
+            gt_matches = SESSION_REGEX.findall(query)
             target_ids = []
             if gt_matches:
                 rows = await conn.fetch("""
