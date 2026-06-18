@@ -48,7 +48,7 @@ graph TD
 ### 1.1. Intelligent Orchestrator (Bộ điều phối thông minh)
 Đóng vai trò là cổng (gateway) tiếp nhận truy vấn của người dùng (User Query) và quản lý luồng dữ liệu giữa các thành phần.
 
-*   **Direct-Answer Path Routing (Định tuyến phản hồi trực tiếp):** Xác định các kết quả thô từ cache hoặc engine. Nếu kết quả có cấu trúc đơn giản (ví dụ: 1 dòng SQL $\le 3$ cột, hoặc một đoạn trích dẫn Web Search duy nhất với độ liên quan > 0.85) và `needs_retrieval = none`, hệ thống sẽ trả về câu trả lời trực tiếp qua mẫu (template). Nếu `needs_retrieval = partial`, hệ thống bắt buộc phải đi qua luồng LLM để đảm bảo tích hợp ngữ cảnh phù hợp.
+*   **Direct-Answer Path Routing (Định tuyến phản hồi trực tiếp):** Xác định các kết quả thô từ cache hoặc engine. Nếu kết quả có cấu trúc đơn giản (ví dụ: 1 dòng SQL $\le 5$ cột, hoặc một đoạn trích dẫn Web Search duy nhất với độ liên quan > 0.85) và `needs_retrieval = none`, hệ thống sẽ trả về câu trả lời trực tiếp qua mẫu (template). Nếu `needs_retrieval = partial`, hệ thống bắt buộc phải đi qua luồng LLM để đảm bảo tích hợp ngữ cảnh phù hợp.
 *   **Advisory Lock:** Sử dụng khóa cố vấn giao dịch (transaction advisory lock) cấp PostgreSQL dựa trên ID phiên (session ID) được băm thành số nguyên 64-bit (PostgreSQL `bigint`) để ngăn chặn tình trạng tranh chấp (Race Condition) trong cùng một phiên.
 
 ### 1.2. 2-Tier Hybrid Router (Bộ định tuyến hỗn hợp 2 lớp)
@@ -70,6 +70,8 @@ Tiếp nhận các tham số truy xuất từng phần `partial_fetch_params` v�
 *   **RAG:** Trích xuất thực thể tài liệu dựa trên siêu dữ liệu (`file_name`).
 *   **WEB/MODEL:** Do không có lược đồ cấu trúc, lớp này sử dụng LLM nhẹ để trích xuất các thực thể chính.
 *   **Đăng ký chỉ mục (Index Registration):** Thực hiện UPSERT tên hiển thị và các đại từ chỉ định tương ứng (ví dụ: "nó", "cái đó", "cuộc gọi lúc nãy",...) vào `session_entity_index` cho từng thực thể để chuẩn bị cho việc tìm kiếm ở Tier 1.
+
+Chi tiết về các tham số cấu hình và ngưỡng hoạt động, vui lòng tham khảo [Cấu hình và Tinh chỉnh Hệ thống](configuration_and_tuning.md).
 
 ## 2. Quy trình vòng đời (Lifecycle Flow)
 

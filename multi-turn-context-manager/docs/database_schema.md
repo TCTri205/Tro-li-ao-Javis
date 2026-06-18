@@ -11,7 +11,46 @@ Lưu trữ nhật ký cuộc gọi và siêu dữ liệu (metadata) của tài l
 | `session_id` | `VARCHAR(64)` | INDEX (GT_XX session format) |
 | `meeting_date` | `DATE` | |
 | `participants` | `JSONB` | Danh sách người tham gia |
+| `speaker_count` | `INT` | Số lượng người nói |
+| `duration_seconds`| `INT` | Thời lượng cuộc gọi (giây) |
+| `raw_text` | `TEXT` | Nội dung hội thoại thô |
 | `summary` | `TEXT` | Tóm tắt cuộc gọi |
+
+### Bảng `chunks_turn`
+Lưu trữ các phân đoạn hội thoại theo lượt nói.
+
+| Tên cột | Kiểu dữ liệu | Ràng buộc |
+| :--- | :--- | :--- |
+| `id` | `UUID` | PRIMARY KEY |
+| `transcript_id` | `UUID` | REFERENCES `transcripts`(id) |
+| `turn_index` | `INT` | Thứ tự lượt nói |
+| `speaker` | `VARCHAR` | Tên người nói |
+| `time_start_sec` | `INT` | Thời điểm bắt đầu (giây) |
+| `time_end_sec` | `INT` | Thời điểm kết thúc (giây) |
+| `text` | `TEXT` | Nội dung phát ngôn |
+
+### Bảng `company_chunks`
+Lưu trữ các kiến thức bổ sung về công ty cho RAG.
+
+| Tên cột | Kiểu dữ liệu | Ràng buộc |
+| :--- | :--- | :--- |
+| `id` | `UUID` | PRIMARY KEY |
+| `document_id` | `UUID` | |
+| `text` | `TEXT` | Nội dung kiến thức |
+
+### Bảng `chat_history`
+Lưu trữ lịch sử hội thoại của người dùng và trợ lý.
+
+| Tên cột | Kiểu dữ liệu | Ràng buộc |
+| :--- | :--- | :--- |
+| `id` | `BIGSERIAL` | PRIMARY KEY |
+| `session_id` | `VARCHAR(64)` | INDEX |
+| `role` | `VARCHAR(20)` | user, assistant |
+| `content` | `TEXT` | Nội dung tin nhắn |
+| `rewritten_content`| `TEXT` | Truy vấn đã viết lại (chỉ user) |
+| `answer_confidence`| `VARCHAR(20)` | high, low |
+| `routing_metadata` | `JSONB` | Thông tin định tuyến |
+| `created_at` | `TIMESTAMP` | |
 
 ## 2. Bộ nhớ đệm ngữ cảnh động (Dynamic Context Cache)
 

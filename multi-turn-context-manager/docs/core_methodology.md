@@ -29,7 +29,7 @@ Hệ thống kết hợp việc đối chiếu đại từ chỉ định (Entity
 
 | Pipeline | Định dạng dữ liệu | Điều kiện phản hồi trực tiếp | Luồng (Path) | Ví dụ |
 | :--- | :--- | :--- | :--- | :--- |
-| **SQL** | Dạng bảng (Rows) | Kết quả có đúng 1 dòng và $\le 3$ cột | **Direct Path** | "Thời gian gọi của GT_04?" -> "Thời gian gọi của GT_04 là 105 giây." |
+| **SQL** | Dạng bảng (Rows) | Kết quả có đúng 1 dòng và $\le 5$ cột | **Direct Path** | "Thời gian gọi của GT_04?" -> "Thời gian gọi của GT_04 là 105 giây." |
 | **WEB** | Đoạn trích (Snippet) | Chỉ có 1 kết quả và độ liên quan (relevance) > 0.85 | **Direct Path** | "Giá cổ phiếu Mitsubishi hôm nay?" -> Trả về snippet chứa giá cụ thể. |
 | **WEB** | Đoạn trích (Snippet) | Nhiều kết quả hoặc độ liên quan thấp | **LLM Path** | LLM so sánh, tóm tắt nội dung và trả lời. |
 | **RAG** | Đoạn văn bản | Mọi trường hợp | **LLM Path** | Cần hiểu ngữ cảnh và tạo câu trả lời tự nhiên, nên luôn dùng LLM. |

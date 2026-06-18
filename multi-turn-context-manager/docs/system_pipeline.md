@@ -25,6 +25,9 @@ Hệ thống quản lý ngữ cảnh đa lượt (multi-turn context management)
 ### 3. Thực thi và Truy xuất (Execution & Retrieval)
 *   **Mô tả:** Dựa trên quyết định định tuyến, hệ thống thực thi các công cụ tương ứng.
 *   **Input:** `target_pipeline`, `rewritten_query`, `partial_fetch_params`.
+*   **Cơ chế bảo vệ & tối ưu:**
+    *   **Circuit Breaker:** Mỗi engine được bọc bởi bộ ngắt mạch. Nếu thất bại liên tiếp > 3 lần, engine sẽ tạm dừng (Open state) trong 30 giây để tránh làm treo hệ thống, tự động fallback sang kiến thức nội tại (Parametric Knowledge).
+    *   **Heuristic SQL Translation:** Các câu hỏi phổ biến về thời gian, người tham gia, tóm tắt của 1 GT cụ thể được dịch trực tiếp sang SQL bằng Regex để bỏ qua độ trễ của LLM.
 *   **Các kịch bản:**
     *   **Cache Hit:** Lấy trực tiếp `payload` từ bảng `session_context_payload`.
     *   **Partial Fetch:** Chạy Engine với tham số lọc bổ sung, sau đó hợp nhất (merge) kết quả mới vào `payload` cũ.

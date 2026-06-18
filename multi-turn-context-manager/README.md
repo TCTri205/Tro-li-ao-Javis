@@ -20,6 +20,11 @@ Hệ thống quản lý ngữ cảnh đa lượt (Multi-turn Context Management)
 - **Tính ổn định hệ thống:**
   - **Advisory Locking:** Sử dụng khóa cố vấn 64-bit để ngăn chặn tình trạng Race Condition.
   - **Circuit Breakers:** Tự động dự phòng khi gặp sự cố embedding hoặc timeout LLM.
+- **Tài liệu chi tiết:**
+  - [Tổng quan kiến trúc](docs/architecture_overview.md)
+  - [Quy tắc quản lý ngữ cảnh & định tuyến](docs/context_management_rules.md)
+  - [Lược đồ cơ sở dữ liệu](docs/database_schema.md)
+  - [Cấu hình và Tinh chỉnh](docs/configuration_and_tuning.md)
 
 ## 🏗️ Kiến trúc hệ thống (Vòng đời 8 bước)
 

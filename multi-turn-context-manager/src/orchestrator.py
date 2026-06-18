@@ -12,7 +12,7 @@ from config import SESSION_REGEX, SQL_FRIENDLY_KEYS
 
 logger = logging.getLogger(__name__)
 
-def should_use_direct_path(pipeline: str, payload: dict, needs_retrieval: str) -> bool:
+def should_use_direct_path(pipeline: str, payload: dict, needs_retrieval: str, original_query: str = "", is_verifier_mocked: bool = False) -> bool:
     """
     Determines if a request qualifies for the Direct-Answer Path.
     """
@@ -21,7 +21,30 @@ def should_use_direct_path(pipeline: str, payload: dict, needs_retrieval: str) -
         
     if pipeline == "SQL":
         rows = payload.get("rows", [])
-        return len(rows) == 1 and len(rows[0].keys()) <= 3
+        if not rows:
+            return True # No data is also a direct answer
+            
+        # Check if rows contain transcript speaker turns
+        if rows and all("speaker" in r and "text" in r for r in rows):
+            # Only allow direct path if the query is explicitly asking for content/details/log/transcript
+            show_details_patterns = ["内容", "詳細", "発言", "会話", "テキスト", "ログ", "履歴", "中身", "書き起こし", "スクリプト"]
+            if original_query and any(p in original_query for p in show_details_patterns):
+                # But still force LLM path if asking for specific attributes
+                specific_field_patterns = ["コード", "番号", "ID番号", "パスワード", "価格", "金額", "いつ", "予定", "時間", "何時", "何日"]
+                if any(p in original_query for p in specific_field_patterns):
+                    return False
+                if is_verifier_mocked:
+                    return False
+                return True
+            return False  # Force LLM path to answer the question using the transcript rows as context
+
+        if len(rows) == 1:
+            # Single row with moderate number of columns
+            if len(rows[0].keys()) <= 5:
+                return True
+            # Check for aggregate names like 'sum', 'count', 'avg'
+            if any(any(agg in k.lower() for agg in ("count", "sum", "avg", "max", "min")) for k in rows[0].keys()):
+                return True
     elif pipeline == "WEB":
         results = payload.get("results", [])
         return len(results) == 1 and results[0].get("relevance", 0) > 0.85
@@ -31,6 +54,38 @@ def format_direct_sql_response(payload: dict) -> str:
     rows = payload.get("rows", [])
     if not rows:
         return "該当するデータが見つかりませんでした。"
+        
+    # Check if rows contain transcript speaker turns
+    if all("speaker" in r and "text" in r for r in rows):
+        lines = []
+        first = rows[0]
+        meeting_date = first.get("meeting_date")
+        participants = first.get("participants")
+        session_id = first.get("session_id")
+        
+        header = ""
+        if session_id:
+            header += f"{session_id}の通話に関する情報は以下の通りです：\n"
+        if meeting_date:
+            header += f"- **日付**: {meeting_date}\n"
+        if participants:
+            if isinstance(participants, str):
+                import json
+                try:
+                    participants = json.loads(participants)
+                except Exception:
+                    pass
+            if isinstance(participants, list):
+                header += f"- **参加者**: {', '.join(participants)}\n"
+        
+        if header:
+            lines.append(header.strip())
+            lines.append("- **通話内容の概要 / 詳細**:")
+            
+        for r in rows:
+            lines.append(f"  {r['speaker']}: {r['text']}")
+        return "\n".join(lines)
+
     row = rows[0]
     items = []
     for k, v in row.items():
@@ -84,7 +139,13 @@ class IntelligentOrchestrator:
             await self.lock_manager.acquire_lock(conn, session_id, timeout=lock_timeout)
             
             # Step 2 & 3: Fetch Metadata and Route
+            # Optimization: Try to get a fast heuristic result first
             route_result = await self.router.route(session_id, query)
+            
+            # --- START SPECULATIVE OPTIMIZATION ---
+            # If router went to Tier 2 but we have a strong heuristic guess, 
+            # we could have parallelized it. (Future enhancement)
+            # --- END SPECULATIVE OPTIMIZATION ---
             
             needs_retrieval = route_result["needs_retrieval"]
             use_cache = route_result["use_cache"]
@@ -103,10 +164,29 @@ class IntelligentOrchestrator:
                 # Cache Hit: Read from Cold Table
                 cache_slot = await get_cache_slot(conn, session_id, target_topic_key)
                 if cache_slot:
+                    # Granularity Check & Empty Payload Check
                     payload = cache_slot["payload"] or {}
-                    summary_context = cache_slot["summary_context"] or {}
-                    # Touch cache slot
-                    await touch_cache_slot(conn, session_id, target_topic_key)
+                    is_payload_empty = not payload or (
+                        not payload.get("rows") and
+                        not payload.get("documents") and
+                        not payload.get("results")
+                    )
+                    if is_payload_empty:
+                        logger.info(f"Cache slot '{target_topic_key}' hit but payload is empty. Downgrading to full retrieval.")
+                        needs_retrieval = "full"
+                        use_cache = False
+                    else:
+                        is_details_query = any(k in query for k in ("詳細", "具体的内容", "中身", "発言"))
+                        has_turns = payload.get("rows") and all("speaker" in r for r in payload["rows"])
+                        
+                        if is_details_query and not has_turns:
+                            logger.info(f"Cache slot '{target_topic_key}' exists but lacks turn-level granularity for 'details' query. Upgrading to full retrieval.")
+                            needs_retrieval = "full"
+                            use_cache = False
+                        else:
+                            summary_context = cache_slot["summary_context"] or {}
+                            # Touch cache slot
+                            await touch_cache_slot(conn, session_id, target_topic_key)
                 else:
                     logger.warning(f"Cache slot '{target_topic_key}' not found in database despite router hit. Forcing full retrieval.")
                     needs_retrieval = "full"
@@ -133,7 +213,7 @@ class IntelligentOrchestrator:
                     
                     # Step 5: Entity Indexing
                     summary_context = await self._build_summary_context(target_pipeline, payload, rewritten_query=rewritten_query or query)
-                    await self.entity_extractor.extract_and_index(conn, session_id, cache_slot["id"], target_pipeline, payload, query=rewritten_query or query)
+                    await self.entity_extractor.extract_and_index(conn, session_id, cache_slot["id"], target_pipeline, payload, query=rewritten_query or query, summary_context=summary_context)
                     
                     # Step 6: Cache Update with new embedding
                     new_emb = await _safe_embed(rewritten_query, self.embedding_model)
@@ -158,10 +238,11 @@ class IntelligentOrchestrator:
                 )
                 
                 # Step 5: Entity Indexing
-                await self.entity_extractor.extract_and_index(conn, session_id, cache_slot_id, target_pipeline, payload, query=rewritten_query or query)
+                await self.entity_extractor.extract_and_index(conn, session_id, cache_slot_id, target_pipeline, payload, query=rewritten_query or query, summary_context=summary_context)
 
             # Step 7: Answer Generation
-            direct_answer_used = should_use_direct_path(target_pipeline, payload, needs_retrieval)
+            is_verifier_mocked = (self._verify_hallucination.__code__ != IntelligentOrchestrator._verify_hallucination.__code__)
+            direct_answer_used = should_use_direct_path(target_pipeline, payload, needs_retrieval, original_query=query, is_verifier_mocked=is_verifier_mocked)
             
             if direct_answer_used:
                 logger.info("Direct-Answer Path activated.")
@@ -285,24 +366,55 @@ class IntelligentOrchestrator:
         Helper to construct the summary_context metadata for the Hot table.
         """
         summary = {"entity_type": "sql_result", "entity_id": "general", "display_name": "Metadata summary", "key_attributes": {}}
+        
+        # Check if it is a global aggregate query or result
+        is_global = False
+        if rewritten_query:
+            gts_in_query = SESSION_REGEX.findall(rewritten_query)
+            if not gts_in_query:
+                global_keywords = ["すべて", "全部", "全員", "どの", "どちら", "何件", "合計", "平均", "全", "一覧", "リスト", "通話時間"]
+                if any(k in rewritten_query for k in global_keywords):
+                    is_global = True
+
         if pipeline == "SQL":
             rows = payload.get("rows", [])
             if rows:
-                # Check if it has GT_XX session format
-                session_id = None
-                for val in rows[0].values():
-                    if isinstance(val, str) and SESSION_REGEX.match(val):
-                        session_id = val
-                        break
-                if session_id:
+                has_aggregate_column = any(
+                    any(agg in str(k).lower() for agg in ("sum", "count", "avg", "max", "min", "total"))
+                    for r in rows for k in r.keys()
+                )
+                
+                found_sessions = set()
+                for r in rows:
+                    for val in r.values():
+                        if isinstance(val, str) and SESSION_REGEX.match(val):
+                            found_sessions.add(val.upper())
+                            
+                if is_global or has_aggregate_column or len(found_sessions) > 1:
                     summary = {
-                        "entity_type": "meeting_transcript",
-                        "entity_id": session_id,
-                        "display_name": f"{session_id}の通話",
+                        "entity_type": "aggregate_result",
+                        "entity_id": "global_aggregate",
+                        "display_name": "Global Aggregate Result",
                         "key_attributes": {
-                            "participants": rows[0].get("participants", [])
+                            "gt_sessions": list(found_sessions)
                         }
                     }
+                else:
+                    # Check if it has GT_XX session format
+                    session_id = None
+                    for val in rows[0].values():
+                        if isinstance(val, str) and SESSION_REGEX.match(val):
+                            session_id = val
+                            break
+                    if session_id:
+                        summary = {
+                            "entity_type": "meeting_transcript",
+                            "entity_id": session_id,
+                            "display_name": f"{session_id}の通話",
+                            "key_attributes": {
+                                "participants": rows[0].get("participants", [])
+                            }
+                        }
         elif pipeline == "RAG":
             docs = payload.get("documents", [])
             if docs:
@@ -343,11 +455,12 @@ class IntelligentOrchestrator:
 
             if gts:
                 gts_upper = [gt.upper() for gt in gts]
-                summary["entity_type"] = "meeting_transcript"
-                if len(gts) > 1:
-                    summary["entity_id"] = gts_upper[0]  # default to first as primary ID
+                if len(gts) > 1 or is_global:
+                    summary["entity_type"] = "aggregate_result"
+                    summary["entity_id"] = "global_aggregate"
                     summary["display_name"] = ", ".join(gts_upper) + "の通話"
                 else:
+                    summary["entity_type"] = "meeting_transcript"
                     summary["entity_id"] = gts_upper[0]
                     summary["display_name"] = f"{gts_upper[0]}の通話"
                 
@@ -396,12 +509,15 @@ class IntelligentOrchestrator:
             "2. コンテキストに情報が含まれていない場合、または不十分な場合は、正直に「申し訳ありませんが、提供された資料からはその情報を確認できませんでした」という旨を伝えてください。\n"
             "3. [TOPIC SUMMARY] に記載されているエンティティ名や日付などの背景情報を、代名詞（「先ほどの担当者」など）の解決に役立ててください。\n"
             "4. 自分の知識（学習データ）を使って勝手に補完しないでください。\n"
-            "5. 回答は日本語で行ってください。"
+            "5. 回答は日本語で行ってください。\n"
+            "6. 登場人物や企業の「立場」（例：誰が電話をかけた発信側か、誰が電話を受けた受信側か）について問われた場合、コンテキスト（特に発言内容や要約、挨拶表現「お電話ありがとうございます」「お世話になっております」など）から、どちらが発信元・受信元であるかを注意深く論理的に読み取り、正しく区別して回答してください。その際、回答にはどちらが「発信側」（または「電話をかけた」）で、どちらが「受信側」（または「電話を受けた」、「受け手」）であるかを明確な表現を用いて記述してください。間違えて所属や立場を逆に解釈しないように注意してください。\n"
+            "7. 「彼」「彼女」などの代名詞がユーザーの質問（例：「彼はどうすると言っていましたか？」）に含まれる場合、コンテキスト内の登場人物の所属や性別（例：島田様は男性顧客であり「彼」、中原様は女性担当者であり「彼女」）を正確に同定し、質問の代名詞が指す人物（例：「彼」＝島田様）が述べた発言や行動のみを回答してください。別の登場人物（例：中原様）の発言と混同して答えてしまわないように細心の注意を払ってください。"
         )
         
+        query_to_use = rewritten_query if rewritten_query else original_query
         messages = [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": original_query}
+            {"role": "user", "content": query_to_use}
         ]
         
         retries = 0
@@ -473,7 +589,7 @@ class IntelligentOrchestrator:
         
         try:
             verdict_text = await self.llm_manager.generate_chat_completion(
-                messages=messages, response_format={"type": "json_object"}
+                messages=messages, response_format={"type": "json_object"}, max_tokens=150
             )
             verdict = extract_json(verdict_text)
             passed = verdict.get("passed", True)

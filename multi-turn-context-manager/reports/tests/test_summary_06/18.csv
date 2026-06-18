@@ -1,0 +1,4 @@
+Test Suite Version,Total Cases Run,Passed Cases,Failed Cases,Accuracy (%),Average Latency (ms),Cache Hit Rate (%),Self-Check Pass Rate (%)
+V1 (Standard),26,26,0,100.00,6859.25,19.23,95.65
+V2 (Advanced),22,22,0,100.00,10023.30,22.73,94.44
+V3 (Hard Real Estate),30,30,0,100.00,11798.00,20.00,100.00

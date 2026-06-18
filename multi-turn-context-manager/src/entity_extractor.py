@@ -13,10 +13,14 @@ class EntityExtractor:
         self.db_pool = db_pool
         self.llm_manager = llm_manager
 
-    async def extract_and_index(self, conn, session_id: str, cache_slot_id: int, pipeline: str, payload: dict, query: str = None):
+    async def extract_and_index(self, conn, session_id: str, cache_slot_id: int, pipeline: str, payload: dict, query: str = None, summary_context: dict = None):
         """
         Extracts entities from the engine payload and indexes them into session_entity_index.
         """
+        if summary_context and summary_context.get("entity_id") == "global_aggregate":
+            logger.info(f"Skipping entity index extraction for global aggregate cache slot {cache_slot_id}")
+            return
+            
         logger.info(f"Extracting entities for pipeline {pipeline}, session_id {session_id}, slot {cache_slot_id}")
         entities_to_upsert = [] # List of tuples: (entity_id, entity_type, display_names)
 
@@ -102,7 +106,8 @@ class EntityExtractor:
                                 if p_clean:
                                     p_id = f"{canonical_session}_{p_clean}"
                                     p_base = re.sub(r'(さん|様|さま|君|くん|ちゃん|氏|殿)$', '', p_clean)
-                                    p_names = [p_clean, p_base, f"{p_base}さん", f"{p_base}様", "彼", "彼女", "その人", "あの人"]
+                                    # Use neutral indicator words instead of forcing gendered pronouns in heuristic index
+                                    p_names = [p_clean, p_base, f"{p_base}さん", f"{p_base}様", "その人", "あの人", "担当者"]
                                     entities_to_upsert.append((p_id, "person", p_names))
                                     
                 entities_to_upsert.append((canonical_session, "meeting_transcript", display_names))
@@ -193,7 +198,7 @@ class EntityExtractor:
                                         if p_clean:
                                             p_id = f"{entity_id}_{p_clean}"
                                             p_base = re.sub(r'(さん|様|さま|君|くん|ちゃん|氏|殿)$', '', p_clean)
-                                            p_names = [p_clean, p_base, f"{p_base}さん", f"{p_base}様", "彼", "彼女", "その人", "あの人"]
+                                            p_names = [p_clean, p_base, f"{p_base}さん", f"{p_base}様", "その人", "あの人", "担当者"]
                                             entities_to_upsert.append((p_id, "person", p_names))
                                             
                     entities_to_upsert.append((entity_id, "document" if not SESSION_REGEX.match(entity_id) else "meeting_transcript", display_names))
@@ -251,21 +256,30 @@ class EntityExtractor:
 
         # 4. Perform DB UPSERT
         ALLOWED_TYPES = {'meeting_transcript', 'person', 'document', 'sql_result'}
+        
+        # Deduplicate entities by (entity_id, entity_type) and merge display_names
+        unique_entities = {}
         for e_id, e_type, d_names in entities_to_upsert:
-            try:
-                # Sanitize entity type to avoid check constraint violations
-                e_type_clean = e_type.strip()
-                if e_type_clean not in ALLOWED_TYPES:
-                    if e_type_clean.lower() in ('company', 'organization', 'object', 'thing', 'location'):
-                        e_type_clean = 'document'
-                    elif e_type_clean.lower() in ('user', 'human', 'employee'):
-                        e_type_clean = 'person'
-                    else:
-                        e_type_clean = 'document'
+            # Sanitize entity type
+            e_type_clean = e_type.strip()
+            if e_type_clean not in ALLOWED_TYPES:
+                if e_type_clean.lower() in ('company', 'organization', 'object', 'thing', 'location'):
+                    e_type_clean = 'document'
+                elif e_type_clean.lower() in ('user', 'human', 'employee'):
+                    e_type_clean = 'person'
+                else:
+                    e_type_clean = 'document'
+            
+            key = (e_id, e_type_clean)
+            if key not in unique_entities:
+                unique_entities[key] = set()
+            for n in d_names:
+                if n.strip():
+                    unique_entities[key].add(n.strip())
 
-                # Ensure pronouns and variations are lowercased and clean
-                clean_names = list(set([n.strip() for n in d_names if n.strip()]))
-                
+        for (e_id, e_type_clean), clean_names_set in unique_entities.items():
+            try:
+                clean_names = list(clean_names_set)
                 await conn.execute("""
                     INSERT INTO session_entity_index (session_id, cache_slot_id, entity_id, entity_type, display_names)
                     VALUES ($1, $2, $3, $4, $5)
@@ -276,6 +290,6 @@ class EntityExtractor:
                             FROM unnest(session_entity_index.display_names || EXCLUDED.display_names) AS x
                         )
                 """, session_id, cache_slot_id, e_id, e_type_clean, clean_names)
-                logger.info(f"UPSERT entity {e_id} ({e_type}) for session {session_id} successful.")
+                logger.info(f"UPSERT entity {e_id} ({e_type_clean}) for session {session_id} successful.")
             except Exception as e:
                 logger.error(f"Error during UPSERT entity {e_id}: {e}")

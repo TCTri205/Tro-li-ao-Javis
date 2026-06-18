@@ -29,6 +29,10 @@ Tier 1 thực hiện tuần tự các bước kiểm tra sau để đưa ra quy�
     *   **Vùng Đỏ (Khoảng cách > 0.55):** Độ tương đồng thấp. Coi là chủ đề mới hoàn toàn (Topic Shift).
     *   **Vùng Xám (0.22 - 0.55):** Không chắc chắn, chuyển sang Tier 2.
 
+5.  **Heuristic Pronoun Resolution (Giải quyết đại từ):**
+    *   **Đại từ số ít:** "anh ấy", "cô ấy", "nó" được giải quyết dựa trên thực thể Person hoặc Session gần nhất trong Index. Hệ thống có cơ chế phân biệt giới tính dựa trên tên (ví dụ: 中原 prioritized cho "cô ấy").
+    *   **Đại từ số nhiều:** "họ", "hai người họ", "phía bên kia" được giải quyết bằng cách tìm 2 thực thể Person/Session khác nhau gần nhất trong lịch sử để tạo truy vấn so sánh.
+
 ### 2. Tier 2: LLM Router & Rewriter (Phân tích nâng cao)
 
 Được kích hoạt khi Tier 1 không thể đưa ra quyết định tin cậy. Hỗ trợ mô hình **Groq (llama-3.3-70b)** hoặc **Javis Qwen** (cho các suy luận phức tạp).

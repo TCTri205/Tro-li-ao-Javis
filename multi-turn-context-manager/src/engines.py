@@ -119,7 +119,7 @@ def heuristic_sql_translation(query: str) -> str:
     # Single GT query
     if len(gts_upper) == 1:
         gt_id = gts_upper[0]
-        if any(k in query for k in ("詳細", "具体的内容", "話したこと", "内容", "中身")):
+        if any(k in query for k in ("詳細", "具体の内容", "話したこと", "内容", "中身", "伝言", "発言", "メッセージ", "予定", "約束", "打ち合わせ", "言いました", "言っていました")):
             return f"SELECT t.id, t.session_id, t.meeting_date, t.participants, ct.turn_index, ct.speaker, ct.text FROM transcripts t JOIN chunks_turn ct ON t.id = ct.transcript_id WHERE t.session_id = '{gt_id}' ORDER BY ct.turn_index LIMIT 50;"
         elif "要約" in query:
             return f"SELECT summary FROM transcripts WHERE session_id = '{gt_id}' LIMIT 50;"
@@ -128,6 +128,8 @@ def heuristic_sql_translation(query: str) -> str:
                 return f"SELECT duration_seconds FROM transcripts WHERE session_id = '{gt_id}' AND meeting_date = '{date_str}' LIMIT 50;"
             else:
                 return f"SELECT duration_seconds FROM transcripts WHERE session_id = '{gt_id}' LIMIT 50;"
+        elif any(k in query for k in ("誰", "参加者", "話者", "相手", "メンバ", "メンバー", "名前", "担当者")):
+            return f"SELECT session_id, meeting_date, participants, summary FROM transcripts WHERE session_id = '{gt_id}' LIMIT 50;"
 
     # Date-only query
     if date_str and any(k in query for k in ("通話", "会話", "call", "録音")):
@@ -185,7 +187,9 @@ class SQLEngine:
                 "重要な注意事項:\n"
                 "- 常にクエリやコンテキストから抽出された正確な session_id を使用してください。\n"
                 "- transcripts および chunks_turn 以外のテーブルは使用しないでください。\n"
-                "- `participants`（JSONB配列）を展開する場合は、`(jsonb_array_elements(participants)).value` のような無効な構文を使用しないでください（PostgreSQLでは `column notation .value applied to type jsonb` のエラーになります）。代わりに `jsonb_array_elements_text(participants)` を使用するか、単に `participants` 列を選択してください。\n"
+                "- 質問が「会社」「所属」「役職」「目的」「用件」など、参加者の属性や通話の詳細な内容に関するものである場合、単に `participants` や `session_id` を取得するだけでなく、必ず `raw_text` 列（会話の全文）も SELECT 句に含めて取得してください。これにより、会話本文から会社名や所属を正確に特定できるようになります。\n"
+                "- `participants`（JSONB配列）から特定の話者を探す場合は、`participants @> '[\"人名\"]'` のような構文を使用してください。`jsonb_array_elements_text` を WHERE 句の中で使用するとエラーになります。\n"
+                "- 他の参加者（自分以外）を取得したい場合は、`SELECT p FROM transcripts, jsonb_array_elements_text(participants) p WHERE session_id = '...' AND p != '自分の名前'` のような横方向結合（LATERAL joinの暗黙的利用）を使用してください。\n"
                 "- 結果は常に最大50行に制限してください (LIMIT 50)。\n"
             )
             
@@ -296,8 +300,40 @@ class RAGEngine:
                 """, [gt.upper() for gt in gt_matches])
                 target_ids = [r["id"] for r in rows]
             
+            # Extract query keywords for resolving entities from current session index
+            words = re.findall(r'[\u4e00-\u9fff]+|[\u30a0-\u30ff]+|[a-zA-Z0-9_]+', query)
+            stop_words = {"query", "passage", "の", "は", "と", "を", "が", "に", "で", "も", "した", "ですか", "でした", "について", "同じ", "目的", "電話"}
+            keywords = [w for w in words if w.lower() not in stop_words and len(w) >= 2]
+            clean_keywords = []
+            for kw in keywords:
+                clean_kw = re.sub(r'(さん|様|さま|君|くん|ちゃん|氏|殿)$', '', kw)
+                if clean_kw:
+                    clean_keywords.append(clean_kw)
+                clean_keywords.append(kw)
+            clean_keywords = list(set(clean_keywords))
+
+            # If no explicit GT sessions in query, try to resolve via session_entity_index
+            if not target_ids and session_id and clean_keywords:
+                matched_gts = set()
+                for kw in clean_keywords:
+                    if len(kw) >= 2:
+                        ent_rows = await conn.fetch("""
+                            SELECT entity_id FROM session_entity_index 
+                            WHERE session_id = $1 AND (entity_id LIKE 'GT_%' OR entity_id = $1)
+                              AND array_to_string(display_names, ' ') LIKE $2
+                        """, session_id, f"%{kw}%")
+                        for er in ent_rows:
+                            gts = SESSION_REGEX.findall(er["entity_id"])
+                            if gts:
+                                matched_gts.add(gts[0].upper())
+                if matched_gts:
+                    rows = await conn.fetch("""
+                        SELECT id FROM transcripts WHERE session_id = ANY($1::varchar[])
+                    """, list(matched_gts))
+                    target_ids = [r["id"] for r in rows]
+            
             # Also check if session_id matches a transcript
-            if session_id:
+            if session_id and not target_ids:
                 t_id = await conn.fetchval(
                     "SELECT id FROM transcripts WHERE session_id = $1", session_id
                 )
@@ -312,6 +348,33 @@ class RAGEngine:
                     WHERE c.transcript_id = ANY($1::uuid[])
                 """, target_ids)
                 chunks.extend([dict(r) for r in rows_turn])
+
+                rows_trans = await conn.fetch("""
+                    SELECT id AS doc_id, session_id, raw_text, summary, 'transcripts' AS source_table
+                    FROM transcripts
+                    WHERE id = ANY($1::uuid[])
+                """, target_ids)
+                for r in rows_trans:
+                    if r["summary"]:
+                        chunks.append({
+                            "id": f"{r['session_id']}_summary",
+                            "doc_id": str(r["doc_id"]),
+                            "session_id": r["session_id"],
+                            "text": f"通話の要約: {r['summary']}",
+                            "speaker": "System",
+                            "turn_index": -1,
+                            "source_table": "transcripts"
+                        })
+                    if r["raw_text"]:
+                        chunks.append({
+                            "id": f"{r['session_id']}_raw_text",
+                            "doc_id": str(r["doc_id"]),
+                            "session_id": r["session_id"],
+                            "text": f"通話のログ全体:\n{r['raw_text']}",
+                            "speaker": "System",
+                            "turn_index": -2,
+                            "source_table": "transcripts"
+                        })
             else:
                 # General search: fetch all chunks from chunks_turn and company_chunks
                 rows_turn = await conn.fetch("""
@@ -350,14 +413,25 @@ class RAGEngine:
         query_norm = np.linalg.norm(query_emb)
         chunk_norms = np.linalg.norm(chunk_embs, axis=1)
         # Avoid division by zero
+        query_norm_val = query_norm if query_norm != 0 else 1e-9
         chunk_norms[chunk_norms == 0] = 1e-9
-        similarities = dot_products / (query_norm * chunk_norms)
+        similarities = dot_products / (query_norm_val * chunk_norms)
         
         # Extract keywords for boosting keyword match
         keywords = []
         words = re.findall(r'[\u4e00-\u9fff]+|[\u30a0-\u30ff]+|[a-zA-Z0-9_]+', query)
         stop_words = {"query", "passage", "の", "は", "と", "を", "が", "に", "で", "も", "した", "ですか", "でした", "について", "同じ", "目的", "電話"}
-        keywords = [w for w in words if w.lower() not in stop_words and len(w) >= 2]
+        raw_keywords = [w for w in words if w.lower() not in stop_words and len(w) >= 2]
+        
+        # Strip honorifics from keywords to match base names in database
+        keywords = []
+        for kw in raw_keywords:
+            clean_kw = re.sub(r'(さん|様|さま|君|くん|ちゃん|氏|殿)$', '', kw)
+            if clean_kw:
+                keywords.append(clean_kw)
+            keywords.append(kw)
+        keywords = list(set(keywords))
+        
         logger.info(f"RAGEngine: Extracted keywords for boosting: {keywords}")
         
         # 3. Sort and select top results
@@ -369,6 +443,10 @@ class RAGEngine:
                 if kw in chunk_text:
                     boost += 0.35  # Boost score by 0.35 for each matching keyword
             
+            # Boost virtual transcript chunks to guarantee their retrieval
+            if chunks[idx].get("source_table") == "transcripts":
+                boost += 0.5
+                
             chunks[idx]["score"] = float(sim) + boost
             # Make ID and doc_id JSON serializable (str)
             chunks[idx]["id"] = str(chunks[idx]["id"])
