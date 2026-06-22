@@ -13,8 +13,8 @@ def get_visual_width(text):
             width += 1
     return width
 
-csv_path = r'D:\VJ\Tro-li-ao-Javis\multi-turn-context-manager\reports\tests\test_summary_06_18.csv'
-xlsx_path = r'D:\VJ\Tro-li-ao-Javis\multi-turn-context-manager\reports\tests\test_summary_06_18.xlsx'
+csv_path = r'D:\VJ\Tro-li-ao-Javis\multi-turn-context-manager\reports\tests\test_summary_06_22.csv'
+xlsx_path = r'D:\VJ\Tro-li-ao-Javis\multi-turn-context-manager\reports\tests\test_summary_06_22.xlsx'
 
 print(f"Reading CSV from: {csv_path}")
 df = pd.read_csv(csv_path, encoding='utf-8')

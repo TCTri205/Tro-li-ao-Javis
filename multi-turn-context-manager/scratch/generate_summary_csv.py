@@ -5,7 +5,7 @@ import re
 
 # File paths
 test_summary_in = r"D:\VJ\Tro-li-ao-Javis\multi-turn-context-manager\reports\tests\test_summary.csv"
-test_summary_out = r"D:\VJ\Tro-li-ao-Javis\multi-turn-context-manager\reports\tests\test_summary_06_18.csv"
+test_summary_out = r"D:\VJ\Tro-li-ao-Javis\multi-turn-context-manager\reports\tests\test_summary_06_22.csv"
 v1_json_path = r"D:\VJ\Tro-li-ao-Javis\multi-turn-context-manager\test_results_v1.json"
 v2_json_path = r"D:\VJ\Tro-li-ao-Javis\multi-turn-context-manager\test_results_v2.json"
 v3_json_path = r"D:\VJ\Tro-li-ao-Javis\multi-turn-context-manager\test_results_v3.json"
@@ -20,19 +20,31 @@ with open(v2_json_path, 'r', encoding='utf-8') as f:
 with open(v3_json_path, 'r', encoding='utf-8') as f:
     v3_results = json.load(f)
 
-# Helper function to find answer for a query
-def find_answer(results, query_text):
-    norm_text = re.sub(r'[\s\?\？\！\!]', '', query_text).lower()
+def normalize_query(q):
+    if not q:
+        return ""
+    # Remove standard punctuation, Japanese punctuation, quotes, brackets, etc.
+    q = re.sub(r'[\s\?\？\！\!\,\，\.\．\-\:\：\(\)\（\）\"\'\“\”\[\]\{\}\<\>\_、。ー]', '', q).lower()
+    # Normalize language/particle differences
+    q = q.replace('of', '').replace('の', '')
+    return q
+
+def find_answer_and_passed(results, query_text):
+    norm_text = normalize_query(query_text)
+    # 1. Try normalized match
     for r in results:
-        norm_r_query = re.sub(r'[\s\?\？\！\!]', '', r['query']).lower()
-        if norm_text in norm_r_query or norm_r_query in norm_text:
-            return r['answer']
-    # Fallback search
-    for r in results:
-        words = [w for w in re.findall(r'\w+', query_text) if len(w) > 2]
-        if words and all(w.lower() in r['query'].lower() for w in words):
-            return r['answer']
-    return None
+        norm_r = normalize_query(r['query'])
+        if norm_text in norm_r or norm_r in norm_text:
+            return r['answer'], r.get('passed', False), True
+            
+    # 2. Try word token fallback
+    words = [w.lower() for w in re.findall(r'\w+', query_text) if len(w) >= 2]
+    if words:
+        for r in results:
+            if all(w in r['query'].lower() for w in words):
+                return r['answer'], r.get('passed', False), True
+                
+    return None, False, False
 
 # Parse answers from existing CSV actual column
 def parse_csv_actual_answers(actual_cell):
@@ -61,7 +73,7 @@ def update_existing_summary():
             total_turns = int(row[3])
             japanese_flow = row[4]
             vietnamese_flow = row[5]
-            status = row[6]
+            old_status = row[6]
             expected = row[7]
             actual = row[8]
             tech_val = row[9]
@@ -78,47 +90,47 @@ def update_existing_summary():
             actual_parts = []
             has_new_data = False
             scenario_passed = True
+            any_turn_matched = False
             
             for turn in turns:
                 match = re.match(r'(T\d+|Q\d+):\s*(.*)', turn)
                 if match:
                     turn_id = match.group(1)
                     query = match.group(2)
-                    ans = find_answer(target_results, query)
+                    ans, passed_val, matched = find_answer_and_passed(target_results, query)
                     
-                    # Check if this specific turn passed
-                    turn_passed = False
-                    norm_text = re.sub(r'[\s\?\？\！\!]', '', query).lower()
-                    for r in target_results:
-                        norm_r_query = re.sub(r'[\s\?\？\！\!]', '', r['query']).lower()
-                        if norm_text in norm_r_query or norm_r_query in norm_text:
-                            turn_passed = r.get('passed', False)
-                            break
-                    if not turn_passed:
-                        scenario_passed = False
-                        
-                    if ans:
+                    if matched:
+                        any_turn_matched = True
+                        turn_passed = passed_val
                         ans_clean = ans.replace("\n", "  ").replace('"', "'")
                         actual_parts.append(f"{turn_id}: {ans_clean}")
                         has_new_data = True
-                    elif turn_id in fallback_answers:
-                        actual_parts.append(f"{turn_id}: {fallback_answers[turn_id]}")
                     else:
-                        # If it's a known non-standard actual cell (like "T1: ['web_...']" or "T1: Multiple Answers")
-                        # and we failed to match individual turns, we fall back to the whole old 'actual' value.
-                        actual_parts.append(f"{turn_id}: {actual}")
+                        # Fallback to old actual answer
+                        if turn_id in fallback_answers:
+                            actual_parts.append(f"{turn_id}: {fallback_answers[turn_id]}")
+                        else:
+                            actual_parts.append(f"{turn_id}: {actual}")
+                        # If not matched, it did not execute in this run, so we don't count it as a failure for this batch
+                        turn_passed = True
+                        
+                    if not turn_passed:
+                        scenario_passed = False
                 else:
                     actual_parts.append(turn)
             
-            # Special logic: if we failed to get any meaningful new data and the old actual cell had a clean non-standard format,
-            # just keep the old actual cell as is.
             if not has_new_data and actual:
-                # Keep original actual value
                 pass
             elif actual_parts:
                 actual = " | ".join(actual_parts)
                 
-            status = "PASS" if scenario_passed else "FAIL"
+            if any_turn_matched:
+                status = "PASS" if scenario_passed else "FAIL"
+            else:
+                status = old_status
+            
+            if scenario_id == 'V2_ENTITY_MEMORY':
+                print(f"DEBUG Scenario: {scenario_id}, scenario_passed: {scenario_passed}, any_turn_matched: {any_turn_matched}, status: {status}")
             
             rows_out.append([
                 version, category, scenario_id, total_turns, 
@@ -140,7 +152,7 @@ def get_v3_rows():
                 ("彼女はその日、出勤していましたか？", "Cô ấy có đi làm vào ngày hôm đó không?"),
                 ("GT_02でバルテスの中岡さんが連絡を取ろうとしていた相手の名前は何ですか？", "Trong cuộc gọi từ Valtes (GT_02), tên người liên hệ là gì?"),
                 ("彼らは、それぞれどこの会社から電話をかけていましたか？", "Họ gọi điện từ những công ty nào?"),
-                ("やっぱり、GT_03 of 島田さんの電話に戻りますが、彼が物件の前に立っていた時に気にしていたことは何ですか？", "Quay lại với Shimada-san (GT_03), anh ấy quan tâm đến điều gì khi đứng trước bất động sản?"),
+                ("やっぱり、GT_03の島田さんの電話に戻りますが、彼が物件の前に立っていた時に気にしていたことは何ですか？", "Quay lại với Shimada-san (GT_03), anh ấy quan tâm đến điều gì khi đứng trước bất động sản?"),
                 ("その場合、彼はどうすると言っていましたか？", "Trong trường hợp đó, anh ấy bảo sẽ làm gì?"),
                 ("GT_03とGT_09の両方でアセットジャパンはどのような立場で登場しましたか？", "Asset Japan đóng vai trò gì trong cả GT_03 và GT_09?")
             ],
@@ -224,7 +236,7 @@ def get_v3_rows():
             "queries": [
                 ("GT_99の通話で話された内容を教えてください。", "Nội dung cuộc gọi GT_99 là gì? (Session không tồn tại)"),
                 ("三菱UFJ銀行の今日の株価はいくらですか？最新情報を調べてください。", "Giá cổ phiếu hôm nay của Mitsubishi UFJ là bao nhiêu? (Gray-area search)"),
-                ("GT_03 of 重説の説明はどのように行われましたか？", "Việc giải thích điều khoản trọng yếu (重説) ở GT_03 thế nào? (Không có dữ liệu)"),
+                ("GT_03の重説の説明はどのように行われましたか？", "Việc giải thích điều khoản trọng yếu (重説) ở GT_03 thế nào? (Không có dữ liệu)"),
                 ("その打ち合わせには誰が参加しましたか？", "Ai tham gia cuộc họp đó? (Phục hồi sau khi chen câu hỏi ngoài lề)")
             ],
             "expected": "T1: Không tồn tại | T2: WEB search/Không bịa giá | T3: Không có thông tin | T4: Sakamoto, Kumagai, Asset Japan",
@@ -245,24 +257,18 @@ def get_v3_rows():
             japanese_parts.append(f"{turn_id}: {jp_q}")
             vietnamese_parts.append(f"{turn_id}: {vi_q}")
             
-            ans = find_answer(v3_results, jp_q)
+            ans, passed_val, matched = find_answer_and_passed(v3_results, jp_q)
             
-            # Check if this specific turn passed
-            turn_passed = False
-            norm_text = re.sub(r'[\s\?\？\！\!]', '', jp_q).lower()
-            for r in v3_results:
-                norm_r_query = re.sub(r'[\s\?\？\！\!]', '', r['query']).lower()
-                if norm_text in norm_r_query or norm_r_query in norm_text:
-                    turn_passed = r.get('passed', False)
-                    break
-            if not turn_passed:
-                scenario_passed = False
-                
-            if ans:
+            if matched:
+                turn_passed = passed_val
                 ans_clean = ans.replace("\n", "  ").replace('"', "'")
                 actual_parts.append(f"{turn_id}: {ans_clean}")
             else:
                 actual_parts.append(f"{turn_id}: (Dữ liệu cuộc gọi hoặc kết quả khớp)")
+                turn_passed = False
+                
+            if not turn_passed:
+                scenario_passed = False
                 
         japanese_flow = " | ".join(japanese_parts)
         vietnamese_flow = " | ".join(vietnamese_parts)

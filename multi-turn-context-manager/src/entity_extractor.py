@@ -106,6 +106,7 @@ class EntityExtractor:
         # 2. RAG Pipeline Extraction
         elif pipeline == "RAG":
             documents = payload.get("documents", [])
+            query_gts = {gt.upper() for gt in SESSION_REGEX.findall(query)} if query else set()
             for doc in documents:
                 meta = doc.get("metadata", {})
                 file_name = meta.get("file_name") or meta.get("source")
@@ -130,6 +131,17 @@ class EntityExtractor:
                         logger.error(f"Error resolving doc_id {meta.get('doc_id')} to session_id: {e}")
                         
                 if entity_id:
+                    # GT Scoping: Only index entities belonging to GTs mentioned in the query.
+                    # This prevents cross-session entity pollution from RAG vector retrieval noise.
+                    entity_gt_matches = SESSION_REGEX.findall(entity_id.upper())
+                    entity_gt = entity_gt_matches[0].upper() if entity_gt_matches else None
+                    if query_gts and entity_gt and entity_gt not in query_gts:
+                        logger.info(
+                            f"RAG Scoping: Skipping entity '{entity_id}' (GT={entity_gt}), "
+                            f"not in query GTs {query_gts}"
+                        )
+                        continue
+
                     display_names = [
                         entity_id,
                         f"{entity_id}.txt",
