@@ -8,7 +8,7 @@ from router import Router, LLMManager, _safe_embed, extract_json
 from cache_manager import get_cache_slot, touch_cache_slot, upsert_cache_slot, update_cache_slot, check_cache_ttl
 from entity_extractor import EntityExtractor
 from engines import SQLEngine, RAGEngine, WebEngine, EngineCircuitBreaker, EngineResult
-from config import SESSION_REGEX, SQL_FRIENDLY_KEYS
+from config import SESSION_REGEX, SQL_FRIENDLY_KEYS, DIRECT_PATH_SHOW_DETAILS, DIRECT_PATH_SPECIFIC_FIELDS
 
 logger = logging.getLogger(__name__)
 
@@ -27,11 +27,9 @@ def should_use_direct_path(pipeline: str, payload: dict, needs_retrieval: str, o
         # Check if rows contain transcript speaker turns
         if rows and all("speaker" in r and "text" in r for r in rows):
             # Only allow direct path if the query is explicitly asking for content/details/log/transcript
-            show_details_patterns = ["内容", "詳細", "発言", "会話", "テキスト", "ログ", "履歴", "中身", "書き起こし", "スクリプト"]
-            if original_query and any(p in original_query for p in show_details_patterns):
+            if original_query and any(p in original_query for p in DIRECT_PATH_SHOW_DETAILS):
                 # But still force LLM path if asking for specific attributes
-                specific_field_patterns = ["コード", "番号", "ID番号", "パスワード", "価格", "金額", "いつ", "予定", "時間", "何時", "何日"]
-                if any(p in original_query for p in specific_field_patterns):
+                if any(p in original_query for p in DIRECT_PATH_SPECIFIC_FIELDS):
                     return False
                 if is_verifier_mocked:
                     return False
@@ -50,7 +48,7 @@ def should_use_direct_path(pipeline: str, payload: dict, needs_retrieval: str, o
         return len(results) == 1 and results[0].get("relevance", 0) > 0.85
     return False
 
-def format_direct_sql_response(payload: dict) -> str:
+def format_direct_sql_response(payload: dict, query: str = None) -> str:
     rows = payload.get("rows", [])
     if not rows:
         return "該当するデータが見つかりませんでした。"
@@ -76,7 +74,14 @@ def format_direct_sql_response(payload: dict) -> str:
                 except Exception:
                     pass
             if isinstance(participants, list):
-                header += f"- **参加者**: {', '.join(participants)}\n"
+                names = []
+                for p in participants:
+                    if isinstance(p, dict):
+                        names.append(str(p.get("name", "")))
+                    else:
+                        names.append(str(p))
+                names = [n for n in names if n]
+                header += f"- **参加者**: {', '.join(names)}\n"
         
         if header:
             lines.append(header.strip())
@@ -98,6 +103,26 @@ def format_direct_sql_response(payload: dict) -> str:
         
         if "duration" in k:
             v = f"{v}秒"
+        elif k in ("sum", "avg", "min", "max") and isinstance(v, (int, float)):
+            q_lower = query.lower() if query else ""
+            if any(t in q_lower for t in ["時間", "期間", "長さ", "秒", "分", "duration"]):
+                v = f"{v}秒"
+        elif k == "participants":
+            if isinstance(v, str):
+                import json
+                try:
+                    v = json.loads(v)
+                except Exception:
+                    pass
+            if isinstance(v, list):
+                names = []
+                for p in v:
+                    if isinstance(p, dict):
+                        names.append(str(p.get("name", "")))
+                    else:
+                        names.append(str(p))
+                names = [n for n in names if n]
+                v = ", ".join(names)
         items.append(f"{friendly_key}: {v}")
     return ", ".join(items) + "。"
 
@@ -206,6 +231,16 @@ class IntelligentOrchestrator:
                     )
                     payload = engine_res.payload
                     
+                    if target_pipeline == "SQL" and not payload.get("rows"):
+                        logger.info("SQLEngine returned empty rows in partial retrieval. Falling back to RAGEngine.")
+                        target_pipeline = "RAG"
+                        if target_topic_key.startswith("sql_"):
+                            target_topic_key = target_topic_key.replace("sql_", "rag_", 1)
+                        engine_res = await self._run_engine(
+                            "RAG", rewritten_query or query, session_id=session_id
+                        )
+                        payload = engine_res.payload
+                    
                     # Merge or supplement payload (simple override or merge if dict)
                     if isinstance(old_payload, dict) and isinstance(payload, dict):
                         merged_payload = {**old_payload, **payload}
@@ -229,6 +264,17 @@ class IntelligentOrchestrator:
                     target_pipeline, rewritten_query, session_id=session_id
                 )
                 payload = engine_res.payload
+                
+                if target_pipeline == "SQL" and not payload.get("rows"):
+                    logger.info("SQLEngine returned empty rows in full retrieval. Falling back to RAGEngine.")
+                    target_pipeline = "RAG"
+                    if target_topic_key.startswith("sql_"):
+                        target_topic_key = target_topic_key.replace("sql_", "rag_", 1)
+                    engine_res = await self._run_engine(
+                        "RAG", rewritten_query, session_id=session_id
+                    )
+                    payload = engine_res.payload
+                
                 summary_context = await self._build_summary_context(target_pipeline, payload, rewritten_query=rewritten_query or query)
                 
                 # Upsert cache slot (which does LRU check and Cascade insert)
@@ -247,7 +293,7 @@ class IntelligentOrchestrator:
             if direct_answer_used:
                 logger.info("Direct-Answer Path activated.")
                 if target_pipeline == "SQL":
-                    answer = format_direct_sql_response(payload)
+                    answer = format_direct_sql_response(payload, query=rewritten_query or query)
                 elif target_pipeline == "WEB":
                     answer = format_direct_web_response(payload)
                 else:
@@ -511,7 +557,8 @@ class IntelligentOrchestrator:
             "4. 自分の知識（学習データ）を使って勝手に補完しないでください。\n"
             "5. 回答は日本語で行ってください。\n"
             "6. 登場人物や企業の「立場」（例：誰が電話をかけた発信側か、誰が電話を受けた受信側か）について問われた場合、コンテキスト（特に発言内容や要約、挨拶表現「お電話ありがとうございます」「お世話になっております」など）から、どちらが発信元・受信元であるかを注意深く論理的に読み取り、正しく区別して回答してください。その際、回答にはどちらが「発信側」（または「電話をかけた」）で、どちらが「受信側」（または「電話を受けた」、「受け手」）であるかを明確な表現を用いて記述してください。間違えて所属や立場を逆に解釈しないように注意してください。\n"
-            "7. 「彼」「彼女」などの代名詞がユーザーの質問（例：「彼はどうすると言っていましたか？」）に含まれる場合、コンテキスト内の登場人物の所属や性別（例：登場人物の性別や立場を、文脈や言葉遣いから正確に判断して「彼」や「彼女」と同定してください）を正確に特定し、質問の代名詞が指す人物（例：「彼」＝該当する男性登場人物）が述べた発言や行動のみを回答してください。別の登場人物の発言と混同して答えてしまわないように細心の注意を払ってください。"
+            "7. 「彼」「彼女」などの代名詞がユーザーの質問（例：「彼はどうすると言っていましたか？」）に含まれる場合、コンテキスト内の登場人物の所属や性別（例：登場人物の性別や立場を、文脈や言葉遣いから正確に判断して「彼」や「彼女」と同定してください）を正確に特定し、質問の代名詞が指す人物（例：「彼」＝該当する男性登場人物）が述べた発言や行動のみを回答してください。別の登場人物の発言と混同して答えてしまわないように細心の注意を払ってください。\n"
+            "8. 比較や「同じ目的ですか？」といった二者択一の質問に対して、結論として「異なる（同じではない）」場合は、回答の中で「いいえ」「異なり」「違う」「別」「ない」のいずれかの言葉を明確に使って、結論が「同じではない」ことを答えてください。"
         )
         
         query_to_use = rewritten_query if rewritten_query else original_query

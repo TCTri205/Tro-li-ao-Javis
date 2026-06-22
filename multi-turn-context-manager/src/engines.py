@@ -295,13 +295,7 @@ class RAGEngine:
             chunks.extend([dict(r) for r in rows_company])
         else:
             # Check for GT sessions in query
-            gt_matches = SESSION_REGEX.findall(query)
-            target_ids = []
-            if gt_matches:
-                rows = await conn.fetch("""
-                    SELECT id FROM transcripts WHERE session_id = ANY($1::varchar[])
-                """, [gt.upper() for gt in gt_matches])
-                target_ids = [r["id"] for r in rows]
+            gt_matches = set(gt.upper() for gt in SESSION_REGEX.findall(query))
             
             # Extract query keywords for resolving entities from current session index
             words = re.findall(r'[\u4e00-\u9fff]+|[\u30a0-\u30ff]+|[a-zA-Z0-9_]+', query)
@@ -315,25 +309,38 @@ class RAGEngine:
                 clean_keywords.append(kw)
             clean_keywords = list(set(clean_keywords))
 
-            # If no explicit GT sessions in query, try to resolve via session_entity_index
-            if not target_ids and session_id and clean_keywords:
-                matched_gts = set()
+            # Resolve names to GTs via session_entity_index (no entity_type restriction)
+            if session_id and clean_keywords:
                 for kw in clean_keywords:
                     if len(kw) >= 2:
                         ent_rows = await conn.fetch("""
                             SELECT entity_id FROM session_entity_index 
-                            WHERE session_id = $1 AND (entity_type = 'meeting_transcript' OR entity_id = $1)
-                              AND array_to_string(display_names, ' ') LIKE $2
+                            WHERE session_id = $1 AND array_to_string(display_names, ' ') LIKE $2
                         """, session_id, f"%{kw}%")
                         for er in ent_rows:
                             gts = SESSION_REGEX.findall(er["entity_id"])
                             if gts:
-                                matched_gts.add(gts[0].upper())
-                if matched_gts:
-                    rows = await conn.fetch("""
-                        SELECT id FROM transcripts WHERE session_id = ANY($1::varchar[])
-                    """, list(matched_gts))
-                    target_ids = [r["id"] for r in rows]
+                                gt_matches.add(gts[0].upper())
+
+            # Fallback direct search in transcripts table participants list
+            if clean_keywords:
+                for kw in clean_keywords:
+                    if len(kw) >= 2:
+                        rows = await conn.fetch("""
+                            SELECT session_id FROM transcripts 
+                            WHERE participants::text ILIKE $1
+                            LIMIT 5
+                        """, f"%{kw}%")
+                        for r in rows:
+                            if r["session_id"]:
+                                gt_matches.add(r["session_id"].upper())
+
+            target_ids = []
+            if gt_matches:
+                rows = await conn.fetch("""
+                    SELECT id FROM transcripts WHERE session_id = ANY($1::varchar[])
+                """, list(gt_matches))
+                target_ids = [r["id"] for r in rows]
             
             # Also check if session_id matches a transcript
             if session_id and not target_ids:

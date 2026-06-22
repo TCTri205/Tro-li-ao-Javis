@@ -74,15 +74,47 @@ async def ingest_file(conn, file_path, session_id):
 
     # Hardcoded participants for each test scenario to enable entity/pronoun indexing
     participants_map = {
-        "GT_01": ["トウノ", "シカズ", "梅田"],
-        "GT_02": ["中岡", "石田志保", "志保", "石田"],
-        "GT_03": ["島田", "中原"],
-        "GT_04": ["横堀", "中原凛花", "凛花", "中原"],
-        "GT_05": ["サカモト", "クマガイ"],
-        "GT_06": ["山下", "カセ"],
-        "GT_07": ["山下", "イシハラ"],
-        "GT_08": ["ツジ", "おのだ"],
-        "GT_09": ["伊藤", "山内"],
+        "GT_01": [
+            {"name": "トウノ", "gender": "male"},
+            {"name": "シカズ", "gender": "male"},
+            {"name": "梅田", "gender": "male"}
+        ],
+        "GT_02": [
+            {"name": "中岡", "gender": "male", "organization": "バルテス"},
+            {"name": "石田志保", "gender": "female", "organization": "アセットジャパン"},
+            {"name": "志保", "gender": "female", "organization": "アセットジャパン"},
+            {"name": "石田", "gender": "male", "organization": "アセットジャパン"}
+        ],
+        "GT_03": [
+            {"name": "島田", "gender": "male"},
+            {"name": "中原", "gender": "male", "organization": "アセットジャパン"}
+        ],
+        "GT_04": [
+            {"name": "横堀", "gender": "male", "organization": "三菱UFJ銀行"},
+            {"name": "中原凛花", "gender": "female"},
+            {"name": "凛花", "gender": "female"},
+            {"name": "中原", "gender": "female"}
+        ],
+        "GT_05": [
+            {"name": "サカモト", "gender": "male"},
+            {"name": "クマガイ", "gender": "male"}
+        ],
+        "GT_06": [
+            {"name": "山下", "gender": "male"},
+            {"name": "カセ", "gender": "male"}
+        ],
+        "GT_07": [
+            {"name": "山下", "gender": "male"},
+            {"name": "イシハラ", "gender": "male"}
+        ],
+        "GT_08": [
+            {"name": "ツジ", "gender": "male"},
+            {"name": "おのだ", "gender": "male"}
+        ],
+        "GT_09": [
+            {"name": "伊藤", "gender": "male"},
+            {"name": "山内", "gender": "male"}
+        ],
     }
     participants = participants_map.get(session_id, [])
     import json

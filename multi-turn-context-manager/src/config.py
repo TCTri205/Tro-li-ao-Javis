@@ -40,6 +40,10 @@ WEB_KEYWORDS = [
     "天気", "株価", "ニュース", "ネット", "検索", "グーグル", "株"
 ]
 
+# Direct-Answer Path Keywords
+DIRECT_PATH_SHOW_DETAILS = ["内容", "詳細", "発言", "会話", "テキスト", "ログ", "履歴", "中身", "書き起こし", "スクリプト"]
+DIRECT_PATH_SPECIFIC_FIELDS = ["コード", "番号", "ID番号", "パスワード", "価格", "金額", "いつ", "予定", "時間", "何時", "何日"]
+
 # Combined keyword lists exported to the rest of the application
 SQL_KEYWORDS = SQL_SYSTEM_KEYWORDS + SQL_DOMAIN_KEYWORDS
 RAG_KEYWORDS = RAG_SYSTEM_KEYWORDS + RAG_DOMAIN_KEYWORDS

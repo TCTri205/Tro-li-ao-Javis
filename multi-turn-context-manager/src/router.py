@@ -372,60 +372,10 @@ class Router:
         has_pronoun = any(re.search(re.escape(p), query.lower()) for p in PRONOUNS)
         is_ellipsis = query.strip().endswith(("は？", "は", "も？", "も"))
         
-        # Plural pronoun check: 
-        # Heuristic resolution: If we have exactly 2 distinct GTs/Persons in recent index, and query asks for comparison/same/difference
+        # Plural pronoun check: Delegate straight to Tier 2
         plural_pattern = re.compile(r'(彼ら|彼女ら|ら\b|方々|お二人|二人|双方|両者)')
         if plural_pattern.search(query):
-            # Try to resolve plural entities heuristically if recent history is small
-            recent_entities = sorted(entities, key=lambda x: x['cache_slot_id'], reverse=True)
-            distinct_entities = []
-            seen_ids = set()
-            seen_sessions = set()
-            for re_ent in recent_entities:
-                sessions_in_ent = SESSION_REGEX.findall(re_ent['entity_id'])
-                ent_session = sessions_in_ent[0].upper() if sessions_in_ent else None
-                
-                if (re_ent['entity_id'] not in seen_ids and 
-                    ent_session not in seen_sessions and 
-                    re_ent['entity_type'] in ['person', 'meeting_transcript']):
-                    
-                    distinct_entities.append(re_ent)
-                    seen_ids.add(re_ent['entity_id'])
-                    if ent_session:
-                        seen_sessions.add(ent_session)
-                if len(distinct_entities) >= 2: break
-                
-            if len(distinct_entities) == 2:
-                e1 = distinct_entities[0]
-                e2 = distinct_entities[1]
-                
-                # Extract clean session IDs (e.g. GT_02_中岡 -> GT_02)
-                s1_match = SESSION_REGEX.findall(e1['entity_id'])
-                s1 = s1_match[0].upper() if s1_match else e1['entity_id']
-                s2_match = SESSION_REGEX.findall(e2['entity_id'])
-                s2 = s2_match[0].upper() if s2_match else e2['entity_id']
-                
-                # If they are from different GT sessions, we need full retrieval for comparison
-                guessed_p = heuristic_pipeline_guess(query)
-                if guessed_p == "MODEL": guessed_p = "RAG" # Default to RAG for comparison
-                
-                rewritten = query.replace(plural_pattern.search(query).group(0), f"{s1}と{s2}")
-                logger.info(f"Tier 1: Heuristically resolved plural pronoun to {s1} and {s2}.")
-                
-                return {
-                    "is_follow_up": True,
-                    "relation_type": "topic_shift", # Comparison is usually a shift or extension
-                    "use_cache": False,
-                    "needs_retrieval": "full",
-                    "rewritten_query": rewritten,
-                    "target_topic_key": f"compare_{int(time.time())}",
-                    "target_pipeline": guessed_p,
-                    "routing_tier": "tier_1",
-                    "routing_method": "heuristics",
-                    "embedding_failed": embedding_failed
-                }
-            
-            logger.info("Tier 1: Plural pronoun detected but couldn't resolve heuristically. Bypassing to Tier 2.")
+            logger.info("Tier 1: Plural pronoun detected. Delegating straight to Tier 2.")
             return await self._route_tier_2(session_id, query, routing_reason="plural_pronoun", embedding_failed=embedding_failed)
         
         # Check for multiple GTs in query (e.g. comparison)
@@ -490,6 +440,21 @@ class Router:
             recent_slots = sorted(entities, key=lambda x: x['cache_slot_id'], reverse=True)
             if recent_slots:
                 target_slot_id = recent_slots[0]['cache_slot_id']
+                
+                # Contextual Heuristic Guard: if the query matches a non-pronoun display name of a different slot, bypass to Tier 2.
+                pronoun_words = {"あの人", "その人", "この人", "彼", "彼女", "それ", "あれ", "これ", "担当者", "お二人", "二人", "双方", "両者", "通話", "会話"}
+                other_slots_entities = [e for e in entities if e['cache_slot_id'] != target_slot_id]
+                has_other_entity_match = False
+                for oe in other_slots_entities:
+                    if match_pronoun(query, oe['display_names']):
+                        non_pronouns = [dn for dn in oe['display_names'] if dn not in pronoun_words]
+                        if any(np in query for np in non_pronouns):
+                            has_other_entity_match = True
+                            break
+                if has_other_entity_match:
+                    logger.info("Tier 1: Guard triggered - Query matches entity of another slot. Bypassing to Tier 2.")
+                    return await self._route_tier_2(session_id, query, routing_reason="other_entity_match", embedding_failed=embedding_failed)
+
                 slot_entities = [e for e in entities if e['cache_slot_id'] == target_slot_id]
                 
                 s_match = SESSION_REGEX.findall(recent_slots[0]['entity_id'])
@@ -531,9 +496,27 @@ class Router:
                                     p_list = []
                             else:
                                 p_list = p_val
-                            for p in p_list:
-                                if p:
-                                    all_participants.add(p)
+                            if isinstance(p_list, list):
+                                for p in p_list:
+                                    if not p:
+                                        continue
+                                    if isinstance(p, dict):
+                                        p_name = p.get("name", "")
+                                        p_gender = p.get("gender", "")
+                                        if p_name:
+                                            p_clean = str(p_name).strip()
+                                            if p_gender == "female":
+                                                female_names.add(p_clean)
+                                                p_base = re.sub(r'(さん|様|さま|君|くん|ちゃん|氏|殿)$', '', p_clean)
+                                                female_names.add(p_base)
+                                            elif p_gender == "male":
+                                                male_names.add(p_clean)
+                                                p_base = re.sub(r'(さん|様|さま|君|くん|ちゃん|氏|殿)$', '', p_clean)
+                                                male_names.add(p_base)
+                                            else:
+                                                all_participants.add(p_clean)
+                                    else:
+                                        all_participants.add(str(p).strip())
                     
                     female_suffixes = (
                         "子", "美", "香", "花", "華", "奈", "菜", "乃", "莉", "里", 
@@ -708,18 +691,21 @@ class Router:
             
         # Run cosine distance query joining Cold table payload for mismatch checks
         query_emb_str = "[" + ",".join(map(str, query_emb)) + "]"
-        closest_slot = await self.db_pool.fetchrow("""
+        closest_slots = await self.db_pool.fetch("""
             SELECT c.id, c.topic_key, c.last_pipeline, (c.query_embedding <=> $1::vector) as distance, p.summary_context
             FROM session_context_cache c
             LEFT JOIN session_context_payload p ON c.id = p.cache_id
             WHERE c.session_id = $2 AND c.query_embedding IS NOT NULL
             ORDER BY distance ASC
-            LIMIT 1
+            LIMIT 2
         """, query_emb_str, session_id)
         
-        if closest_slot:
-            dist = closest_slot['distance']
-            logger.info(f"Tier 1: Closest cache slot is '{closest_slot['topic_key']}' with distance {dist:.4f}")
+        if closest_slots:
+            closest_slot = closest_slots[0]
+            d1 = closest_slot['distance']
+            d2 = closest_slots[1]['distance'] if len(closest_slots) > 1 else None
+            gap = (d1 / d2) if (d2 is not None and d2 > 0) else 0.0
+            logger.info(f"Tier 1: Closest cache slot is '{closest_slot['topic_key']}' with d1={d1:.4f}, d2={d2}, gap={gap:.4f}")
             
             # Check Metadata mismatches
             # If query mentions a specific date or GT session, but it doesn't match the closest slot, bypass to Tier 2
@@ -757,8 +743,8 @@ class Router:
                 logger.info("Tier 1: Detected GT or Date mismatch. Forwarding to Tier 2.")
                 return await self._route_tier_2(session_id, query, routing_reason="metadata_mismatch", embedding_failed=embedding_failed)
                 
-            if dist < 0.22:  # Similarity > 0.78
-                logger.info(f"Tier 1: Semantic match hit! Distance {dist:.4f} < 0.22")
+            if d1 < 0.35 and (d2 is None or gap < 0.65):
+                logger.info(f"Tier 1: Confident semantic match hit! d1={d1:.4f}, gap={gap:.4f}")
                 return {
                     "is_follow_up": True,
                     "relation_type": "same_entity",
@@ -773,8 +759,8 @@ class Router:
                     "routing_method": "embeddings",
                     "embedding_failed": False
                 }
-            elif dist > 0.55:  # Similarity < 0.45
-                logger.info(f"Tier 1: Semantic shift detected! Distance {dist:.4f} > 0.55")
+            elif d1 > 0.55:  # Similarity < 0.45
+                logger.info(f"Tier 1: Semantic shift detected! Distance {d1:.4f} > 0.55")
                 guessed_pipeline = heuristic_pipeline_guess(query)
                 return {
                     "is_follow_up": False,
@@ -791,12 +777,12 @@ class Router:
                     "embedding_failed": False
                 }
             else:
-                logger.info(f"Tier 1: Gray area (distance {dist:.4f}). Forwarding to Tier 2.")
+                logger.info(f"Tier 1: Ambiguity or gray area detected (d1={d1:.4f}, gap={gap:.4f}). Forwarding to Tier 2.")
                 # Add heuristic guess for speculative execution
                 guessed_p = heuristic_pipeline_guess(query)
                 return await self._route_tier_2(
                     session_id, query, 
-                    routing_reason="gray_area", 
+                    routing_reason="gray_area_or_ambiguity", 
                     embedding_failed=embedding_failed,
                     speculative_guess={
                         "target_pipeline": guessed_p if guessed_p != "MODEL" else closest_slot['last_pipeline'],
@@ -804,7 +790,7 @@ class Router:
                     }
                 )
                 
-        return await self._route_tier_2(session_id, query, routing_reason="gray_area", embedding_failed=embedding_failed)
+        return await self._route_tier_2(session_id, query, routing_reason="gray_area_no_closest_slots", embedding_failed=embedding_failed)
 
     async def _route_tier_2(self, session_id: str, query: str, routing_reason: str, embedding_failed: bool = False, speculative_guess: dict = None) -> dict:
         """
@@ -1040,20 +1026,24 @@ class Router:
             if query_emb is not None:
                 try:
                     query_emb_str = "[" + ",".join(map(str, query_emb)) + "]"
-                    closest_slot = await self.db_pool.fetchrow("""
+                    closest_slots = await self.db_pool.fetch("""
                         SELECT topic_key, last_pipeline, (query_embedding <=> $1::vector) as distance
                         FROM session_context_cache
                         WHERE session_id = $2 AND query_embedding IS NOT NULL
                         ORDER BY distance ASC
-                        LIMIT 1
+                        LIMIT 2
                     """, query_emb_str, session_id)
+                    if closest_slots:
+                        closest_slot = closest_slots[0]
+                        d1 = closest_slot['distance']
+                        d2 = closest_slots[1]['distance'] if len(closest_slots) > 1 else None
+                        gap = (d1 / d2) if (d2 is not None and d2 > 0) else 0.0
                 except Exception as db_err:
                     logger.error(f"Failed to query closest slot for fallback: {db_err}")
 
             if closest_slot:
-                dist = closest_slot['distance']
-                logger.info(f"Fallback routing: closest slot is '{closest_slot['topic_key']}' with distance {dist:.4f}")
-                if dist < 0.22:
+                logger.info(f"Fallback routing: closest slot is '{closest_slot['topic_key']}' with d1={d1:.4f}, d2={d2}, gap={gap:.4f}")
+                if d1 < 0.35 and (d2 is None or gap < 0.65):
                     result = {
                         "is_follow_up": True,
                         "relation_type": "same_entity",
@@ -1066,7 +1056,7 @@ class Router:
                         "partial_fetch_params": None,
                         "routing_method": "embeddings"
                     }
-                elif dist > 0.55:
+                elif d1 > 0.55:
                     guessed_pipeline = heuristic_pipeline_guess(query)
                     result = {
                         "is_follow_up": False,

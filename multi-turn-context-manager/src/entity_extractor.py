@@ -83,14 +83,23 @@ class EntityExtractor:
                                 parts = []
                         if isinstance(parts, list):
                             for p in parts:
-                                # Normalize participant name
-                                p_clean = str(p).strip()
+                                if not p:
+                                    continue
+                                if isinstance(p, dict):
+                                    p_clean = str(p.get("name", "")).strip()
+                                    p_org = str(p.get("organization", "")).strip() or str(p.get("company", "")).strip()
+                                else:
+                                    p_clean = str(p).strip()
+                                    p_org = ""
                                 if p_clean:
                                     p_id = f"{canonical_session}_{p_clean}"
                                     p_base = re.sub(r'(さん|様|さま|君|くん|ちゃん|氏|殿)$', '', p_clean)
-                                    # Use neutral indicator words instead of forcing gendered pronouns in heuristic index
-                                    p_names = [p_clean, p_base, f"{p_base}さん", f"{p_base}様", "その人", "あの人", "担当者"]
+                                    p_names = [p_clean, p_base, f"{p_base}さん", f"{p_base}様"]
                                     entities_to_upsert.append((p_id, "person", p_names))
+                                if p_org:
+                                    org_id = f"{canonical_session}_{p_org}"
+                                    org_names = [p_org, f"{p_org}の通話", f"{p_org}の会話"]
+                                    entities_to_upsert.append((org_id, "document", org_names))
                                     
                 entities_to_upsert.append((canonical_session, "meeting_transcript", display_names))
 
@@ -151,12 +160,23 @@ class EntityExtractor:
                                         parts = []
                                 if isinstance(parts, list):
                                     for p in parts:
-                                        p_clean = str(p).strip()
+                                        if not p:
+                                            continue
+                                        if isinstance(p, dict):
+                                            p_clean = str(p.get("name", "")).strip()
+                                            p_org = str(p.get("organization", "")).strip() or str(p.get("company", "")).strip()
+                                        else:
+                                            p_clean = str(p).strip()
+                                            p_org = ""
                                         if p_clean:
                                             p_id = f"{entity_id}_{p_clean}"
                                             p_base = re.sub(r'(さん|様|さま|君|くん|ちゃん|氏|殿)$', '', p_clean)
-                                            p_names = [p_clean, p_base, f"{p_base}さん", f"{p_base}様", "その人", "あの人", "担当者"]
+                                            p_names = [p_clean, p_base, f"{p_base}さん", f"{p_base}様"]
                                             entities_to_upsert.append((p_id, "person", p_names))
+                                        if p_org:
+                                            org_id = f"{entity_id}_{p_org}"
+                                            org_names = [p_org, f"{p_org}の通話", f"{p_org}の会話"]
+                                            entities_to_upsert.append((org_id, "document", org_names))
                                             
                     entities_to_upsert.append((entity_id, "document" if not SESSION_REGEX.match(entity_id) else "meeting_transcript", display_names))
 
