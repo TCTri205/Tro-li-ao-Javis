@@ -253,12 +253,14 @@ class TestSuiteV2:
         await self.orchestrator.handle(session_lru, "GT_04の通話時間はどれくらいですか？")
         await self.orchestrator.handle(session_lru, "今日の東京の天気はどうですか？")
         await self.orchestrator.handle(session_lru, "三菱の最近の株価は？")
-        await self.orchestrator.handle(session_lru, "GT_08の通話の詳細は何ですか？") # 4th unique topic -> triggers LRU
+        await self.orchestrator.handle(session_lru, "GT_08の通話の詳細は何ですか？")
+        await self.orchestrator.handle(session_lru, "GT_03で島田さんは何を希望していましたか？")
+        await self.orchestrator.handle(session_lru, "GT_09の伊藤さんはどこの会社ですか？") # 6th unique topic -> triggers LRU
         
         async with self.db_pool.acquire() as conn:
             active_slots = await conn.fetch("SELECT topic_key FROM session_context_cache WHERE session_id = $1", session_lru)
             active_keys = [r["topic_key"] for r in active_slots]
-            passed9 = len(active_keys) == 3 and not any("gt_04" in k.lower() for k in active_keys)
+            passed9 = len(active_keys) == 5 and not any("gt_04" in k.lower() for k in active_keys)
         await self.record_result("NEG", "NEG_009_LRU_EVICTION", "LRU check", "Checked DB slots", {}, passed9)
 
         # NEG_010: Web Cache TTL Expired

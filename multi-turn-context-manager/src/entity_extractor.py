@@ -59,25 +59,7 @@ class EntityExtractor:
                     canonical_session,
                     f"{canonical_session}.txt",
                     f"{canonical_session}の通話",
-                    f"{canonical_session}の会話",
-                    "この通話",
-                    "その通話",
-                    "あの通話",
-                    "これ",
-                    "それ",
-                    "あれ",
-                    "さっき",
-                    "先ほど",
-                    "さっきの通話",
-                    "先ほどの通話",
-                    "さっきの会話",
-                    "先ほどの会話",
-                    "そのcall",
-                    "このcall",
-                    "あのcall",
-                    "さっきのcall",
-                    "先ほどのcall",
-                    "その件"
+                    f"{canonical_session}の会話"
                 ]
                 
                 if t_row:
@@ -143,33 +125,8 @@ class EntityExtractor:
                         entity_id,
                         f"{entity_id}.txt",
                         f"{entity_id}の通話",
-                        f"{entity_id}の会話",
-                        "これ",
-                        "それ",
-                        "あれ",
-                        "このファイル",
-                        "そのファイル",
-                        "このドキュメント",
-                        "そのドキュメント",
-                        "この通話",
-                        "その通話",
-                        "あの通話",
-                        "さっきの通話",
-                        "先ほどの通話"
+                        f"{entity_id}の会話"
                     ]
-                    if SESSION_REGEX.match(entity_id):
-                        display_names.extend([
-                            "さっき",
-                            "先ほど",
-                            "さっきの会話",
-                            "先ほどの会話",
-                            "そのcall",
-                            "このcall",
-                            "あのcall",
-                            "さっきのcall",
-                            "先ほどのcall",
-                            "その件"
-                        ])
                         
                     if SESSION_REGEX.match(entity_id):
                         t_row = await conn.fetchrow("""

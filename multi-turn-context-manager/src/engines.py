@@ -6,7 +6,7 @@ import re
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from router import LLMManager, extract_json
-from config import SESSION_REGEX
+from config import SESSION_REGEX, HEURISTIC_SQL_DETAIL, HEURISTIC_SQL_DURATION, HEURISTIC_SQL_MEMBERS, HEURISTIC_SQL_COMPARE
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +91,10 @@ def heuristic_sql_translation(query: str) -> str:
     Programmatic translation of common queries to SQL to bypass LLM latency constraints.
     """
     # Do not translate range queries heuristically
-    if any(k in query for k in ("から", "まで", "の間", "期間")):
+    if ("から" in query and ("まで" in query or "の間" in query)) or "期間" in query:
+        return None
+    # Check for GT session range like GT_01からGT_09 or GT-01〜GT-09
+    if re.search(r'(?:GT|SESSION|SESS|RECORD|TR)[-_]?\d+\s*(?:から|〜|~|-)\s*(?:GT|SESSION|SESS|RECORD|TR)[-_]?\d+', query, re.IGNORECASE):
         return None
         
     gts = SESSION_REGEX.findall(query)
@@ -112,23 +115,23 @@ def heuristic_sql_translation(query: str) -> str:
             date_str = f"{date_match2.group(1)}-{int(date_match2.group(2)):02d}-{int(date_match2.group(3)):02d}"
 
     # Comparison query
-    if len(gts_upper) >= 2 and any(k in query for k in ("比較", "くらべ", "対比")):
+    if len(gts_upper) >= 2 and any(k in query for k in HEURISTIC_SQL_COMPARE):
         gt_list_str = ", ".join(f"'{g}'" for g in gts_upper)
         return f"SELECT * FROM transcripts WHERE session_id IN ({gt_list_str}) LIMIT 50;"
 
     # Single GT query
     if len(gts_upper) == 1:
         gt_id = gts_upper[0]
-        if any(k in query for k in ("詳細", "具体の内容", "話したこと", "内容", "中身", "伝言", "発言", "メッセージ", "予定", "約束", "打ち合わせ", "言いました", "言っていました")):
+        if any(k in query for k in HEURISTIC_SQL_DETAIL):
             return f"SELECT t.id, t.session_id, t.meeting_date, t.participants, ct.turn_index, ct.speaker, ct.text FROM transcripts t JOIN chunks_turn ct ON t.id = ct.transcript_id WHERE t.session_id = '{gt_id}' ORDER BY ct.turn_index LIMIT 50;"
         elif "要約" in query:
             return f"SELECT summary FROM transcripts WHERE session_id = '{gt_id}' LIMIT 50;"
-        elif any(k in query for k in ("時間", "秒", "分", "どれくらい", "期間", "長さ", "つうわ")):
+        elif any(k in query for k in HEURISTIC_SQL_DURATION):
             if date_str:
                 return f"SELECT duration_seconds FROM transcripts WHERE session_id = '{gt_id}' AND meeting_date = '{date_str}' LIMIT 50;"
             else:
                 return f"SELECT duration_seconds FROM transcripts WHERE session_id = '{gt_id}' LIMIT 50;"
-        elif any(k in query for k in ("誰", "参加者", "話者", "相手", "メンバ", "メンバー", "名前", "担当者")):
+        elif any(k in query for k in HEURISTIC_SQL_MEMBERS):
             return f"SELECT session_id, meeting_date, participants, summary FROM transcripts WHERE session_id = '{gt_id}' LIMIT 50;"
 
     # Date-only query

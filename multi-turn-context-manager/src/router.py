@@ -36,7 +36,7 @@ PRONOUNS = [
 
 async def _safe_embed(query: str, model: SentenceTransformer) -> list:
     """
-    Safely compute the embedding of the query with a 1.0s timeout and a zero-vector check.
+    Safely compute the embedding of the query with a 3.0s timeout and a zero-vector check.
     """
     try:
         prefixed_query = f"query: {query}"
@@ -44,7 +44,7 @@ async def _safe_embed(query: str, model: SentenceTransformer) -> list:
         # Run synchronous model.encode in a separate thread to prevent blocking the async loop
         vector = await asyncio.wait_for(
             loop.run_in_executor(None, lambda: model.encode(prefixed_query)),
-            timeout=1.0
+            timeout=3.0
         )
         if vector is None:
             raise ValueError("Embedding model returned None")
@@ -514,9 +514,9 @@ class Router:
                 is_he = "彼" in query and "彼女" not in query
                 is_she = "彼女" in query
                 
-                # Dynamically classify gender of person names from the database
-                female_names = {"凛花", "志保", "さくら", "ひなた", "ゆき", "めぐみ", "あい", "まみ", "みき", "しほ", "りんか"}
-                male_names = {"シカズ"}
+                # Dynamically classify gender of person names from the database using suffixes only
+                female_names = set()
+                male_names = set()
                 try:
                     # Run DB query on self.db_pool to get all known participants
                     rows = await self.db_pool.fetch("SELECT DISTINCT participants FROM transcripts WHERE participants IS NOT NULL")
@@ -812,13 +812,13 @@ class Router:
         """
         logger.info(f"Starting Tier 2 routing. Reason: {routing_reason}")
         
-        # 1. Fetch Chat History (last 8 messages)
+        # 1. Fetch Chat History (last 16 messages)
         history_rows = await self.db_pool.fetch("""
             SELECT role, content, rewritten_content
             FROM chat_history
             WHERE session_id = $1
             ORDER BY id ASC
-            LIMIT 8
+            LIMIT 16
         """, session_id)
         
         history_str = ""
@@ -829,7 +829,7 @@ class Router:
             
         # 2. Fetch Active Caches Metadata and Entities
         cache_rows = await self.db_pool.fetch("""
-            SELECT c.topic_key, c.last_pipeline, c.last_accessed_at, c.refreshed_at, p.summary_context
+            SELECT c.id, c.topic_key, c.last_pipeline, c.last_accessed_at, c.refreshed_at, p.summary_context
             FROM session_context_cache c
             LEFT JOIN session_context_payload p ON c.id = p.cache_id
             WHERE c.session_id = $1
@@ -853,22 +853,6 @@ class Router:
                 "type": er['entity_type'],
                 "names": er['display_names']
             })
-
-        active_caches = []
-        for r in cache_rows:
-            # (lookup internal id for entities mapping - topic_key matches name in cache table)
-            # Actually we can join but simpler here to use cache_id
-            # Wait, cache_rows has c.id? No, I didn't select it.
-            pass
-
-        # Re-fetch cache_rows with ID
-        cache_rows = await self.db_pool.fetch("""
-            SELECT c.id, c.topic_key, c.last_pipeline, c.last_accessed_at, c.refreshed_at, p.summary_context
-            FROM session_context_cache c
-            LEFT JOIN session_context_payload p ON c.id = p.cache_id
-            WHERE c.session_id = $1
-            ORDER BY c.last_accessed_at DESC
-        """, session_id)
 
         active_caches = []
         for r in cache_rows:

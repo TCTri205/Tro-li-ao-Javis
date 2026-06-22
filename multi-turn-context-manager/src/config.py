@@ -1,8 +1,8 @@
 import re
 
 # Session Pattern (Supports GT, SESSION, SESS, RECORD, TR, etc.)
-SESSION_PATTERN = r'\b(?:GT|SESSION|SESS|RECORD|TR)[-_]?\d+\b'
-SESSION_REGEX = re.compile(SESSION_PATTERN, re.IGNORECASE)
+SESSION_PATTERN = r'\b(?:GT|SESSION|SESS|RECORD|TR)[-_]?\d+(?![a-zA-Z0-9])'
+SESSION_REGEX = re.compile(SESSION_PATTERN, re.IGNORECASE | re.ASCII)
 
 # Pipeline Keywords (Decoupled System & Domain keywords)
 SQL_SYSTEM_KEYWORDS = [
@@ -10,7 +10,22 @@ SQL_SYSTEM_KEYWORDS = [
     "だれ", "何秒", "何分", "件数", "何件", "いつ", "何日", "伝言", "メンバ", "メンバー", "参加者",
     "担当者", "名前", "会社", "企業"
 ]
-SQL_DOMAIN_KEYWORDS = []
+SQL_DOMAIN_KEYWORDS = ["賃料", "坪単価", "成約", "仲介料", "敷金", "礼金", "賃貸", "管理費", "売買"]
+
+# Heuristic SQL translation query classification keywords
+HEURISTIC_SQL_DETAIL = [
+    "詳細", "具体の内容", "話したこと", "内容", "中身", "伝言", "発言", "メッセージ", 
+    "予定", "約束", "打ち合わせ", "言いました", "言っていました"
+]
+HEURISTIC_SQL_DURATION = [
+    "時間", "秒", "分", "どれくらい", "期間", "長さ", "つうわ"
+]
+HEURISTIC_SQL_MEMBERS = [
+    "誰", "参加者", "話者", "相手", "メンバ", "メンバー", "名前", "担当者"
+]
+HEURISTIC_SQL_COMPARE = [
+    "比較", "くらべ", "対比"
+]
 
 RAG_SYSTEM_KEYWORDS = [
     "要約", "内容", "詳細", "発言", "翻訳", "ドキュメント", "ファイル", "テキスト", "何を話した", 
@@ -40,6 +55,6 @@ SQL_FRIENDLY_KEYS = {
 }
 
 # Cache Settings
-MAX_CACHE_SLOTS = 3
+MAX_CACHE_SLOTS = 5
 CACHE_TTL_WEB = 3600  # 1 hour
 CACHE_TTL_SQL = 86400 # 24 hours

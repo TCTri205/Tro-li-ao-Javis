@@ -247,22 +247,26 @@ class TestSuite:
         # NEG_009: Changing mind (LRU test)
         session_lru = "session_lru"
         await self.clear_db(session_lru)
-        logger.info("NEG_009: Sequentially querying 4 distinct topics to trigger LRU eviction")
+        logger.info("NEG_009: Sequentially querying 6 distinct topics to trigger LRU eviction")
         # 1. Ask GT_04
         await self.orchestrator.handle(session_lru, "GT_04の通話時間はどれくらいですか？")
         # 2. Ask something entirely different (Web info)
         await self.orchestrator.handle(session_lru, "今日の東京の天気はどうですか？")
         # 3. Ask about Mitsubishi
         await self.orchestrator.handle(session_lru, "三菱の最近の株価は？")
-        # Now 3 slots are active. Ask GT_08 (should evict GT_04)
+        # 4. Ask GT_08
         await self.orchestrator.handle(session_lru, "GT_08の通話の詳細は何ですか？")
+        # 5. Ask GT_03
+        await self.orchestrator.handle(session_lru, "GT_03で島田さんは何を希望していましたか？")
+        # Now 5 slots are active. Ask GT_09 (should evict GT_04)
+        await self.orchestrator.handle(session_lru, "GT_09の伊藤さんはどこの会社ですか？")
         
-        # Verify oldest (GT_04) was evicted, so we should have exactly 3 slots
+        # Verify oldest (GT_04) was evicted, so we should have exactly 5 slots
         async with self.db_pool.acquire() as conn:
             active_slots = await conn.fetch("SELECT topic_key FROM session_context_cache WHERE session_id = $1", session_lru)
             active_keys = [r["topic_key"] for r in active_slots]
             logger.info(f"Active keys after eviction: {active_keys}")
-            passed = len(active_keys) == 3 and not any("gt_04" in k.lower() for k in active_keys)
+            passed = len(active_keys) == 5 and not any("gt_04" in k.lower() for k in active_keys)
         await self.record_result("NEG", "NEG_009", "LRU Eviction Test", str(active_keys), {}, passed)
 
         # NEG_010: Web Cache TTL Expired
