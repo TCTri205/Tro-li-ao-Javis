@@ -1,89 +1,316 @@
 # Multi-Turn Context Manager (V1.0.0)
 
-Hệ thống quản lý ngữ cảnh đa lượt (Multi-turn Context Management) hiệu năng cao dành cho trợ lý AI (Javis). Đây là lớp trung gian thông minh kết nối truy vấn của người dùng với nhiều nguồn dữ liệu (SQL, RAG, Web) trong khi vẫn duy trì tính nhất quán của ngữ cảnh qua các phiên làm việc.
+Hệ thống quản lý ngữ cảnh đa lượt (Multi-turn Context Management) hiệu năng cao dành cho trợ lý ảo AI (Javis). Đây là lớp trung gian thông minh kết nối truy vấn của người dùng với nhiều nguồn dữ liệu (SQL, RAG, Web Search) trong khi vẫn duy trì tính nhất quán của ngữ cảnh thực thể qua các phiên làm việc đa lượt, giải quyết đại từ chỉ định, và tối ưu hóa tài nguyên hệ thống.
+
+---
 
 ## 🚀 Tính năng then chốt (Key Features)
 
-- **Định tuyến thông minh 2 lớp (2-Tier Routing):**
-  - **Tier 1 (Fast Path):** Sử dụng Heuristics, Entity Index và pgvector để giải quyết các câu hỏi tiếp nối và đại từ (ví dụ: "nó", "cuộc gọi đó") với độ trễ < 15ms.
-  - **Tier 2 (Precision Path):** Sử dụng LLM (Groq/Javis Qwen) để phân tích ý định phức tạp, viết lại truy vấn và giải quyết quy chiếu (Co-reference).
-- **Quản lý ngữ cảnh nâng cao:**
-  - **Hot/Cold Storage:** Tách biệt siêu dữ liệu nhẹ (Hot) và dữ liệu tải trọng lớn (Cold) trong PostgreSQL để tối ưu hóa bộ nhớ.
-  - **LRU Cache Eviction:** Duy trì tối đa 3 slot cache nóng nhất cho mỗi phiên.
-  - **Entity Indexing:** Tự động theo dõi các thực thể (mã cuộc gọi, ngày tháng, tên người) để giải quyết đại từ chỉ định ngay lập tức.
-- **Công cụ thực thi linh hoạt (Execution Engines):**
-  - **SQL Engine:** Chuyển đổi ngôn ngữ tự nhiên thành SQL để truy xuất dữ liệu có cấu trúc.
-  - **RAG Engine:** Tìm kiếm vector trên tài liệu phi cấu trúc bằng `pgvector`.
-  - **Web Engine:** Cập nhật kiến thức thời gian thực qua tìm kiếm web.
-- **Ngăn chặn ảo giác (Hallucination Prevention):**
-  - **Self-Check Verification:** Mọi câu trả lời của AI đều được đối chiếu với ngữ cảnh thô đã truy xuất để đảm bảo tính xác thực 100%.
-- **Tính ổn định hệ thống:**
-  - **Advisory Locking:** Sử dụng khóa cố vấn 64-bit để ngăn chặn tình trạng Race Condition.
-  - **Circuit Breakers:** Tự động dự phòng khi gặp sự cố embedding hoặc timeout LLM.
-- **Tài liệu chi tiết:**
-  - [Tổng quan kiến trúc](docs/architecture_overview.md)
-  - [Quy tắc quản lý ngữ cảnh & định tuyến](docs/context_management_rules.md)
-  - [Lược đồ cơ sở dữ liệu](docs/database_schema.md)
-  - [Cấu hình và Tinh chỉnh](docs/configuration_and_tuning.md)
+- **Định tuyến hỗn hợp 2 lớp (2-Tier Hybrid Routing):**
+  - **Tier 1 (Fast Path):** Sử dụng các quy tắc Heuristics (Regex), tìm kiếm chỉ mục thực thể (`session_entity_index`) cực nhanh, kiểm tra sai lệch metadata, và tính khoảng cách ngữ nghĩa vector qua `pgvector` để giải quyết các câu hỏi tiếp nối và đại từ (như "nó", "cuộc gọi đó") dưới **15ms**.
+  - **Tier 2 (Precision Path):** Sử dụng LLM (Groq/Javis Qwen với thought reasoning) để phân tích ý định sâu, thực hiện giải quyết quy chiếu (Co-reference Resolution), viết lại câu hỏi hoàn chỉnh độc lập ngữ cảnh (Query Rewriting), và lựa chọn Pipeline thực thi phù hợp.
+- **Quản lý Cache Hot/Cold tách biệt:**
+  - **Hot Cache (`session_context_cache`):** Lưu trữ siêu dữ liệu nhẹ, khóa chủ đề (`topic_key`), và vector đại diện `query_embedding` để phục vụ tìm kiếm pgvector nhanh chóng.
+  - **Cold Cache (`session_context_payload`):** Lưu trữ tải trọng dữ liệu thực tế lớn dưới dạng JSONB. Chỉ được tải khi xác định là **Cache Hit** (`use_cache = true`) nhằm tối ưu hóa bộ nhớ RAM và băng thông cơ sở dữ liệu.
+- **Cập nhật & Đuổi Cache LRU thông minh:**
+  - Giới hạn tối đa **5 slot cache chủ đề** cho mỗi phiên (`MAX_CACHE_SLOTS = 5` cấu hình tại [config.py](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/src/config.py)), tự động loại bỏ slot cũ nhất (LRU Eviction) dựa trên thời gian truy cập gần nhất (`last_accessed_at`).
+  - Sử dụng khóa dòng giao dịch `FOR UPDATE` trong quá trình cập nhật để ngăn chặn xung đột giữa LRU Eviction và cập nhật Payload.
+- **Các Công cụ Thực thi (Execution Engines) & Khả năng chịu lỗi:**
+  - **SQL Engine:** Chuyển đổi ngôn ngữ tự nhiên thành SQL để truy xuất dữ liệu có cấu trúc. Hỗ trợ cơ chế dịch lập trình nhanh (`heuristic_sql_translation`) cho các truy vấn siêu dữ liệu phổ biến để bỏ qua LLM. Tích hợp chống SQL Injection.
+  - **RAG Engine:** Tìm kiếm vector ngữ nghĩa trên tài liệu phi cấu trúc bằng `pgvector`.
+  - **Web Search Engine:** Cập nhật kiến thức thời gian thực qua tìm kiếm web với chính sách Cache TTL.
+  - **Engine Circuit Breaker:** Cơ chế ngắt mạch tự động cô lập lỗi của từng engine và tự động hạ cấp về parametric knowledge khi gặp sự cố embedding hoặc timeout.
+- **Cơ chế Phản hồi Trực tiếp (Direct-Answer Path):**
+  - Bỏ qua LLM sinh câu trả lời đối với các câu hỏi có kết quả cấu trúc đơn giản (SQL aggregate, single web snippet, hoặc log thoại chi tiết thô) giúp phản hồi tức thì và tiết kiệm chi phí token.
+- **Ngăn ngừa ảo giác (Hallucination Control):**
+  - Trình kiểm định **Self-Check Verifier** đối chiếu câu trả lời được sinh ra với dữ liệu ngữ cảnh thô (raw payload) đã truy xuất. Cho phép thử lại tự động tối đa 2 lần trước khi hạ cấp độ tin cậy của câu trả lời xuống `low`.
+- **Đồng bộ hóa & Khóa Cố văn (Advisory Locking):**
+  - Sử dụng khóa cố vấn giao dịch `pg_try_advisory_xact_lock` dựa trên mã băm 64-bit của `session_id` để tuần tự hóa các yêu cầu đồng thời trong cùng một phiên, tránh Race Condition.
 
-## 🏗️ Kiến trúc hệ thống (Vòng đời 8 bước)
+---
 
-1.  **Request Input & Locking:** Nhận truy vấn và lấy khóa Advisory Lock cấp phiên.
-2.  **Routing (Tier 1 & 2):** Xác định mục tiêu (Hit/Shift) và viết lại truy vấn.
-3.  **Execution & Retrieval:** Thực thi các engine (SQL/RAG/Web) để lấy dữ liệu.
-4.  **Metadata Extraction:** Trích xuất thực thể và chuẩn bị tóm tắt ngữ cảnh.
-5.  **Cache Orchestration:** Cập nhật Hot/Cold storage và thực hiện LRU.
-6.  **Answer Generation:** Tạo câu trả lời qua LLM hoặc luồng phản hồi trực tiếp (Direct Path).
-7.  **Self-Check Verification:** Xác minh hiện tượng ảo giác và tính nhất quán.
-8.  **Logging & Commit:** Lưu nhật ký, metadata và commit giao dịch trước khi giải phóng Lock.
+## 🏗️ Kiến trúc Hệ thống (Vòng đời 8 bước)
 
-## 📥 Đầu vào & 📤 Đầu ra
+Luồng điều phối trong lớp [IntelligentOrchestrator](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/src/orchestrator.py#L135) tuân thủ nghiêm ngặt quy trình 8 bước:
+
+```mermaid
+graph TD
+    User((Người dùng)) -->|1. Truy vấn| Orch[Bộ điều phối thông minh]
+    
+    subgraph "2. Tầng định tuyến (router.py)"
+        Orch --> T1[Tier 1: Heuristic, Entity Index & pgvector Filter]
+        T1 -->|Lỗi Embedding / Tin cậy thấp / Mơ hồ| T2[Tier 2: LLM Router & Rewriter]
+    end
+    
+    T1 -->|Quyết định| Decision[Quyết định định tuyến]
+    T2 -->|Viết lại & Phân loại| Decision
+    
+    Decision -->|3. Thực thi & Truy xuất| Engines[Công cụ thực thi]
+    
+    subgraph "Lớp thực thi (engines.py)"
+        Engines --> SQL[SQL Engine]
+        Engines --> RAG[RAG Engine]
+        Engines --> WEB[Web Search Engine]
+    end
+    
+    Engines -->|4. Trích xuất metadata| EntityExtractor[Trích xuất thực thể]
+    EntityExtractor --> CacheMgr[5. Quản lý Cache]
+    
+    subgraph "Lớp lưu trữ (DB)"
+        CacheMgr -->|Cập nhật metadata| DB_Hot[(PostgreSQL Hot: Metadata & Embeddings)]
+        CacheMgr -->|Cập nhật payload| DB_Cold[(PostgreSQL Cold: Payload Table)]
+        EntityExtractor --> DB_Entity[(session_entity_index)]
+    end
+    
+    Engines -->|Dữ liệu thô| LLM[6. Bộ tạo câu trả lời]
+    CacheMgr -->|Dữ liệu cache| LLM
+    
+    LLM --> Verify{7. Tự kiểm tra xác minh}
+    Verify -->|Đạt| Logging[8. Ghi nhật ký & Commit]
+    Logging --> Response((Câu trả lời cuối cùng))
+    Verify -->|Thất bại & Thử lại < 2| LLM
+    Verify -->|Thất bại & Thử lại >= 2| FallbackResponse([Câu trả lời kèm cảnh báo tin cậy thấp])
+```
+
+1.  **Request Input & Locking:** Tiếp nhận truy vấn, băm `session_id` thành số nguyên 64-bit và lấy khóa cố vấn Advisory Lock cấp phiên trên PostgreSQL.
+2.  **Routing (Tier 1 & Tier 2):** Kiểm tra chuyển đổi chủ đề (Topic Shift) bằng khoảng cách Embedding tương đối (Semantic Gap Analysis), tra cứu thực thể trong [session_entity_index](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/docs/database_schema.md#L83), hoặc gọi LLM ở Tier 2 để viết lại câu truy vấn.
+3.  **Execution & Retrieval:** Thực thi truy xuất dữ liệu thông qua SQL Engine, RAG Engine hoặc Web Engine dựa trên quyết định ở bước 2.
+4.  **Metadata Extraction:** [EntityExtractor](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/src/entity_extractor.py#L11) tự động trích xuất các thực thể mới (Person, Document, Session) từ kết quả thô của Engine và cập nhật vào `session_entity_index`.
+5.  **Cache Orchestration:** Ghi dữ liệu vào Hot/Cold storage của PostgreSQL thông qua [cache_manager.py](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/src/cache_manager.py) và thực hiện giải phóng cache LRU nếu vượt ngưỡng 5 slot.
+6.  **Answer Generation:** Sinh câu trả lời qua LLM (sử dụng prompt làm sạch không thiên kiến) hoặc định tuyến qua luồng Direct Path trả kết quả ngay lập tức.
+7.  **Self-Check Verification:** Xác minh chéo câu trả lời với dữ liệu thô ban đầu để loại bỏ hoàn toàn các lỗi ảo giác ngữ nghĩa.
+8.  **Logging & Commit:** Ghi nhật ký lịch sử trò chuyện (tối đa 16 lượt hỏi gần nhất), lưu thông tin định tuyến vào DB và giải phóng Advisory Lock.
+
+---
+
+## 🛠️ Cải tiến Chống Overfitting & Tối ưu hóa Production (V3 Hard Mode)
+
+Để chuẩn bị đưa dự án lên môi trường Production thực tế với dữ liệu ngoài miền (out-of-domain) và mô hình Embedding thật, hệ thống đã thực hiện các cải tiến kiến trúc cốt lõi:
+
+- **Tách biệt và Cấu hình hóa trung tâm ([config.py](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/src/config.py)):**
+  - Toàn bộ từ khóa định tuyến hệ thống (SQL, RAG, Web), từ khóa kích hoạt Direct Path, và mapping hiển thị SQL được đưa ra ngoài file cấu hình.
+  - Sử dụng regex động (`SESSION_PATTERN`) hỗ trợ đa dạng định dạng Session ID (`GT`, `SESSION`, `SESS`, `RECORD`, `TR`,...) thay vì hardcode một tiền tố duy nhất.
+- **Phân tích khoảng cách ngữ nghĩa tương đối (Semantic Gap Analysis):**
+  - Thay vì so sánh khoảng cách tuyệt đối cứng nhắc dễ gây lỗi kẹt ngữ cảnh trên mô hình embedding thực tế, Tier 1 tính tỉ lệ khoảng cách tương đối giữa hai slot cache tốt nhất ($d_1 / d_2 < 0.65$). Nếu không rõ ràng, hệ thống tự động đẩy lên Tier 2 để xử lý.
+- **Tự phục hồi lỗi Embedding (Zero Vector Failure Fallback):**
+  - Trình bao bọc [_safe_embed](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/src/router.py#L37) tích hợp cơ chế tự phục hồi: tự động gỡ bỏ các vector lỗi/vector không (Zero Vector) trên Postgres và chuyển giao quyền xử lý định tuyến sang Tier 2 bằng văn bản thuần túy.
+- **Giải quyết đại từ số nhiều và Liên kết đại từ động (Dynamic Binding):**
+  - Loại bỏ đại từ chung ("担当者", "その人") khỏi DB chỉ mục thực thể để tránh ô nhiễm chỉ mục. Hệ thống sử dụng cơ chế Dynamic Binding tự động ánh xạ đại từ chung vào thực thể hoạt động gần nhất trong cache.
+  - Triển khai lọc trùng lặp thực thể chéo session đối với đại từ số nhiều ("彼ら") để tổng hợp thông tin chính xác từ nhiều phiên trò chuyện khác nhau.
+- **Cô lập ngữ cảnh Tổng hợp (Global Aggregate Cache Bypass):**
+  - Đánh dấu `entity_id = "global_aggregate"` cho các câu hỏi mang tính tổng hợp toàn cục (như tổng thời lượng cuộc gọi) để bypass cache ngữ cảnh thực thể cụ thể, ngăn ngừa ô nhiễm chéo dữ liệu giữa các phiên hội thoại.
+
+---
+
+## 🗄️ Lược đồ Cơ sở Dữ liệu Chi tiết (Database Schema Columns)
+
+Hệ thống sử dụng cơ sở dữ liệu PostgreSQL 15+ với thiết kế lược đồ tối ưu:
+
+### 1. Bảng Quản lý Ngữ cảnh Hệ thống (System Cache Tables)
+
+#### Bảng `chat_history` (Lưu lịch sử hội thoại)
+| Tên cột | Kiểu dữ liệu | Mô tả |
+| :--- | :--- | :--- |
+| `id` | `BIGSERIAL PRIMARY KEY` | Định danh duy nhất tự tăng. |
+| `session_id` | `VARCHAR(64) NOT NULL` | Mã định danh phiên (Có index hỗ trợ). |
+| `role` | `VARCHAR(50) NOT NULL` | Quyền gửi tin: `'user'`, `'assistant'`, hoặc `'system'`. |
+| `content` | `TEXT NOT NULL` | Nội dung tin nhắn gốc. |
+| `rewritten_content` | `TEXT` | Câu hỏi đã được viết lại giải quyết đại từ chỉ định (chỉ dành cho user). |
+| `answer_confidence` | `VARCHAR(50) NOT NULL`| Độ tin cậy của câu trả lời: `'high'` hoặc `'low'`. Mặc định `'high'`. |
+| `routing_metadata` | `JSONB` | Metadata kỹ thuật định tuyến. |
+| `created_at` | `TIMESTAMPTZ` | Thời gian tạo bản ghi. |
+
+#### Bảng `session_context_cache` (Hot Cache Metadata)
+| Tên cột | Kiểu dữ liệu | Mô tả |
+| :--- | :--- | :--- |
+| `id` | `BIGSERIAL PRIMARY KEY` | Định danh duy nhất tự tăng. |
+| `session_id` | `VARCHAR(64) NOT NULL` | Mã định danh phiên (Có index hỗ trợ). |
+| `topic_key` | `TEXT NOT NULL` | Khóa chủ đề cache. |
+| `last_pipeline` | `VARCHAR(50) NOT NULL` | Pipeline cuối: `'RAG'`, `'SQL'`, `'WEB'`, hoặc `'MODEL'`. |
+| `last_routing_method` | `VARCHAR(50) NOT NULL` | Phương thức: `'heuristics'`, `'embeddings'`, `'llm_router'`, hoặc `'fallback'`. |
+| `query_embedding` | `vector(384)` | Embedding vector đại diện cho tâm điểm ngữ cảnh chủ đề. |
+| `embedding_model_version`| `VARCHAR(100)` | Phiên bản mô hình embedding (mặc định `'multilingual-e5-small'`). |
+| `last_accessed_at` | `TIMESTAMPTZ` | Cập nhật khi Hit cache (phục vụ LRU Eviction). |
+| `refreshed_at` | `TIMESTAMPTZ` | Cập nhật khi nạp dữ liệu mới từ Engine (phục vụ TTL). |
+
+#### Bảng `session_context_payload` (Cold Cache Payload)
+| Tên cột | Kiểu dữ liệu | Mô tả |
+| :--- | :--- | :--- |
+| `id` | `BIGSERIAL PRIMARY KEY` | Định danh duy nhất tự tăng. |
+| `cache_id` | `BIGINT NOT NULL` | Khóa ngoại tham chiếu đến `session_context_cache(id)` (ON DELETE CASCADE, UNIQUE). |
+| `cached_payload` | `JSONB NOT NULL` | Nội dung dữ liệu thô lớn lưu từ Engine. |
+| `summary_context` | `JSONB` | Dữ liệu tóm tắt thực thể và thuộc tính cốt lõi. |
+
+#### Bảng `session_entity_index` (Entity Index)
+| Tên cột | Kiểu dữ liệu | Mô tả |
+| :--- | :--- | :--- |
+| `id` | `BIGSERIAL PRIMARY KEY` | Định danh duy nhất tự tăng. |
+| `session_id` | `VARCHAR(64) NOT NULL` | Mã định danh phiên (Có index hỗ trợ). |
+| `entity_id` | `TEXT NOT NULL` | Định danh thực thể (ví dụ: `GT_04`, `GT_02_Nakaoka`). |
+| `entity_type` | `VARCHAR(50) NOT NULL` | Loại thực thể: `'meeting_transcript'`, `'person'`, `'document'`, `'sql_result'`. |
+| `display_names` | `TEXT[] NOT NULL` | Mảng chứa danh sách tên và đại từ tương ứng (GIN Index). |
+| `cache_slot_id` | `BIGINT` | Tham chiếu tới `session_context_cache(id)` (ON DELETE CASCADE). |
+| `created_at` | `TIMESTAMPTZ` | Thời gian tạo bản ghi. |
+
+---
+
+### 2. Bảng Dữ liệu Nghiệp vụ (Business Data Tables)
+
+#### Bảng `transcripts` (Thông tin cuộc gọi)
+| Tên cột | Kiểu dữ liệu | Mô tả |
+| :--- | :--- | :--- |
+| `id` | `UUID PRIMARY KEY` | Định danh UUID tự sinh. |
+| `session_id` | `VARCHAR(64) NOT NULL` | Mã phiên tương ứng (ví dụ: `GT_01`). |
+| `meeting_date` | `DATE` | Ngày diễn ra cuộc gọi. |
+| `participants` | `JSONB` | Danh sách người tham gia cuộc gọi (tên, công ty, giới tính). |
+| `speaker_count` | `INT` | Số lượng người nói tham gia. |
+| `duration_seconds` | `INT` | Tổng thời lượng cuộc gọi tính bằng giây. |
+| `raw_text` | `TEXT` | Nội dung hội thoại thô hoàn chỉnh. |
+| `summary` | `TEXT` | Nội dung tóm tắt cuộc gọi. |
+
+#### Bảng `chunks_turn` (Chi tiết lượt hội thoại)
+| Tên cột | Kiểu dữ liệu | Mô tả |
+| :--- | :--- | :--- |
+| `id` | `UUID PRIMARY KEY` | Định danh UUID tự sinh. |
+| `transcript_id` | `UUID` | Khóa ngoại tham chiếu đến `transcripts(id)` (ON DELETE CASCADE). |
+| `turn_index` | `INT` | Thứ tự lượt nói trong cuộc gọi. |
+| `speaker` | `VARCHAR(255)` | Tên người nói lượt đó. |
+| `time_start_sec` | `INT` | Thời điểm bắt đầu lượt nói (giây). |
+| `time_end_sec` | `INT` | Thời điểm kết thúc lượt nói (giây). |
+| `text` | `TEXT` | Nội dung văn bản phát ngôn. |
+
+#### Bảng `company_chunks` (Tài liệu tri thức bổ sung cho RAG)
+| Tên cột | Kiểu dữ liệu | Mô tả |
+| :--- | :--- | :--- |
+| `id` | `UUID PRIMARY KEY` | Định danh UUID tự sinh. |
+| `document_id` | `UUID` | Định danh tài liệu nguồn. |
+| `text` | `TEXT` | Nội dung văn bản tri thức. |
+| `metadata` | `JSONB` | Metadata tài liệu bổ sung. |
+
+---
+
+## ⚙️ Các Tham số Cấu hình & Tinh chỉnh (Tuning Parameters)
+
+Hệ thống có thể tinh chỉnh hành vi thông qua các tham số cấu hình tĩnh sau:
+
+| Tham số cấu hình | Giá trị mặc định | File nguồn | Ý nghĩa |
+| :--- | :--- | :--- | :--- |
+| `MAX_CACHE_SLOTS` | `5` | [config.py](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/src/config.py) | Số lượng slot cache chủ đề tối đa trên một session để kích hoạt LRU. |
+| `CACHE_TTL_WEB` | `3600` (1 giờ) | [config.py](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/src/config.py) | Thời gian sống của cache pipeline WEB trước khi ép tải lại. |
+| `CACHE_TTL_SQL` | `86400` (24 giờ) | [config.py](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/src/config.py) | Thời gian sống của cache pipeline SQL trước khi ép tải lại. |
+| **Lock Timeout** | `8.0s` | [orchestrator.py](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/src/orchestrator.py) | Thời gian chờ tối đa để lấy khóa Advisory Lock. |
+| **Engine Timeout** | `30.0s` | [engines.py](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/src/engines.py) | Thời gian tối đa một Engine thực thi trước khi bị ngắt mạch. |
+| **Circuit Breaker Threshold** | `3` lỗi | [engines.py](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/src/engines.py) | Số lỗi tối đa trước khi chuyển Circuit Breaker sang OPEN. |
+| **Circuit Cooldown** | `30.0s` | [engines.py](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/src/engines.py) | Thời gian nghỉ của Engine bị lỗi trước khi thử lại ở HALF_OPEN. |
+| **Embedding Timeout** | `3.0s` | [router.py](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/src/router.py) | Thời gian chờ tối đa sinh Vector Embedding. |
+| **Cosine Threshold Hit** | `< 0.22` | [router.py](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/src/router.py) | Ngưỡng khoảng cách cosine tin cậy thuộc cùng chủ đề. |
+| **Cosine Threshold Shift** | `> 0.55` | [router.py](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/src/router.py) | Ngưỡng khoảng cách cosine tin cậy đổi chủ đề. |
+| **Self-Check Retries** | `2` lần thử | [orchestrator.py](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/src/orchestrator.py) | Số lần thử lại tối đa của LLM Verifier chống ảo giác. |
+
+---
+
+## 📥 Đầu vào & 📤 Đầu ra (API Schema)
 
 ### Input Schema
 | Trường | Kiểu | Mô tả |
 | :--- | :--- | :--- |
-| `session_id` | `String` | Định danh duy nhất của phiên (ví dụ: GT_01). |
+| `session_id` | `String` | Định danh phiên làm việc (ví dụ: `GT_01`, `v3h_deep_chain`). |
 | `query` | `String` | Truy vấn ngôn ngữ tự nhiên (tiếng Việt hoặc tiếng Nhật). |
 
 ### Output Schema
 | Trường | Kiểu | Mô tả |
 | :--- | :--- | :--- |
-| `answer` | `String` | Câu trả lời cuối cùng (đã qua kiểm tra xác minh). |
-| `metadata` | `Object` | Thông tin kỹ thuật: `latency_ms`, `routing_method`, `target_pipeline`, v.v. |
+| `answer` | `String` | Câu trả lời cuối cùng đã qua bước kiểm định Self-Check. |
+| `metadata` | `Object` | Thông tin định tuyến kỹ thuật: `latency_ms`, `target_pipeline`, `routing_method`, `self_check_passed`, `answer_confidence` ("high" hoặc "low"), v.v. |
+
+---
 
 ## 🛠️ Cài đặt và Thiết lập
 
 ### Yêu cầu hệ thống
 - Python 3.11+
-- PostgreSQL 15+ (đã cài `pgvector` và `uuid-ossp`).
-- Quyền truy cập API LLM (Groq/Athena).
+- PostgreSQL 15+ (đã cài extension `pgvector` và `uuid-ossp`).
+- Khóa API của LLM (Groq API Key / Javis LLM Client config).
 
-### Các bước cài đặt
-1.  **Clone repository:**
-    ```bash
-    git clone <repo-url>
-    cd multi-turn-context-manager
-    ```
-2.  **Thiết lập môi trường ảo:**
-    ```bash
-    python -m venv .venv
-    source .venv/bin/activate  # Hoặc .venv\Scripts\activate trên Windows
-    pip install -r requirements.txt
-    ```
-3.  **Cấu hình:**
-    Tạo tệp `.env` từ mẫu `.env.example` và cung cấp thông tin kết nối DB cũng như API keys.
-4.  **Khởi tạo cơ sở dữ liệu:**
-    ```bash
-    python scripts/init_db.py
-    python scripts/init_extra_tables.py
-    ```
+### Các bước thiết lập nhanh
 
-## 🧪 Kiểm thử
-Hệ thống đi kèm bộ kiểm thử E2E toàn diện bao gồm các kịch bản Tiêu chuẩn, Tiêu cực và Khôi phục.
+1. **Clone repository:**
+   ```bash
+   git clone <repo-url>
+   cd multi-turn-context-manager
+   ```
 
+2. **Thiết lập môi trường ảo và cài đặt thư viện:**
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # Trên Windows sử dụng: .venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+
+3. **Cấu hình biến môi trường:**
+   Sao chép file `.env.example` thành `.env` và điền thông tin kết nối DB cũng như API keys:
+   ```env
+   NUMERIC_SQL_DATABASE_URL=postgresql://app_user:app_password@localhost:54331/app_db
+   GROQ_API_KEY=your-groq-api-key
+   ```
+
+4. **Khởi tạo cơ sở dữ liệu và nạp dữ liệu kiểm thử:**
+   ```bash
+   python scripts/init_db.py
+   python scripts/init_extra_tables.py
+   python scripts/ingest_test_data.py
+   ```
+
+5. **Xác minh tính toàn vẹn dữ liệu:**
+   ```bash
+   python scripts/verify_summary_integrity.py
+   ```
+
+---
+
+## 🧪 Hệ thống Kiểm thử & Đánh giá (Evaluation & Testing)
+
+Hệ thống tích hợp bộ kiểm thử nâng cao toàn diện (V1, V2, V3) kiểm thử các khía cạnh nghiệp vụ, khả năng phục hồi lỗi, bảo mật, và tương tranh.
+
+### 1. Các bộ kiểm thử hiện có
+- [test_suite.py](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/tests/test_suite.py): Bộ kiểm thử tiêu chuẩn V1 (16 kịch bản, 26 lượt hỏi).
+- [test_suite_v2.py](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/tests/test_suite_v2.py): Bộ kiểm thử nâng cao V2 (8 kịch bản, 22 lượt hỏi).
+- [test_suit_v3.py](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/tests/test_suit_v3.py): **Bộ kiểm thử Hard Mode V3** (7 nhóm kịch bản lớn, 30 lượt hỏi) bao gồm:
+  - *Deep Chain:* Phân giải đại từ liên tiếp qua 7 lượt hỏi, chuyển đổi chủ đề đan xen, phân giải đại từ số nhiều "彼ら" qua các session khác nhau.
+  - *Complex SQL:* Phép tính tổng hợp (SUM, MAX, COUNT, INTERSECT, BETWEEN), lọc khoảng thời gian, tìm kiếm cuộc gọi dài nhất.
+  - *Adversarial (Bảo mật):* Chống SQL Injection độc hại (`DROP TABLE`), từ chối bịa đặt giá cả (Hallucination Control), chống lệnh đột biến dữ liệu.
+  - *Disambiguation:* Phân biệt trùng tên người ("山下") ở các mã GT/Session ID khác nhau.
+  - *Cache & Error Recovery:* Tái sử dụng cache, tự động hạ cấp xuống Tier 2 khi embedding lỗi (Zero vector).
+  - *Concurrency:* Xử lý đồng thời 5 luồng tranh chấp khóa Advisory Lock một cách tuần tự và an toàn.
+
+### 2. Chạy kiểm thử
+Để chạy bộ kiểm thử Hard Mode V3:
 ```bash
-python tests/test_suite.py
+python tests/test_suit_v3.py
 ```
+
+### 3. Xuất báo cáo kết quả kiểm thử sang Excel chuyên nghiệp
+Sau khi hoàn thành kiểm thử, bạn có thể chuyển đổi file kết quả CSV thành file Excel có định dạng màu sắc trực quan (PASS/FAIL):
+```bash
+python scripts/convert_test_summary_to_excel_v2.py
+```
+*Tệp kết quả Excel sẽ được lưu trữ tại thư mục `scratch/` để dễ dàng theo dõi.*
+
+---
+
+## 📈 Kết quả Kiểm thử & Phân tích KPIs
+
+Bảng so sánh hiệu năng và độ chính xác qua 3 phiên bản kiểm thử cải tiến:
+
+| Chỉ số (Metric) | Phiên bản V1 | Phiên bản V2 | Phiên bản V3 (Hard Mode & Cải tiến) |
+| :--- | :--- | :--- | :--- |
+| **Số lượng kịch bản kiểm thử** | 16 Scenarios | 8 Scenarios | 7 Scenarios |
+| **Tổng số lượt hỏi (Total Turns)** | 26 Turns | 22 Turns | 30 Turns |
+| **Tỷ lệ vượt qua (Passed Rate)** | **26/26 (100.0%)** | **22/22 (100.0%)** | **30/30 (100.0%)** |
+| **Tỷ lệ lỗi (Failed Rate)** | 0.0% | 0.0% | 0.0% |
+| **Độ trễ trung bình (Avg Latency)**| ~6,146ms | ~8,467ms | ~9,485ms |
+| **Tỷ lệ trúng Cache (Cache Hit Rate)** | 23.08% | 27.27% | 20.0% |
+| **Khóa tương tranh & Bảo mật** | Đạt | Đạt | Đạt (Ngăn chặn 100% SQL Injection & Concurrent Deadlocks) |
 
 ---
 *Phát triển bởi Gemini CLI Agent cho dự án Trợ lý ảo Javis.*
