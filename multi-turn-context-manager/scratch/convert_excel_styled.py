@@ -71,7 +71,8 @@ for row_idx, row in enumerate(df.values, 2):
             'Full Dialogue Flow (Nguyên bản tiếng Nhật)', 
             'Full Dialogue Flow (Bản dịch tiếng Việt)', 
             'Expected Result (Ground Truth)', 
-            'Actual Result (Captured Answer)'
+            'Actual Result (Captured Answer)',
+            'Dịch Actual Result'
         ] and val:
             parts = val.split(" | ")
             formatted_parts = []
@@ -109,6 +110,7 @@ for i, col in enumerate(df.columns):
         'Full Dialogue Flow (Bản dịch tiếng Việt)', 
         'Expected Result (Ground Truth)', 
         'Actual Result (Captured Answer)', 
+        'Dịch Actual Result',
         'Technical Validation (Tiếng Việt)', 
         'Functional Evaluation (Tiếng Việt)'
     ]:
