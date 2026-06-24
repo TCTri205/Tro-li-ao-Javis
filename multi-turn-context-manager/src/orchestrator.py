@@ -109,7 +109,6 @@ def format_direct_sql_response(payload: dict, query: str = None) -> str:
                 v = f"{v}秒"
         elif k == "participants":
             if isinstance(v, str):
-                import json
                 try:
                     v = json.loads(v)
                 except Exception:
@@ -261,7 +260,7 @@ class IntelligentOrchestrator:
                     target_topic_key = f"{target_pipeline.lower()}_{int(time.time())}"
                     
                 engine_res = await self._run_engine(
-                    target_pipeline, rewritten_query, session_id=session_id
+                    target_pipeline, rewritten_query, session_id=session_id, conn=conn
                 )
                 payload = engine_res.payload
                 
@@ -271,7 +270,7 @@ class IntelligentOrchestrator:
                     if target_topic_key.startswith("sql_"):
                         target_topic_key = target_topic_key.replace("sql_", "rag_", 1)
                     engine_res = await self._run_engine(
-                        "RAG", rewritten_query, session_id=session_id
+                        "RAG", rewritten_query, session_id=session_id, conn=conn
                     )
                     payload = engine_res.payload
                 
@@ -433,7 +432,7 @@ class IntelligentOrchestrator:
                 found_sessions = set()
                 for r in rows:
                     for val in r.values():
-                        if isinstance(val, str) and SESSION_REGEX.match(val):
+                        if isinstance(val, str) and SESSION_REGEX.search(val):
                             found_sessions.add(val.upper())
                             
                 if is_global or has_aggregate_column or len(found_sessions) > 1:

@@ -1,6 +1,8 @@
 .env
 venv
+.venv/
 *.pyc
+__pycache__/
 .omg
 .agents/
 .commandcode/

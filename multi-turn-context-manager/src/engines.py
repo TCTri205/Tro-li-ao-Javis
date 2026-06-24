@@ -229,6 +229,10 @@ class SQLEngine:
         if ";" in sql_query:
             sql_query = sql_query.split(";")[0].strip() + ";"
             
+        # Safety guard: only SELECT queries are allowed
+        if not sql_query.strip().upper().startswith("SELECT"):
+            raise ValueError(f"Generated SQL is not a SELECT statement. Query rejected: {sql_query[:100]}")
+            
         logger.info(f"SQLEngine: Executing generated SQL:\n{sql_query}")
         
         # 2. Execute SQL query on PostgreSQL
