@@ -33,7 +33,7 @@ async def main():
                 role              VARCHAR(50) NOT NULL CHECK (role IN ('user', 'assistant', 'system')),
                 content           TEXT NOT NULL,
                 rewritten_content TEXT,
-                answer_confidence VARCHAR(50) NOT NULL CHECK (answer_confidence IN ('high', 'low')) DEFAULT 'high',
+                answer_confidence VARCHAR(50) NOT NULL CHECK (answer_confidence IN ('high', 'medium', 'low')) DEFAULT 'high',
                 routing_metadata  JSONB,
                 created_at        TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             );

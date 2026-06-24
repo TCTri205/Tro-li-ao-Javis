@@ -298,7 +298,11 @@ class JavisQwenManager(LLMManager):
                     "temperature": 0.0,
                     **extra_kwargs
                 }
-                if response_format:
+                if response_format and response_format.get("type") == "json_object":
+                    # Bypass response_format for JavisQwenManager to prevent gateway JSON validation failures
+                    # on reasoning models with thinking tags.
+                    pass
+                elif response_format:
                     kwargs["response_format"] = response_format
                 
                 completion = await self.client.chat.completions.create(**kwargs, timeout=timeout_val)
@@ -353,15 +357,24 @@ class Router:
         # 2. Lightweight Entity Index Lookup
         entities = await self.db_pool.fetch("""
             SELECT e.cache_slot_id, e.entity_id, e.entity_type, e.display_names, c.topic_key, c.last_pipeline, p.summary_context,
-                   c.last_accessed_at
+                   c.last_accessed_at, c.refreshed_at
             FROM session_entity_index e
             JOIN session_context_cache c ON e.cache_slot_id = c.id
             LEFT JOIN session_context_payload p ON c.id = p.cache_id
             WHERE e.session_id = $1
         """, session_id)
         
+        from cache_manager import check_cache_ttl
+        from config import CACHE_TTL_SQL, CACHE_TTL_WEB
+
         matched_entities = {} # entity_id -> entity_record
         for ent in entities:
+            # Check cache TTL freshness
+            ttl = CACHE_TTL_SQL if ent["last_pipeline"] == "SQL" else CACHE_TTL_WEB
+            if not check_cache_ttl(ent["refreshed_at"], ttl):
+                logger.info(f"Tier 1 Fast Filter: Stale entity '{ent['entity_id']}' in cache slot '{ent['topic_key']}' filtered out.")
+                continue
+
             if match_pronoun(query, ent['display_names']):
                 # Store full record, prefer the one with highest cache_slot_id (newest) if same entity_id exists
                 eid = ent['entity_id']
@@ -599,7 +612,6 @@ class Router:
                     for p in sorted(singular_pronouns, key=len, reverse=True):
                         if p in query:
                             rewritten = rewritten.replace(p, replacement)
-                            break
                     logger.info(f"Tier 1: Heuristically resolved singular pronoun to {replacement}.")
                     return {
                         "is_follow_up": True,
@@ -764,22 +776,35 @@ class Router:
                     "embedding_failed": False
                 }
             elif d1 > 0.55:  # Similarity < 0.45
-                logger.info(f"Tier 1: Semantic shift detected! Distance {d1:.4f} > 0.55")
-                guessed_pipeline = heuristic_pipeline_guess(query)
-                return {
-                    "is_follow_up": False,
-                    "relation_type": "topic_shift",
-                    "use_cache": False,
-                    "needs_retrieval": "full",
-                    "context_reuse_type": "none",
-                    "rewritten_query": query,
-                    "target_topic_key": None,
-                    "target_pipeline": guessed_pipeline,
-                    "partial_fetch_params": None,
-                    "routing_tier": "tier_1",
-                    "routing_method": "embeddings",
-                    "embedding_failed": False
-                }
+                if cache_count > 0:
+                    logger.info(f"Tier 1: Semantic shift detected (d1={d1:.4f} > 0.55), but active caches exist. Escalating to Tier 2 to check for switchback.")
+                    guessed_p = heuristic_pipeline_guess(query)
+                    return await self._route_tier_2(
+                        session_id, query, 
+                        routing_reason="semantic_shift_with_active_caches", 
+                        embedding_failed=embedding_failed,
+                        speculative_guess={
+                            "target_pipeline": guessed_p if guessed_p != "MODEL" else closest_slot['last_pipeline'],
+                            "target_topic_key": closest_slot['topic_key']
+                        }
+                    )
+                else:
+                    logger.info(f"Tier 1: Semantic shift detected! Distance {d1:.4f} > 0.55")
+                    guessed_pipeline = heuristic_pipeline_guess(query)
+                    return {
+                        "is_follow_up": False,
+                        "relation_type": "topic_shift",
+                        "use_cache": False,
+                        "needs_retrieval": "full",
+                        "context_reuse_type": "none",
+                        "rewritten_query": query,
+                        "target_topic_key": None,
+                        "target_pipeline": guessed_pipeline,
+                        "partial_fetch_params": None,
+                        "routing_tier": "tier_1",
+                        "routing_method": "embeddings",
+                        "embedding_failed": False
+                    }
             else:
                 logger.info(f"Tier 1: Ambiguity or gray area detected (d1={d1:.4f}, gap={gap:.4f}). Forwarding to Tier 2.")
                 # Add heuristic guess for speculative execution
@@ -844,8 +869,17 @@ class Router:
                 "names": er['display_names']
             })
 
+        from cache_manager import check_cache_ttl
+        from config import CACHE_TTL_SQL, CACHE_TTL_WEB
+
         active_caches = []
         for r in cache_rows:
+            # Check cache TTL freshness
+            ttl = CACHE_TTL_SQL if r["last_pipeline"] == "SQL" else CACHE_TTL_WEB
+            if not check_cache_ttl(r["refreshed_at"], ttl):
+                logger.info(f"Router active_caches: Stale cache slot '{r['topic_key']}' (refreshed_at: {r['refreshed_at']}) filtered out.")
+                continue
+
             summary = None
             if r['summary_context']:
                 try:
@@ -1134,4 +1168,17 @@ class Router:
                         result["needs_retrieval"] = "full"
                         result["context_reuse_type"] = "none"
                         
+        # Overwrite/Fallback for pronoun/ellipsis queries when no active caches exist (e.g. stale cache or no cache)
+        has_pronoun = any(re.search(re.escape(p), query.lower()) for p in PRONOUNS)
+        is_ellipsis = query.strip().endswith(("は？", "は", "も？", "も"))
+        if (has_pronoun or is_ellipsis) and not active_caches:
+            if result.get("needs_retrieval") == "none" or result.get("target_pipeline") == "MODEL":
+                logger.info("Router override: Pronoun query with no active caches detected. Forcing needs_retrieval='full' and data pipeline.")
+                result["needs_retrieval"] = "full"
+                result["use_cache"] = False
+                result["relation_type"] = "topic_shift"
+                guessed = heuristic_pipeline_guess(query)
+                result["target_pipeline"] = guessed if guessed in ["SQL", "RAG"] else "RAG"
+                result["context_reuse_type"] = "none"
+
         return result

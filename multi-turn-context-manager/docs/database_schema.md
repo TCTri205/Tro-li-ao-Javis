@@ -48,7 +48,7 @@ Lưu trữ lịch sử hội thoại của người dùng và trợ lý.
 | `role` | `VARCHAR(20)` | user, assistant |
 | `content` | `TEXT` | Nội dung tin nhắn |
 | `rewritten_content`| `TEXT` | Truy vấn đã viết lại (chỉ user) |
-| `answer_confidence`| `VARCHAR(20)` | high, low |
+| `answer_confidence`| `VARCHAR(20)` | high, medium, low |
 | `routing_metadata` | `JSONB` | Thông tin định tuyến |
 | `created_at` | `TIMESTAMP` | |
 

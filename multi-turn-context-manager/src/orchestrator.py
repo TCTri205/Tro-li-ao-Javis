@@ -19,6 +19,18 @@ def should_use_direct_path(pipeline: str, payload: dict, needs_retrieval: str, o
     if needs_retrieval == "partial":
         return False
         
+    # Force LLM path if the query asks for reasoning, explanation, or background
+    if original_query and any(k in original_query.lower() for k in ("理由", "背景", "なぜ", "解説", "説明", "どうして", "原因", "分析")):
+        return False
+        
+    # Force LLM path if the query asks about roles, direction, or specific details of call (e.g. who called whom)
+    if original_query and any(k in original_query for k in ("誰から", "誰に", "発信", "受信", "かけた", "受けた", "どちらから", "誰宛", "立場", "役割", "目的", "用件")):
+        return False
+        
+    # Force LLM path if the query asks for specific attributes/fields
+    if original_query and any(p in original_query for p in DIRECT_PATH_SPECIFIC_FIELDS):
+        return False
+        
     if pipeline == "SQL":
         rows = payload.get("rows", [])
         if not rows:
@@ -129,7 +141,15 @@ def format_direct_web_response(payload: dict) -> str:
     results = payload.get("results", [])
     if not results:
         return "該当する検索結果が見つかりませんでした。"
-    return results[0]["snippet"]
+    res = results[0]
+    snippet = res.get("snippet", "")
+    url = res.get("url")
+    title = res.get("title")
+    if url:
+        if title:
+            return f"{snippet}\n\n参考記事: {title} ({url})"
+        return f"{snippet}\n\n参考記事: {url}"
+    return snippet
 
 class IntelligentOrchestrator:
     def __init__(self, db_pool, llm_manager: LLMManager, embedding_model):
@@ -585,8 +605,17 @@ class IntelligentOrchestrator:
                 response = await self.llm_manager.generate_chat_completion(messages=messages)
                 
                 # Verify the response
-                passed, issues = await self._verify_hallucination(response, context_str)
+                try:
+                    passed, issues = await self._verify_hallucination(response, context_str)
+                except Exception as eval_exc:
+                    logger.error(f"Error during self-check verification: {eval_exc}")
+                    passed = True
+                    issues = f"Verifier system encountered an exception: {str(eval_exc)}"
+
                 if passed:
+                    if issues and "Verifier system" in issues:
+                        disclaimer = "\n\n*(警告: 自己検証エンジンがオフラインのため、回答の整合性を完全に保証できません。)*"
+                        return response + disclaimer, "medium", True, retries
                     return response, "high", True, retries
                     
                 retries += 1
@@ -655,5 +684,5 @@ class IntelligentOrchestrator:
             return passed, verdict.get("issues")
         except Exception as e:
             logger.error(f"Error during self-check verification: {e}")
-            # If verifier fails, default to True to avoid infinite retry loop
-            return True, None
+            # If verifier fails, default to True to avoid infinite retry loop, but return connection exception string to warn user
+            return True, f"Verifier system encountered an exception: {str(e)}"

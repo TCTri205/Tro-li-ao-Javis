@@ -116,7 +116,7 @@ Hệ thống sử dụng cơ sở dữ liệu PostgreSQL 15+ với thiết kế 
 | `role` | `VARCHAR(50) NOT NULL` | Quyền gửi tin: `'user'`, `'assistant'`, hoặc `'system'`. |
 | `content` | `TEXT NOT NULL` | Nội dung tin nhắn gốc. |
 | `rewritten_content` | `TEXT` | Câu hỏi đã được viết lại giải quyết đại từ chỉ định (chỉ dành cho user). |
-| `answer_confidence` | `VARCHAR(50) NOT NULL`| Độ tin cậy của câu trả lời: `'high'` hoặc `'low'`. Mặc định `'high'`. |
+| `answer_confidence` | `VARCHAR(50) NOT NULL`| Độ tin cậy của câu trả lời: `'high'`, `'medium'` hoặc `'low'`. Mặc định `'high'`. |
 | `routing_metadata` | `JSONB` | Metadata kỹ thuật định tuyến. |
 | `created_at` | `TIMESTAMPTZ` | Thời gian tạo bản ghi. |
 
@@ -221,7 +221,7 @@ Hệ thống có thể tinh chỉnh hành vi thông qua các tham số cấu hì
 | Trường | Kiểu | Mô tả |
 | :--- | :--- | :--- |
 | `answer` | `String` | Câu trả lời cuối cùng đã qua bước kiểm định Self-Check. |
-| `metadata` | `Object` | Thông tin định tuyến kỹ thuật: `latency_ms`, `target_pipeline`, `routing_method`, `self_check_passed`, `answer_confidence` ("high" hoặc "low"), v.v. |
+| `metadata` | `Object` | Thông tin định tuyến kỹ thuật: `latency_ms`, `target_pipeline`, `routing_method`, `self_check_passed`, `answer_confidence` ("high", "medium" hoặc "low"), v.v. |
 
 ---
 
