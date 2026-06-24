@@ -8,7 +8,7 @@ from router import Router, LLMManager, _safe_embed, extract_json
 from cache_manager import get_cache_slot, touch_cache_slot, upsert_cache_slot, update_cache_slot, check_cache_ttl
 from entity_extractor import EntityExtractor
 from engines import SQLEngine, RAGEngine, WebEngine, EngineCircuitBreaker, EngineResult
-from config import SESSION_REGEX, SQL_FRIENDLY_KEYS, DIRECT_PATH_SHOW_DETAILS, DIRECT_PATH_SPECIFIC_FIELDS
+from config import SESSION_REGEX, SQL_FRIENDLY_KEYS, DIRECT_PATH_SHOW_DETAILS, DIRECT_PATH_SPECIFIC_FIELDS, CACHE_TTL_WEB, CACHE_TTL_SQL
 
 logger = logging.getLogger(__name__)
 
@@ -188,29 +188,38 @@ class IntelligentOrchestrator:
                 # Cache Hit: Read from Cold Table
                 cache_slot = await get_cache_slot(conn, session_id, target_topic_key)
                 if cache_slot:
-                    # Granularity Check & Empty Payload Check
-                    payload = cache_slot["payload"] or {}
-                    is_payload_empty = not payload or (
-                        not payload.get("rows") and
-                        not payload.get("documents") and
-                        not payload.get("results")
-                    )
-                    if is_payload_empty:
-                        logger.info(f"Cache slot '{target_topic_key}' hit but payload is empty. Downgrading to full retrieval.")
+                    # Check cache TTL freshness
+                    ttl = CACHE_TTL_SQL if cache_slot["last_pipeline"] == "SQL" else CACHE_TTL_WEB
+                    is_fresh = check_cache_ttl(cache_slot["refreshed_at"], ttl)
+                    if not is_fresh:
+                        logger.info(f"Cache slot '{target_topic_key}' expired. Downgrading to full retrieval.")
                         needs_retrieval = "full"
                         use_cache = False
                     else:
-                        is_details_query = any(k in query for k in ("詳細", "具体的内容", "中身", "発言"))
-                        has_turns = payload.get("rows") and all("speaker" in r for r in payload["rows"])
-                        
-                        if is_details_query and not has_turns:
-                            logger.info(f"Cache slot '{target_topic_key}' exists but lacks turn-level granularity for 'details' query. Upgrading to full retrieval.")
+                        # Granularity Check & Empty Payload Check
+                        payload = cache_slot["payload"] or {}
+                        is_payload_empty = not payload or (
+                            not payload.get("rows") and
+                            not payload.get("documents") and
+                            not payload.get("results") and
+                            not payload.get("info")
+                        )
+                        if is_payload_empty:
+                            logger.info(f"Cache slot '{target_topic_key}' hit but payload is empty. Downgrading to full retrieval.")
                             needs_retrieval = "full"
                             use_cache = False
                         else:
-                            summary_context = cache_slot["summary_context"] or {}
-                            # Touch cache slot
-                            await touch_cache_slot(conn, session_id, target_topic_key)
+                            is_details_query = any(k in query for k in ("詳細", "具体の内容", "中身", "発言"))
+                            has_turns = payload.get("rows") and all("speaker" in r for r in payload["rows"])
+                            
+                            if is_details_query and not has_turns:
+                                logger.info(f"Cache slot '{target_topic_key}' exists but lacks turn-level granularity for 'details' query. Upgrading to full retrieval.")
+                                needs_retrieval = "full"
+                                use_cache = False
+                            else:
+                                summary_context = cache_slot["summary_context"] or {}
+                                # Touch cache slot
+                                await touch_cache_slot(conn, session_id, target_topic_key)
                 else:
                     logger.warning(f"Cache slot '{target_topic_key}' not found in database despite router hit. Forcing full retrieval.")
                     needs_retrieval = "full"

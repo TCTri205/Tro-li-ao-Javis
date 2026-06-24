@@ -658,7 +658,6 @@ class Router:
             for pron in sorted_pronouns:
                 if pron in query:
                     rewritten_query = rewritten_query.replace(pron, matched_ent['entity_id'])
-                    break # Stop after first replacement to avoid nested replacements
             
             guessed_pipeline = heuristic_pipeline_guess(query)
             target_pipeline = guessed_pipeline if guessed_pipeline != "MODEL" else matched_ent['last_pipeline']
@@ -1005,7 +1004,6 @@ class Router:
                         for pron in sorted_pronouns:
                             if pron in rewritten:
                                 rewritten = rewritten.replace(pron, gt_id)
-                                break
                         result["rewritten_query"] = rewritten
 
             # Force needs_retrieval to none for same_entity cache hits, EXCEPT when multiple GTs are involved

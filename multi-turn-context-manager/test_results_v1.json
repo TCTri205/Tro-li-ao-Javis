@@ -17,7 +17,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 206.0548999997991
+      "latency_ms": 107.94200000009369
     },
     "passed": true,
     "error": null
@@ -40,7 +40,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 8435.31880000046
+      "latency_ms": 7424.664899999925
     },
     "passed": true,
     "error": null
@@ -55,7 +55,7 @@
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "SQL",
-      "target_topic_key": "new_topic_1782271805",
+      "target_topic_key": "new_topic_1782282592",
       "routing_tier": "tier_1",
       "routing_method": "heuristics",
       "embedding_failed": false,
@@ -63,7 +63,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 68.35469999896304
+      "latency_ms": 64.8450999999568
     },
     "passed": true,
     "error": null
@@ -74,7 +74,7 @@
     "query": "では、先ほどの通話を受けたのは誰ですか？",
     "answer": "通話時間: 105秒。",
     "metadata": {
-      "rewritten_query": "では、GT_04の中原さん通話を受けたのは誰ですか？",
+      "rewritten_query": "では、GT_04の横堀さん通話を受けたのは誰ですか？",
       "needs_retrieval": "none",
       "relation_type": "same_entity",
       "target_pipeline": "SQL",
@@ -86,7 +86,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 29.013399998802925
+      "latency_ms": 61.073299999861774
     },
     "passed": true,
     "error": null
@@ -95,7 +95,7 @@
     "category": "NEG",
     "test_id": "NEG_001",
     "query": "彼は何と言いましたか？",
-    "answer": "GT_04の通話において、相手（受信側）は「アセットジャパン」と自己紹介しました。具体的には、女性の話者（Nữ）が「はい、ありがとうございます。アセットジャパンです。」と述べています。この通話では、男性の話者（Nam）が三菱UFJ銀行の横堀（Yokobori）として、中原凛花（Nakahara Rinka）さんへの連絡を試みていますが、中原さん自身が不在のため、アセットジャパンの担当者（Nữ）に伝言を依頼しています。したがって、**通話の相手（受信側）は「アセットジャパン」の担当者であり、その名前は明示されていません**。",
+    "answer": "申し訳ありませんが、提供された資料からはGT_04の通話の相手（受信側）の名前を確認できませんでした。  \n通話ログでは「Nữ（女性）」がアセットジャパンの担当者として応対しており、相手の名前は明示されていません。  \nまた、通話の目的は「中原凛花様」に伝言を届けることでしたが、その「中原凛花様」は通話の相手ではなく、銀行側が連絡を試みていた対象の人物です。",
     "metadata": {
       "rewritten_query": "GT_04の通話の相手は何と言いましたか？",
       "needs_retrieval": "full",
@@ -109,7 +109,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 50508.881399999154
+      "latency_ms": 16778.1894000002
     },
     "passed": true,
     "error": null
@@ -118,9 +118,9 @@
     "category": "NEG",
     "test_id": "NEG_002",
     "query": "あ、やっぱり、ネットで歌手A of 情報を検索してください。",
-    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。コンテキストに含まれる情報は、検索リクエストの記録（\"歌手A of 情報\"の検索）とAPIエラーの記述のみであり、具体的な検索結果や歌手Aに関する詳細な情報は記載されていません。",
+    "answer": "歌手Aに関する情報は以下の通りです：  \n\n1. **最新アルバムのチャート初登場**  \n   歌手Aの最新アルバム『光』は、2023年10月15日にオリコン週間アルバムチャートで初登場1位を記録しました。初動売上は5万枚を突破し、2023年最も注目されるアーティストの一人として認知されています（[詳細はこちら](https://www.oricon.co.jp/news/20231015/001225.html)）。  \n\n2. **2023年冬の東京ドームコンサート**  \n   歌手Aは2023年12月15日に東京ドームでコンサートを開催します。チケットは10月20日に発売され、即日完売するなど大好評を博しています（[詳細はこちら](https://www.nikkei.com/article/DGXMZOU7144120R3A62023120100012.html)）。  \n\n3. **プロフィールと代表曲**  \n   歌手Aは1995年生まれで、2015年にデビューした日本のポップ歌手です。代表曲には『明日への歌』『夢の続き』などがあります（[公式プロフィール](https://www.singer-a-official.com/profile)）。  \n\n以上が現在の情報です。",
     "metadata": {
-      "rewritten_query": "あ、やっぱり、ネットで歌手A of 情報を検索してください。",
+      "rewritten_query": "ネットで歌手Aの情報を検索してください。",
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "WEB",
@@ -132,7 +132,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 16920.15259999971
+      "latency_ms": 18030.37119999999
     },
     "passed": true,
     "error": null
@@ -147,7 +147,7 @@
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "SQL",
-      "target_topic_key": "new_topic_1782271873",
+      "target_topic_key": "new_topic_1782282627",
       "routing_tier": "tier_1",
       "routing_method": "heuristics",
       "embedding_failed": false,
@@ -155,7 +155,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 27.070599999206024
+      "latency_ms": 80.24020000016208
     },
     "passed": true,
     "error": null
@@ -170,7 +170,7 @@
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "RAG",
-      "target_topic_key": "fallback_1782271873",
+      "target_topic_key": "fallback_1782282627",
       "routing_tier": "tier_2",
       "routing_method": "fallback",
       "embedding_failed": false,
@@ -178,7 +178,7 @@
       "self_check_passed": false,
       "self_check_retries": 2,
       "answer_confidence": "low",
-      "latency_ms": 1996.9989999990503
+      "latency_ms": 2032.5027999999747
     },
     "passed": true,
     "error": null
@@ -193,7 +193,7 @@
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "RAG",
-      "target_topic_key": "fallback_1782271875",
+      "target_topic_key": "fallback_1782282629",
       "routing_tier": "tier_2",
       "routing_method": "embeddings",
       "embedding_failed": false,
@@ -201,7 +201,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 1764.8153999998613
+      "latency_ms": 2124.4050000000243
     },
     "passed": true,
     "error": null
@@ -224,7 +224,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 25.439300001380616
+      "latency_ms": 15.046700000084456
     },
     "passed": true,
     "error": null
@@ -247,7 +247,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 2479.1580000000977
+      "latency_ms": 2053.8567999999486
     },
     "passed": true,
     "error": null
@@ -256,21 +256,21 @@
     "category": "NEG",
     "test_id": "NEG_008",
     "query": "GT_04とGT_06の通話を比較してください。",
-    "answer": "GT_04の通話とGT_06の通話の比較は以下の通りです：\n\n**1. 通話の目的**  \n- **GT_04**: 三菱UFJ銀行の横堀が、アセットジャパンの中原凛花（アルバイト）に連絡を届けたい目的で通話をしています。具体的には、中原さんが不在であるため、伝言を残すことを依頼しています。  \n- **GT_06**: AJテクノロジーズの山下が、建設のエスタに「カセさん（おそらく担当者）が戻ったか」を確認する目的で通話をしています。カセさんが外出中であるため、改めて連絡する旨を確認しています。\n\n**2. 通話の内容の詳細性**  \n- **GT_04**: 通話では、銀行の営業時間（平日9:00〜21:00、土日祝日9:00〜17:00）や、過去に中原さんの携帯に電話をかけた経緯（留守番電話に銀行名と番号を録音済み）が明示されています。  \n- **GT_06**: 内容は簡潔で、カセさんの不在を確認し、改めて連絡する旨の合意のみが述べられています。詳細な時間や背景情報は含まれていません。\n\n**3. 通話の結果**  \n- **GT_04**: 伝言の依頼が承諾され、アセットジャパン側が「伝言を届ける」ことを約束しています。  \n- **GT_06**: 山下が「改めて連絡させていただく」と約束し、通話はその合意で終了しています。\n\n**4. 会話の形式**  \n- **GT_04**: 銀行側（横堀）がフォーマルに依頼をし、アセットジャパン側（女性）が丁寧に応対しています。  \n- **GT_06**: 双方が簡潔にやりとりし、形式的な挨拶や礼儀づかいは最小限です。\n\n**結論**  \n**異なる**。GT_04は「伝言の依頼」を目的とした詳細な会話であり、GT_06は「不在確認と再連絡の約束」を目的とした簡潔な会話です。目的・内容・形式に明確な違いがあります。",
+    "answer": "申し訳ありませんが、提供された資料からはGT_06の通話内容を確認する情報が不十分です。  \nGT_06の通話ログ（`GT_06_raw_text`）は存在していますが、その内容は非常に簡潔で、以下のように記録されています：  \n\n**GT_06の通話内容（抜粋）**  \n- **発信者（2）**: 「カセさんってお戻りになられてますか？」  \n- **受信者（1）**: 「ちょっと今外出しちゃってるんですけども。」  \n- **発信者（2）**: 「じゃあまた改めてご連絡させていただきます。」  \n\nこの通話では、発信者（山下氏）が「カセさん（Kasen）の在宅状況」を確認し、受信者（建設のエスタ氏）が「外出中」であることを伝えた上で、再連絡を約束しています。  \n\n---\n\n**GT_04とGT_06の比較**  \n1. **目的**  \n   - **GT_04**: 銀行（横堀氏）が企業（中原凛花様）に「電話をいただきたい」という伝言を依頼。  \n   - **GT_06**: 企業内（山下氏）が同僚（カセさん）の在宅状況を確認し、再連絡を約束。  \n\n2. **対象**  \n   - **GT_04**: 企業の担当者（中原様）への伝言依頼。  \n   - **GT_06**: 企業内同僚（カセさん）の在宅確認。  \n\n3. **結果**  \n   - **GT_04**: 伝言依頼が承諾された。  \n   - **GT_06**: 再連絡を約束した。  \n\n---\n\n**結論**  \nGT_04とGT_06の通話は、**目的（伝言依頼 vs. 在宅確認）**や**対象（企業担当者 vs. 企業内同僚）**が異なります。ただし、両通話とも「相手の不在を確認し、再連絡を依頼する」という共通点があります。  \n\n※GT_06の通話内容は提供された資料に記載されていますが、情報量が極めて少ないため、詳細な比較は限られます。",
     "metadata": {
       "rewritten_query": "GT_04の通話とGT_06の通話を比較してください。",
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "RAG",
-      "target_topic_key": "new_topic_compare_GT_04_GT_06",
+      "target_topic_key": "new_topic_456",
       "routing_tier": "tier_2",
       "routing_method": "llm_router",
       "embedding_failed": false,
       "direct_answer_used": false,
       "self_check_passed": true,
-      "self_check_retries": 0,
+      "self_check_retries": 1,
       "answer_confidence": "high",
-      "latency_ms": 34029.185499999585
+      "latency_ms": 48408.46069999998
     },
     "passed": true,
     "error": null
@@ -279,7 +279,7 @@
     "category": "NEG",
     "test_id": "NEG_009",
     "query": "LRU Eviction Test",
-    "answer": "['model_1782271944', 'new_topic_05', 'new_topic_08', 'new_topic_09', 'web_1782271913']",
+    "answer": "['model_1782282723', 'new_topic_05', 'new_topic_08', 'new_topic_09', 'web_1782282681']",
     "metadata": {},
     "passed": true,
     "error": null
@@ -294,7 +294,7 @@
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "MODEL",
-      "target_topic_key": "default_topic_1782271983",
+      "target_topic_key": "default_topic_1782282743",
       "routing_tier": "tier_2",
       "routing_method": "llm_router",
       "embedding_failed": false,
@@ -302,7 +302,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 5901.716899999883
+      "latency_ms": 3778.100499999937
     },
     "passed": true,
     "error": null
@@ -325,7 +325,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 11.31600000007893
+      "latency_ms": 10.556599999972605
     },
     "passed": true,
     "error": null
@@ -334,7 +334,7 @@
     "category": "NEG",
     "test_id": "NEG_014",
     "query": "彼は何と言いましたか？",
-    "answer": "申し訳ありません。提供された資料からは、横堀（よこぼり）氏の性別に関する明示的な情報が確認できませんでした。したがって、「彼」として特定する根拠が不足しています。  \n\n**横堀（よこぼり）氏の発言内容**（性別は文脈から特定できないため、名前のみで記載）：  \n1. **目的の説明**  \n   「中原凛花様にご案内したいことがございまして、お電話いたしました。」  \n   → 中原凛花さん（アセットジャパンのアルバイト）に連絡を取りたいと説明。  \n\n2. **連絡方法の確認**  \n   「中原様の携帯電話の方にも何度かお電話しておりまして、留守番電話に銀行名と電話番号などは吹き込みさせていただいているので、番号自体はご存じでいらっしゃいます。」  \n   → 中原さんへの連絡履歴と、番号の確認を前提にしている。  \n\n3. **受付時間の案内**  \n   - 平日：9時〜21時  \n   - 土日祝日：9時〜17時  \n   → 銀行の受付時間を伝える。  \n\n4. **伝言依頼**  \n   「お電話いただきたいとの伝言をお願いしてもよろしいでしょうか？」  \n   → 中原さんに出勤後に連絡を取ってもらうよう依頼。  \n\n**立場**：横堀氏は「発信側」（電話をかけた側）であり、アセットジャパンの女性担当者（Nữ）は「受信側」（電話を受けた側）です。  \n\n※「彼」という表現は、文脈に性別に関する明示情報がないため、使用しておりません。",
+    "answer": "GT_04の「彼」（男性）は、三菱UFJ銀行の横堀（よこぼり）と申します。彼は以下の内容を述べました：  \n1. **自己紹介**：「お忙しいところ恐れ入ります。私、三菱UFJ銀行の横堀と申します。」  \n2. **目的の説明**：「貴社でアルバイトとしてお勤めと聞いております、中原凛花様にご案内したいことがございまして、お電話いたしました。」  \n3. **出勤状況の確認**：中原凛花様が「今日はお休み」であることを確認し、伝言を依頼しました。  \n4. **連絡先の説明**：中原様の携帯電話に複数回電話しており、留守番電話に銀行名と番号を録音していることを説明。  \n5. **受付時間の案内**：平日は9時〜21時、土日祝日は9時〜17時と伝えた後、**「私以外の者でもご案内できますので、お電話いただきたいとの伝言をお願いしてもよろしいでしょうか？」**と依頼しました。  \n\n（注：「彼」は通話の発信側（三菱UFJ銀行の横堀）を指します。受信側（アセットジャパンの女性担当者）は「Nữ」で、別人物です。）",
     "metadata": {
       "rewritten_query": "GT_04の彼は何と言いましたか？",
       "needs_retrieval": "full",
@@ -346,9 +346,9 @@
       "embedding_failed": false,
       "direct_answer_used": false,
       "self_check_passed": true,
-      "self_check_retries": 1,
+      "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 30506.829599999037
+      "latency_ms": 14581.66570000003
     },
     "passed": true,
     "error": null
@@ -357,13 +357,13 @@
     "category": "NEG",
     "test_id": "NEG_015",
     "query": "三菱に関する新しいニュースはありますか？",
-    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。コンテキストに含まれる情報は、JSON形式のエラーメッセージと「三菱に関する新しいニュースはありますか？」という検索クエリのみであり、具体的なニュース内容や最新情報は記載されていません。",
+    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。",
     "metadata": {
       "rewritten_query": "三菱に関する新しいニュースはありますか？",
-      "needs_retrieval": "full",
+      "needs_retrieval": "none",
       "relation_type": "same_entity",
       "target_pipeline": "WEB",
-      "target_topic_key": "default_topic_1782272019",
+      "target_topic_key": "default_topic_1782282762",
       "routing_tier": "tier_1",
       "routing_method": "heuristics",
       "embedding_failed": false,
@@ -371,7 +371,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 6597.45109999858
+      "latency_ms": 3924.096899999995
     },
     "passed": true,
     "error": null
@@ -380,13 +380,13 @@
     "category": "NEG",
     "test_id": "NEG_016",
     "query": "データベースに存在しない情報を表示してください",
-    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。コンテキストには「データベースに存在しない情報を表示してください」というクエリが記載されていますが、具体的なデータベースの内容や該当する情報の有無についての記述は含まれていません。そのため、データベースに存在しない情報の内容を特定することはできません。",
+    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。コンテキストには「データベースに存在しない情報を表示してください」というクエリが記録されていますが、具体的なデータベースの内容や該当情報の有無についての記述は含まれていません。",
     "metadata": {
       "rewritten_query": "データベースに存在しない情報を表示してください",
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "MODEL",
-      "target_topic_key": "model_1782272030",
+      "target_topic_key": "model_1782282772",
       "routing_tier": "tier_1",
       "routing_method": "embeddings",
       "embedding_failed": false,
@@ -394,7 +394,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 5893.876599999203
+      "latency_ms": 4115.499399999862
     },
     "passed": true,
     "error": null
@@ -417,7 +417,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 25.80179999858956
+      "latency_ms": 29.420300000083444
     },
     "passed": true,
     "error": null
@@ -426,9 +426,9 @@
     "category": "NEG",
     "test_id": "NEG_019",
     "query": "それとそのドキュメント",
-    "answer": "申し訳ありませんが、提供された資料からは「GT_04」に関する情報を確認できませんでした。",
+    "answer": "申し訳ありませんが、提供された資料からは「GT_04」という情報や関連する内容を確認できませんでした。コンテキストに含まれる情報は、会話の参加者「横堀」および「中原凛花」に関するもののみです。他の情報についてはお答えできません。",
     "metadata": {
-      "rewritten_query": "それとGT_04",
+      "rewritten_query": "GT_04とGT_04",
       "needs_retrieval": "none",
       "relation_type": "same_entity",
       "target_pipeline": "RAG",
@@ -440,7 +440,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 5512.831099998948
+      "latency_ms": 4313.994000000093
     },
     "passed": true,
     "error": null
@@ -449,7 +449,7 @@
     "category": "FIX",
     "test_id": "FIX_001",
     "query": "AJ Technologiesの通話を検索してください",
-    "answer": "申し訳ありませんが、提供された資料からはAJ Technologiesに関する通話の詳細や検索結果を確認する情報が含まれていません。コンテキストに記載されているのは「AJ Technologiesの通話を検索してください」というクエリがGoogle Search APIに送信された事実のみです。具体的な検索結果や通話内容については、この資料からは確認できません。",
+    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。コンテキストには「AJ Technologiesの通話を検索してください」というクエリが記録されていますが、具体的な検索結果や通話内容に関する情報は含まれていません。JSON形式のエラーも併記されており、データの不完全性が確認されています。詳細な情報を得るには、検索条件やAPIの応答内容を再度確認する必要があるかもしれません。",
     "metadata": {
       "rewritten_query": "AJ Technologiesの通話を検索してください",
       "needs_retrieval": "full",
@@ -463,7 +463,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 15738.62200000076
+      "latency_ms": 9981.300899999724
     },
     "passed": true,
     "error": null
@@ -478,7 +478,7 @@
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "MODEL",
-      "target_topic_key": "model_1782272057",
+      "target_topic_key": "model_1782282791",
       "routing_tier": "tier_1",
       "routing_method": "embeddings",
       "embedding_failed": false,
@@ -486,7 +486,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 5700.501299999814
+      "latency_ms": 3406.24680000019
     },
     "passed": true,
     "error": null
@@ -495,7 +495,7 @@
     "category": "FIX",
     "test_id": "FIX_005",
     "query": "GT_04の通話の詳細",
-    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。  \nコンテキストに記載されている情報は、会話の発言内容や参加者リストのみであり、以下のような明確な事実が含まれていません：  \n- 女性話者の所属会社（「アセットジャパン」は発言内容にのみ登場）  \n- 「中原凛花」「凛花」「中原」の関係性（同一人物か異なる人物か）  \n- 通話後の中原凛花様の行動や結果  \n\nコンテキストに明記されていない情報を勝手に補完することはできません。  \nご質問の内容がコンテキストに含まれている場合は、もう一度ご確認ください。\n\n*(注意: この回答は自己検証で完全に一致しなかったため、信頼性が低くなっています。)*",
+    "answer": "申し訳ありませんが、提供された資料からは以下の情報を確認できませんでした：  \n\n1. **中原凛花**、**凛花**、**中原**の3人の女性が同一人物か、またはそれぞれ異なる人物か。  \n2. **受付担当者**（Nữ）が所属する企業名や役職。  \n3. **中原凛花**が「アセットジャパン」のアルバイト社員であるという明確な記述。  \n\n### **確認可能な事実のみ**  \n- **発信側**: 三菱UFJ銀行の**横堀**（男性）  \n- **受信側**: **アセットジャパン**（企業名）の受付担当者（女性、Nữ）  \n- **会話内容**:  \n  - 横堀は中原凛花様に連絡したいと伝える。  \n  - 受付担当者は「今日はお休みですね」と返答し、中原凛花がまだ出勤していないことを確認。  \n  - 横堀は「ご出勤された際に、お電話いただけるよう伝言をお願いしてもよろしいでしょうか？」と依頼。  \n  - 受付担当者は「承りました」と同意。  \n\n### **不明点**  \n- **中原凛花**、**凛花**、**中原**の関係性や所属企業。  \n- 受付担当者の所属企業や役職。  \n\n以上が提供された資料に基づく正確な情報です。\n\n*(注意: この回答は自己検証で完全に一致しなかったため、信頼性が低くなっています。)*",
     "metadata": {
       "rewritten_query": "GT_04の通話の詳細",
       "needs_retrieval": "full",
@@ -509,7 +509,7 @@
       "self_check_passed": false,
       "self_check_retries": 2,
       "answer_confidence": "low",
-      "latency_ms": 46986.85490000025
+      "latency_ms": 36870.560599999866
     },
     "passed": true,
     "error": null
@@ -518,7 +518,7 @@
     "category": "FIX",
     "test_id": "FIX_006",
     "query": "AJ Technologiesに関する情報",
-    "answer": "AJ Technologiesに関する情報は以下の通りです：  \n\n1. **会社概要**  \n   - 1995年に設立され、産業用ロボットと自動化ソリューションの分野で25年以上の実績を持つ企業です（[公式サイト](https://www.ajtech.com/about)）。  \n   - 2023年の売上高は12億ドルに達し、世界15か国に拠点を構えています。  \n\n2. **最新技術**  \n   - 2024年4月に次世代AIロボット『Aurora-7』を発表。従来の製品と比較して30%の生産性向上を実現し、現在は試作段階です（[Tech News](https://www.technews.com/ajtech)）。  \n\n3. **環境への取り組み**  \n   - 2022年から再生可能エネルギー100%使用を宣言。2023年度のCO2排出量は前年比で40%削減し、2030年までにネットゼロを達成する目標を掲げています（[Green Biz](https://www.greenbiz.com/ajtech)）。  \n\n以上が、提供された資料に基づくAJ Technologiesの情報です。",
+    "answer": "AJ Technologiesは1985年に設立され、産業用ロボットと自動化ソリューションの分野で35年以上の実績を持つ企業です。2023年の売上高は12億ドルに達し、世界25か国に拠点を構えています。また、2024年4月に次世代AIロボット『Aurora-7』を発表し、試作段階ではありますが、従来の製品と比較して20%の生産性向上が期待されています。環境への取り組みとしては、2022年から再生可能エネルギー100%の使用を宣言し、2023年度のCO2排出量は前年比30%の削減に成功。2030年までにネットゼロを達成する目標を掲げています。",
     "metadata": {
       "rewritten_query": "AJ Technologiesに関する情報",
       "needs_retrieval": "full",
@@ -532,7 +532,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 16282.597200000964
+      "latency_ms": 13311.169999999947
     },
     "passed": true,
     "error": null
@@ -541,7 +541,7 @@
     "category": "FIX",
     "test_id": "FIX_008",
     "query": "Concurrent advisory locks",
-    "answer": "[107.92190000029223, 375.70380000033765, 215.03880000091158]",
+    "answer": "[137.94830000006186, 82.44600000034552, 277.3509000003287]",
     "metadata": {},
     "passed": true,
     "error": null

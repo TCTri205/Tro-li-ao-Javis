@@ -411,6 +411,21 @@ class TestSuiteV3:
         )
         await self.record_result("E_Cache_SelfCheck", "E2_CACHE_REUSE_CORRECT", q2, ans2, meta2, p2)
 
+        # E2_TTL — Expire cache slot manually and check if it forces full retrieval
+        async with self.db_pool.acquire() as conn:
+            slot_id = await conn.fetchval(
+                "SELECT id FROM session_context_cache WHERE session_id = $1 ORDER BY last_accessed_at DESC LIMIT 1", sid
+            )
+            if slot_id:
+                expired_time = datetime.now(timezone.utc) - timedelta(hours=25)
+                await conn.execute("UPDATE session_context_cache SET refreshed_at = $1 WHERE id = $2", expired_time, slot_id)
+                logger.info(f"Manually expired cache slot {slot_id} by setting refreshed_at to 25 hours ago.")
+
+        q_ttl = "その受付時間を教えてください。"
+        ans_ttl, meta_ttl = await self.orchestrator.handle(sid, q_ttl)
+        p_ttl = meta_ttl["needs_retrieval"] == "full"
+        await self.record_result("E_Cache_SelfCheck", "E2_TTL_EXPIRED", q_ttl, ans_ttl, meta_ttl, p_ttl)
+
         # E3 — Query for information NOT in any transcript (triggers self-check retry loop)
         # Asks for a specific "担当者コード" (staff code) — never mentioned anywhere
         q3 = "GT_04の横堀さんの担当者コードは何番ですか？"

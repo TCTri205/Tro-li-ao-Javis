@@ -3,7 +3,7 @@
     "category": "Standard",
     "test_id": "STD_TURN_1",
     "query": "GT_04の三菱UFJ銀行の横堀さんは誰に伝言を残しましたか？",
-    "answer": "GT_04の三菱UFJ銀行の横堀さんは、**中原凛花**（なかはら りんか）というアルバイト社員に伝言を残しました。  \n\n会話内容によると、横堀さんは「中原凛花様にご案内したいことがございまして、お電話いたしました」と述べており、中原凛花が当日出勤していないため、**「ご出勤されてからで結構なんですけども、当行の方にお電話いただきたいと伝言をお願いすることはできるのでしょうか？」**と依頼しています。受信側（Nữの話者）はこの依頼を承諾し、「申し伝えます」と返答しています。  \n\nしたがって、伝言の対象は**中原凛花**です。",
+    "answer": "GT_04の三菱UFJ銀行の横堀さんは、**中原凛花**（なかはら りんか）さんに対して伝言を残しました。  \n\n具体的には、横堀さんは中原凛花さんがアルバイトとして勤務している会社（アセットジャパン）に電話し、中原凛花さんが当日は出勤していないことを確認した上で、**「ご出勤された際に電話をいただきたい」との伝言を残すことを依頼**しました。受信側の女性（Nữ）はこの依頼を承知し、中原凛花さんに伝えることを約束しています。  \n\n**補足**：  \n- 伝言の内容は「三菱UFJ銀行の横堀から電話をいただきたい」というもので、中原凛花さんの携帯電話に銀行名や電話番号を録音済みであることを横堀さんが説明しています。  \n- 会話の末尾で、横堀さんは「ご出勤されてからで結構」と述べており、中原凛花さんが後で電話を受けることを前提にしています。",
     "metadata": {
       "rewritten_query": "GT_04の三菱UFJ銀行の横堀さんは誰に伝言を残しましたか？",
       "needs_retrieval": "full",
@@ -17,7 +17,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 15175.919799999974
+      "latency_ms": 13317.175099999986
     },
     "passed": true,
     "error": null
@@ -26,7 +26,7 @@
     "category": "Standard",
     "test_id": "STD_TURN_2_FOLLOWUP",
     "query": "彼女は当日出勤していましたか？",
-    "answer": "提供された資料によると、GT_04の当日（2026年5月4日）に中原凛花さんは出勤していませんでした。通話で「今日はお休みですね。まだ出勤してないので……。」と述べているため、当日は出勤していなかったことが確認できます。",
+    "answer": "GT_04の通話において、中原凛花さんは当日（2026年5月4日）出勤していませんでした。通話内容によると、三菱UFJ銀行の横堀さんが「本日お休みで」と述べ、受話側の女性（Nữ）も「今日はお休みですね。まだ出勤してないので……。」と確認しています。したがって、中原凛花さんは当日出勤していなかったことがわかります。",
     "metadata": {
       "rewritten_query": "GT_04の中原凛花さんは当日出勤していましたか？",
       "needs_retrieval": "none",
@@ -40,7 +40,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 11648.614600000656
+      "latency_ms": 8124.137799999971
     },
     "passed": true,
     "error": null
@@ -63,7 +63,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 55.765000000974396
+      "latency_ms": 76.80460000005951
     },
     "passed": true,
     "error": null
@@ -72,7 +72,7 @@
     "category": "Standard",
     "test_id": "STD_TURN_4_SWITCHBACK",
     "query": "では、先ほどの三菱UFJ銀行の担当者の名前は何でしたか？",
-    "answer": "GT_04の通話において、三菱UFJ銀行の担当者の名前は「**横堀**」です。  \nこの通話では、横堀（男性）が三菱UFJ銀行所属として発信側（電話をかけた側）であり、中原凛花（女性）が受信側（電話を受けた側）であることが確認できます。",
+    "answer": "GT_04の通話において、三菱UFJ銀行の担当者の名前は**横堀**です。  \nこの通話では、男性の話者（「Nam」）が「三菱UFJ銀行の横堀と申します」と自己紹介しており、コンテキスト内に記載されている参加者情報にも「横堀」と「三菱UFJ銀行」の所属が明記されています。",
     "metadata": {
       "rewritten_query": "では、GT_04_三菱UFJ銀行三菱UFJ銀行の担当者の名前は何でしたか？",
       "needs_retrieval": "none",
@@ -86,7 +86,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 10445.239399999991
+      "latency_ms": 6446.242399999846
     },
     "passed": true,
     "error": null
@@ -95,7 +95,7 @@
     "category": "Advanced",
     "test_id": "RAG_DEEP_INQUIRY",
     "query": "GT_03で島田さんは物件の何をしたかったと言っていましたか？",
-    "answer": "GT_03の通話において、島田さんは物件について「内見（見学）が可能かどうかを確認し、売れたかどうかの確認をしたい」と述べていました。また、内見が可能であれば「お話やさまざまな情報を聞きたい」とも語っていました。この要望を受けて、担当者（A）は「内見ができるかどうかや売れたかどうかを一旦メモしておく」と確認しています。",
+    "answer": "GT_03の通話において、島田さんは物件について「内見（見学）が可能かどうか」を確認し、「売れたかどうか」の状況を知りたいと述べていました。また、物件のポストに貼ってあるアセットジャパンの電話番号に電話して問い合わせた背景もあり、具体的な内見や物件に関する説明を希望していました。  \n\nこの通話では、島田さんが「内見できるならさせてもらって、お話とかどういう、なんかいろんなお話も聞きたいな」と明言しており、物件の現状確認と直接の相談を目的としていました。",
     "metadata": {
       "rewritten_query": "GT_03で島田さんは物件の何をしたかったと言っていましたか？",
       "needs_retrieval": "full",
@@ -109,7 +109,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 15013.376699998844
+      "latency_ms": 10533.195299999988
     },
     "passed": true,
     "error": null
@@ -118,7 +118,7 @@
     "category": "Advanced",
     "test_id": "FOLLOW_UP_STATE",
     "query": "その物件は今どうなっていますか？",
-    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。GT_03の通話記録では、島田さんが確認した物件について「売れたかどうか」や「内見可能かどうか」を担当者に確認する旨のやり取りはありますが、最終的な物件の状態（売却済み・販売中など）に関する明確な記述は見つかりません。通話の最後には「担当者に引き継ぎ、折り返し連絡する」との合意がなされているものの、その後の進展は記録されていません。",
+    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。GT_03の通話記録では、島田さんが確認した物件の現在の状態（売却済みかどうか、内見可能かどうかなど）について明確な記述が見られません。通話内容では「物件の情報がもう見れなくなっとって」「売れてしまったんか何なのかもよくわからん」など、島田さんの不確実な認識が述べられているものの、最終的な確認結果や現在の状態は記載されていません。",
     "metadata": {
       "rewritten_query": "GT_03の通話で島田さんが確認した物件は今どうなっていますか？",
       "needs_retrieval": "none",
@@ -132,7 +132,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 17601.16039999957
+      "latency_ms": 12195.18979999998
     },
     "passed": true,
     "error": null
@@ -141,7 +141,7 @@
     "category": "Advanced",
     "test_id": "CROSS_DOC_REASONING",
     "query": "GT_06, GT_07, GT_08の通話は、すべて何という会社からの連絡ですか？共通の会社名を答えてください。",
-    "answer": "GT_06、GT_07、GT_08の通話は、すべて**AJテクノロジーズ**（AJ Technologies）からの連絡です。  \n\n- **GT_06**では、発信側が「AJテクノロジーズの山下」（山下氏）として自己紹介しています。  \n- **GT_07**でも、発信側が「AJテクノロジーズの山下」（山下氏）と名乗っています。  \n- **GT_08**では、発信側が「AJテクノロジーズのツジ」（津次氏）と名乗っています。  \n\n3つの通話の共通点は、**発信元が「AJテクノロジーズ」**という会社であることです。受信側はそれぞれ異なる会社（建設のエスタ、マルケン、保険代理店ベネフィット）となっています。",
+    "answer": "GT_06、GT_07、GT_08の通話は、すべて**AJテクノロジーズ**からの連絡です。  \n- **GT_06**では「AJテクノロジーズの山下」（発信側）が建設のエスタ（受信側）に連絡。  \n- **GT_07**では「AJテクノロジーズの山下」（発信側）がマルケン（受信側）に連絡。  \n- **GT_08**では「AJテクノロジーズのツジ」（発信側）が保険代理店ベネフィット（受信側）に連絡。  \n\n3つの通話の**発信元（電話をかけた側）**はすべて「AJテクノロジーズ」です。",
     "metadata": {
       "rewritten_query": "GT_06, GT_07, GT_08の通話は、すべて何という会社からの連絡ですか？共通の会社名を答えてください。",
       "needs_retrieval": "full",
@@ -155,7 +155,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 28903.607700000066
+      "latency_ms": 20157.05250000019
     },
     "passed": true,
     "error": null
@@ -170,7 +170,7 @@
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "SQL",
-      "target_topic_key": "new_topic_1782271896",
+      "target_topic_key": "new_topic_1782282658",
       "routing_tier": "tier_1",
       "routing_method": "heuristics",
       "embedding_failed": false,
@@ -178,7 +178,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 10845.34480000002
+      "latency_ms": 9520.325200000116
     },
     "passed": true,
     "error": null
@@ -193,7 +193,7 @@
       "needs_retrieval": "none",
       "relation_type": "same_entity",
       "target_pipeline": "SQL",
-      "target_topic_key": "new_topic_1782271896",
+      "target_topic_key": "new_topic_1782282658",
       "routing_tier": "tier_2",
       "routing_method": "llm_router",
       "embedding_failed": false,
@@ -201,7 +201,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 3865.7823000012286
+      "latency_ms": 1902.0371999999952
     },
     "passed": true,
     "error": null
@@ -210,7 +210,7 @@
     "category": "Entity",
     "test_id": "ENTITY_COMPARISON",
     "query": "彼らは同じ目的で電話しましたか？",
-    "answer": "いいえ、異なります。  \n**GT_03の島田さん**は、不動産物件（アセットジャパンが掲示している物件）の売却状況や内見の可否を確認する目的で電話しました。  \n**GT_04の中原凛花さん**は、三菱UFJ銀行から連絡を受けており、銀行側が「中原様に電話してほしい」と伝言を依頼された形跡があります（ただし、中原凛花さんが電話をかけたわけではなく、銀行側が彼女に連絡を取らせたいという目的でした）。  \n\n2つの通話の目的は、**不動産に関する問い合わせ**（GT_03）と**銀行からの伝言依頼**（GT_04）であり、直接的な関連性はありません。",
+    "answer": "いいえ、異なります。  \n**GT_03の島田さん**は、不動産物件（アセットジャパンの掲示物件）の状況確認や内見希望についての問い合わせを目的として電話しました。  \n**GT_04の中原凛花さん**は、三菱UFJ銀行から連絡を受けており、銀行関係の件（伝言の依頼）についての対応が目的でした。  \n\n2つの通話の目的は、不動産に関する問い合わせと銀行関係の連絡という**異なる内容**であり、同じ目的ではありません。",
     "metadata": {
       "rewritten_query": "GT_03_島田さんとGT_04_中原凛花さんは同じ目的で電話しましたか？",
       "needs_retrieval": "full",
@@ -224,7 +224,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 16651.75739999904
+      "latency_ms": 15353.97009999997
     },
     "passed": true,
     "error": null
@@ -233,7 +233,7 @@
     "category": "NEG",
     "test_id": "NEG_001_AMBIGUOUS_ENTITY",
     "query": "彼は何と言いましたか？",
-    "answer": "GT_04の通話において、相手（アセットジャパン側の担当者）は自身の名前を明示的に述べていません。通話内容では、相手（女性）は「アセットジャパンです」と自己紹介しており、名前は記載されていません。一方、三菱UFJ銀行の横堀（男性）は自身の名前を明示しています。したがって、相手（アセットジャパン側）の名前は提供された資料からは確認できません。",
+    "answer": "GT_04の通話において、相手（受信側）は「アセットジャパン」という会社名を述べました。具体的には、女性の話者（Nữ）が「はい、ありがとうございます。アセットジャパンです。」と応答しています。この会話では、相手の名前（個人名）は明記されていません。",
     "metadata": {
       "rewritten_query": "GT_04の通話の相手は何と言いましたか？",
       "needs_retrieval": "full",
@@ -247,7 +247,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 19578.558799999882
+      "latency_ms": 23366.559800000003
     },
     "passed": true,
     "error": null
@@ -256,7 +256,7 @@
     "category": "NEG",
     "test_id": "NEG_002_TOPIC_SHIFT",
     "query": "あ、やっぱり、ネットで歌手A of 情報を検索してください。",
-    "answer": "歌手Aに関する最新情報は以下の通りです：  \n\n1. **アルバム『光』のオリコン初登場1位**  \n   2023年9月15日にリリースされたアルバム『光』が、オリコン週間アルバムチャートで初登場1位を記録。初動売上は50万枚を突破し、自身の最高記録を更新しています（[詳細はこちら](https://www.oricon.co.jp/artist/a_album.html)）。  \n\n2. **NHK紅白歌合戦への初出場決定**  \n   2023年10月5日に発表され、第74回NHK紅白歌合戦（2023年12月31日放送）に初出場することが決定しました（[詳細はこちら](https://www.nhk.or.jp/redwhite/news/2023/artist_a.html)）。  \n\n3. **来日公演の開催決定**  \n   2023年12月15日に東京ドームで来日公演が開催されます。チケットは2023年10月20日から一般発売され、1日で完売するなど大変な人気を博しています（[詳細はこちら](https://www.tokyo-dome.co.jp/event/artist_a_2023.html)）。  \n\n以上が現在の主要なニュースです。",
+    "answer": "歌手Aに関する最新情報は以下の通りです：  \n\n1. **最新アルバムのチャート初登場**  \n   歌手Aの最新アルバム『光』が、2023年10月15日にオリコン週間アルバムチャートで初登場1位を記録しました。初動売上は5万枚を突破し、2023年最も注目されるアーティストの一人として認知されています（[詳細はこちら](https://www.oricon.co.jp/news/20231015/001225.html)）。  \n\n2. **2023年冬の東京ドームコンサート**  \n   歌手Aは2023年12月15日に東京ドームでコンサートを開催します。チケットは10月20日に発売され、即日完売するなど大好評を博しています（[詳細はこちら](https://www.nikkei.com/article/DGXMZOU7144120R3A62023120100012.html)）。  \n\n3. **プロフィールと代表曲**  \n   歌手Aは1995年生まれで、2015年にデビューした日本のポップ歌手です。代表曲には『明日への歌』『夢の続き』などがあります（[公式プロフィール](https://www.singer-a-official.com/profile)）。  \n\n以上が現在の主要な情報です。",
     "metadata": {
       "rewritten_query": "ネットで歌手Aの情報を検索してください。",
       "needs_retrieval": "full",
@@ -270,7 +270,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 18971.910899999784
+      "latency_ms": 16022.307199999887
     },
     "passed": true,
     "error": null
@@ -293,7 +293,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 15.74129999971774
+      "latency_ms": 17.25039999996625
     },
     "passed": true,
     "error": null
@@ -316,7 +316,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 1808.6792000012792
+      "latency_ms": 1749.0861000001132
     },
     "passed": true,
     "error": null
@@ -334,13 +334,13 @@
     "category": "NEG",
     "test_id": "NEG_010_TTL_EXPIRED",
     "query": "今日の三菱の株価はどうですか？",
-    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。",
+    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。株価のリアルタイム情報は金融情報サイトや証券会社のサービスで確認することをお勧めします。",
     "metadata": {
       "rewritten_query": "今日の三菱の株価はどうですか？",
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "MODEL",
-      "target_topic_key": "default_topic_1782272054",
+      "target_topic_key": "default_topic_1782282796",
       "routing_tier": "tier_2",
       "routing_method": "llm_router",
       "embedding_failed": false,
@@ -348,7 +348,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 7084.024600000703
+      "latency_ms": 6369.35050000011
     },
     "passed": true,
     "error": null
@@ -357,13 +357,13 @@
     "category": "NEG",
     "test_id": "NEG_016_SQL_FAILURE_FALLBACK",
     "query": "データベースに存在しないテーブル情報を表示してください",
-    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。コンテキストによると、このクエリは「一般的な質問」であり、特定のデータベースから情報が取得されていないことが明記されています。そのため、データベースに存在しないテーブルに関する具体的な情報は提供されていません。",
+    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。コンテキストによると、この一般的なクエリに対して具体的なデータベースの照会は行われていません。テーブルの存在状況に関する詳細な情報は含まれていません。",
     "metadata": {
       "rewritten_query": "データベースに存在しないテーブル情報を表示してください",
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "MODEL",
-      "target_topic_key": "model_1782272060",
+      "target_topic_key": "model_1782282801",
       "routing_tier": "tier_1",
       "routing_method": "embeddings",
       "embedding_failed": false,
@@ -371,7 +371,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 8726.878800000122
+      "latency_ms": 4879.500300000018
     },
     "passed": true,
     "error": null
@@ -380,7 +380,7 @@
     "category": "FIX",
     "test_id": "FIX_001_EMBEDDING_TIMEOUT",
     "query": "AJ Technologiesの通話を検索してください",
-    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。コンテキストには「AJ Technologiesの通話を検索してください」というクエリが記録されていますが、具体的な検索結果や通話内容に関する情報は含まれていません。また、JSON形式のエラーが発生しているため、検索処理自体が正常に実行された可能性も低いです。",
+    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。コンテキストには「AJ Technologiesの通話を検索してください」というクエリが記録されていますが、具体的な検索結果や通話内容に関するデータは含まれていません。",
     "metadata": {
       "rewritten_query": "AJ Technologiesの通話を検索してください",
       "needs_retrieval": "full",
@@ -394,7 +394,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 9898.166100001617
+      "latency_ms": 8987.803800000165
     },
     "passed": true,
     "error": null
@@ -403,7 +403,7 @@
     "category": "FIX",
     "test_id": "FIX_005_HALLUCINATION_LIMIT",
     "query": "GT_04の通話の詳細",
-    "answer": "申し訳ありませんが、提供された資料からは以下の情報を確認できませんでした：  \n\n1. **参加者の所属・役割の明確化**  \n   - 「中原凛花」「凛花」「中原」の3名が同一人物か、または異なる人物かの区別。  \n   - 女性話者（Nữ）の所属組織や役職（例：アセットジャパンの担当者）は、コンテキストに明記されていません。  \n\n2. **通話の目的・結果の明確化**  \n   - 横堀（三菱UFJ銀行）が「中原凛花様に連絡したい」と説明しているものの、具体的な目的（例：業務連絡、面接依頼など）は記載されていません。  \n   - 「伝言依頼が承諾された」旨は会話内容から推測可能ですが、通話終了後の中原凛花様の行動（例：実際に電話をしたか）は記録されていません。  \n\n3. **その他**  \n   - 「アセットジャパン」は会話の最初に女性話者が自己紹介で述べた言葉ですが、その組織の詳細や関係性はコンテキストにありません。  \n\n以上のように、コンテキストに明確な情報が不足しているため、正確な回答は困難です。\n\n*(注意: この回答は自己検証で完全に一致しなかったため、信頼性が低くなっています。)*",
+    "answer": "申し訳ありません、提供された資料からはその情報を確認できませんでした。  \nコンテキストに記載されている情報は、会話の発言内容や参加者リストのみであり、人物の所属企業や役職、会話の目的などについての明確な記述は含まれていません。  \nしたがって、事実に基づいた回答を提供することはできません。\n\n*(注意: この回答は自己検証で完全に一致しなかったため、信頼性が低くなっています。)*",
     "metadata": {
       "rewritten_query": "GT_04の通話の詳細",
       "needs_retrieval": "full",
@@ -417,7 +417,7 @@
       "self_check_passed": false,
       "self_check_retries": 2,
       "answer_confidence": "low",
-      "latency_ms": 52542.00749999836
+      "latency_ms": 36797.13919999995
     },
     "passed": true,
     "error": null
@@ -446,7 +446,7 @@
     "query": "Parallel queries",
     "answer": "Multiple Answers",
     "metadata": {
-      "avg_latency": 57650.46730000031
+      "avg_latency": 32376.15394000004
     },
     "passed": true,
     "error": null
