@@ -1,0 +1,131 @@
+(.venv) PS D:\javis_text2sql\hcacis> python main.py -s scenarios\scenario_2.txt      
+Connecting to database at: postgresql://app_user:app_password@localhost:54331/app_db 
+Initializing HCACIS System...
+ -> Detector LLM : GROQ (llama-3.3-70b-versatile)
+ -> Generator LLM: OLLAMA (qwen2.5:7b)
+
+================ HCACIS MULTI-ENGINE & MULTI-LLM TEST ================
+
+Loading scenario from: scenarios\scenario_2.txt
+
+ユーザー (User): 2026年6月8日の会議の概要を教えてください。
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=False, intent_category=rag
+-> [内部状態] Detector: Rewritten Query='2026年6月8日の会議の概要を教えてください'
+-> [内部状態] Planner : Plan executed=full (rag)
+
+アシスタント (Assistant):
+申し訳ありませんが、2026年6月8日の会議に関する情報は提供されたデータには含まれていま せん。あるのは5月15日の会議での田中の発言で、次回の会議日程として「六月三日」という情報があります。具体的な内容については把握されていませんので、その点ではお答えできませ ん。
+
+もし2026年6月8日に予定されている特別な会議やイベントについて何か特定の情報を提供して いただければ、それに基づいてより詳しい回答ができるかもしれません。
+
+================================================================================     
+
+ユーザー (User): その会議で「田中さん」の発言の平均時間は何秒でしたか？
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=True, intent_category=sql
+-> [内部状態] Detector: Rewritten Query='2026年6月8日の会議で田中さんの発言の平均時間は何秒でしたか？'
+-> [内部状態] Planner : Plan executed=partial (sql)
+
+アシスタント (Assistant):
+2026年6月8日の会議で、田中の発言の平均時間は取得できませんでした。データベースから得 られた情報では、特定の会議での田中的発言時間を示すレコードが見つかりませんでした。   
+
+**[LLM Generated SQL]**:
+```sql
+SELECT ROUND(AVG(ct.time_end_sec - ct.time_start_sec)::numeric, 2) AS turn_duration_avg
+FROM chunks_turn ct
+JOIN transcripts t ON t.id = ct.transcript_id
+WHERE t.meeting_date = '2026-06-08' AND ct.speaker = '田中';
+```
+
+**[Pipeline Generated SQL]**
+```sql
+SELECT ROUND(AVG(ct.time_end_sec - ct.time_start_sec)::numeric, 2) AS value FROM chunks_turn ct JOIN transcripts t ON t.id = ct.transcript_id WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ct.speaker = '田中'
+```
+
+================================================================================     
+
+ユーザー (User): 田中さんが話した内容で一番重要なポイントを1文で要約してください。   
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=True, intent_category=rag
+-> [内部状態] Detector: Rewritten Query='田中さんの発言の重要なポイントを1文で要約し てください'
+-> [内部状態] Planner : Plan executed=partial (rag)
+
+アシスタント (Assistant):
+田中の発言の中で最も重要なポイントは、「開発チームの状況」についての報告を依頼したこ とです。具体的には、鈴木さんからプロジェクト進捗に関する詳細な情報を得ることを指示し ました。
+
+================================================================================     
+
+ユーザー (User): ところで、「Apple」という会社の最新ニュースをインターネットで検索し て。
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=False, intent_category=web
+-> [内部状態] Detector: Rewritten Query='Appleの最新ニュース'
+-> [内部状態] Planner : Plan executed=full (web)
+
+アシスタント (Assistant):
+申し訳ありませんが、取得されたデータには特定の日付や時間帯に発生した「Apple」に関する最新ニュースは含まれておりません。最新の情報を得るためには、インターネット上の信頼で きるニュースサイトやAppleの公式リリースを確認する必要があります。
+
+例えば、Appleの公式ウェブサイトや主要なテクノロジーニュースサイト（TechCrunch, The Verge, CNBCなど）で最新のニュースをチェックすることができます。これらのソースから得られる情報に基づいて、Appleに関する最新の発表や製品情報、企業動向などを確認できます。    
+
+もし具体的な日付やキーワードを指定して検索したい場合は、その情報を提供いただければ、 より詳細な情報を提供できるかもしれません。
+
+================================================================================     
+
+ユーザー (User): その会社のCEOは現在誰ですか？
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=True, intent_category=web
+-> [内部状態] Detector: Rewritten Query='Appleの現在のCEOは誰ですか？'
+-> [内部状態] Planner : Plan executed=full (web)
+
+アシスタント (Assistant):
+Appleの現任CEOはTimothy Donald Cook（ティモシー・ドナルド・クック）です。彼は1960年11月1日生まれで、2011年以来Appleの最高経営責任者（CEO）を務めています。
+
+================================================================================     
+
+ユーザー (User): 今月のすべての会議の中で、「新エネルギー」という言葉は何回言及されましたか？
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=False, intent_category=sql
+-> [内部状態] Detector: Rewritten Query='今月のすべての会議の中で、新エネルギーについては何回言及されましたか?'
+-> [内部状態] Planner : Plan executed=full (sql)
+
+アシスタント (Assistant):
+2026年5月のすべての会議の中で、「新エネルギー」という言葉は1回言及されています。     
+
+**[LLM Generated SQL]**
+```sql
+SELECT COUNT(*) AS mention_count
+FROM chunks_turn ct
+JOIN transcripts t ON t.id = ct.transcript_id
+WHERE t.meeting_date BETWEEN '2026-05-01' AND '2026-05-31'
+AND ct.text ILIKE '%新エネルギー%';
+```
+
+**[Pipeline Generated SQL]**
+```sql
+SELECT COUNT(*) AS value FROM chunks_turn ct JOIN transcripts t ON t.id = ct.transcript_id WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ct.text ILIKE '%新エネルギー%'
+```
+
+================================================================================     
+
+ユーザー (User): その結果を分析して、私たちの会社が新エネルギーにどれくらい関心を持っているか推測してください。
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=True, intent_category=pure_llm
+-> [内部状態] Detector: Rewritten Query='私たちの会社が新エネルギーにどれくらい関心を持っているか推測してください'
+-> [内部状態] Planner : Plan executed=none (pure_llm)
+
+アシスタント (Assistant):
+「新エネルギー」という言葉が2026年5月のすべての会議の中で1回だけ言及されているという 結果から、私たちの会社は当該期間において新エネルギーに関する具体的な話題や計画につい ての議論が少なかった可能性があります。ただし、この数字は一過性のものである可能性もあ りますので、単独で新エネルギーに対する全般的な関心度を推測するには限界があります。   
+
+より正確な分析を行うためには、以下の点を考慮することが重要です：
+
+1. **会議の頻度と内容**: 会議が頻繁に開催されているか、またその中での新エネルギーに関する話題の深さや長さも重要な指標となります。稀な言及でも、それが長期的なプロジェクト に関連している可能性があります。
+
+2. **関連部署やチーム**: 新エネルギーに関心を持っている部門やチームは特定されていますか？例えば、環境推進部や技術開発部など、特定の部署が新エネルギーに関する議論を主導し ているかもしれません。
+
+3. **過去の会議内容**: 5月の結果だけではなく、過去数ヶ月間の会議内容も考慮に入れるこ とが重要です。一時的な傾向なのか、継続的な関心なのかを理解するためには、長期的な視点 が不可欠です。
+
+4. **非言及情報**: 言及されていないにもかかわらず重要な新エネルギーに関する情報をどのように取得しているのか（例：報告書のレビュー、外部研究の共有など）も評価すべき点です 。
+
+これらの要素を総合的に考慮することで、私たちの会社が新エネルギーにどれくらい関心を持 っているかより正確な推測ができるでしょう。
+
+================================================================================ 

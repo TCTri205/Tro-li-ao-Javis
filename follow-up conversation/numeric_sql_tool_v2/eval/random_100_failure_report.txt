@@ -1,0 +1,5 @@
+Total: 100
+Correct: 100
+Failed: 0
+
+=== FAILURE LIST ===

@@ -1,0 +1,187 @@
+Connecting to database at: postgresql://app_user:app_password@localhost:54331/app_db  
+Initializing HCACIS System...
+ -> Detector LLM : GROQ (llama-3.3-70b-versatile)
+ -> Generator LLM: OLLAMA (qwen2.5:7b)
+
+================ HCACIS MULTI-ENGINE & MULTI-LLM TEST ================
+
+Loading scenario from: scenarios\scenario_context_shift_test.txt
+
+ユーザー (User): 2026年5月15日の会議では、主にどんな内容が話し合われましたか？        
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=False, intent_category=rag
+-> [内部状態] Detector: Rewritten Query='2026年5月15日の会議では、主にどんな内容が話し合われましたか？'
+-> [内部状態] Planner : Plan executed=full (rag)
+
+アシスタント (Assistant):
+申し訳ありませんが、2026年5月15日の会議に関する情報は現在のデータから見つかりませんで した。他の情報を提供していただけますと助かります。
+
+================================================================================
+
+ユーザー (User): その会議の中で、「山田さん」は何回発言しましたか？
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=True, intent_category=sql
+-> [内部状態] Detector: Rewritten Query='2026年5月15日の会議の中で、山田さんは何回発言しましたか？'
+-> [内部状態] Planner : Plan executed=partial (sql)
+
+アシスタント (Assistant):
+2026年5月15日の会議で、「山田」さんが約17回発言しました。ただし、これは正確な回数では なく、四捨五入された値です。詳細な発言回数や内容については、具体的なログを確認する必要があります。
+
+**[LLM Generated SQL]**
+```sql
+SELECT COUNT(*)
+FROM chunks_turn ct
+JOIN transcripts t ON ct.transcript_id = t.id
+WHERE t.meeting_date = '2026-05-15' AND ct.speaker = '山田';
+```
+
+**[Pipeline Generated SQL]**
+```sql
+SELECT COUNT(*) AS value FROM chunks_turn ct JOIN transcripts t ON t.id = ct.transcript_id WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ct.speaker = '山田'
+```
+
+================================================================================      
+
+ユーザー (User): 話題は変わりますが、日本の「ソニー」の最新ニュースをインターネットで 調べて。
+思考中 (Thinking)...
+-> [内部状態] Web Engine: Searching DuckDuckGo for: 'ソニー'
+-> [内部状態] Detector: is_followup=False, intent_category=web
+-> [内部状態] Detector: Rewritten Query='ソニー最新ニュース'
+-> [内部状態] Planner : Plan executed=full (web)
+
+アシスタント (Assistant):
+ソニーに関する最新情報では、以下の点が注目されています：
+
+1. 2026年5月7日はソニーグループの創立記念日で、80周年を迎えました。この機会に、ファウ ンダーの言葉を振り返る企画が行われています。
+
+2. テレビやデジタル一眼カメラα（アルファ）、ウォークマンなどの製品情報ページが更新されています。これらの製品に関する最新の商品情報、サポート情報、販売情報が提供されています。
+
+3. ソニー・ピクチャーズエンタテインメント公式サイトでは、映画、デジタル配信、ブルーレ イ、DVD、海外ドラマ/TVシリーズ、アニメなどの情報を更新しています。
+
+これらの情報はソニーの多様な製品やサービスに関する最新動向を反映しています。何か特定の製品や分野について詳しく知りたい場合は、お知らせください。
+
+================================================================================      
+
+ユーザー (User): その会社のCEOは現在誰ですか？
+思考中 (Thinking)...
+-> [内部状態] Web Engine: Searching DuckDuckGo for: 'ソニー CEO'
+-> [内部状態] Detector: is_followup=True, intent_category=web
+-> [内部状態] Detector: Rewritten Query='ソニーの現在のCEOは誰ですか？'
+-> [内部状態] Planner : Plan executed=full (web)
+
+アシスタント (Assistant):
+現在のソニー株式会社の代表取締役社長兼CEOは田中健二氏です。彼は2026年4月1日付で就任し ました。ただし、具体的な就任日や詳細については、上記の情報に基づいていますので、最新の公式発表をご確認いただくことをおすすめします。
+
+================================================================================      
+
+ユーザー (User): 先ほどの5月15日の会議の話に戻りますが、山田さんの発言の平均時間はどれくらいでしたか？
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=True, intent_category=sql
+-> [内部状態] Detector: Rewritten Query='5月15日の会議における山田さんの発言の平均時間はどれくらいでしたか？'
+-> [内部状態] Planner : Plan executed=partial (sql)
+
+アシスタント (Assistant):
+2026年5月15日の会議で、「山田さん」の発言の平均時間は約0秒でした。これはデータから得られた正確な値ではなく、四捨五入された結果です。詳細な情報が必要な場合は、具体的なログを確認することをお勧めします。
+
+**[LLM Generated SQL]**
+```sql
+SELECT AVG(chunks_turn.time_end_sec - chunks_turn.time_start_sec) AS average_duration 
+FROM chunks_turn
+JOIN transcripts ON chunks_turn.transcript_id = transcripts.id
+WHERE transcripts.meeting_date = '2023-05-15' AND chunks_turn.speaker = '山田';       
+```
+
+**[Pipeline Generated SQL]**
+```sql
+SELECT ROUND(AVG(ct.time_end_sec - ct.time_start_sec)::numeric, 2) AS value FROM chunks_turn ct JOIN transcripts t ON t.id = ct.transcript_id WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ct.speaker = '山田さん'
+```
+
+================================================================================      
+
+ユーザー (User): 2026年5月のすべての会議の中で、一番短い会議の時間は何秒でしたか？    
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=False, intent_category=sql
+-> [内部状態] Detector: Rewritten Query='2026年5月のすべての会議の中で、一番短い会議の時間は何秒でしたか？'
+-> [内部状態] Planner : Plan executed=full (sql)
+
+アシスタント (Assistant):
+2026年5月のすべての会議の中で、一番短い会議の時間は約25秒でした。この情報は、取得され たデータから得られた結果です。
+
+**[LLM Generated SQL]**
+```sql
+SELECT MIN(duration_seconds) AS shortest_meeting_duration
+FROM transcripts
+WHERE meeting_date BETWEEN '2026-05-01' AND '2026-05-31';
+```
+
+**[Pipeline Generated SQL]**
+```sql
+SELECT t.id::text AS transcript_id, t.session_id AS session_id, t.meeting_date::text AS meeting_date, t.participants AS participants, t.duration_seconds AS value, t.summary AS summary FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND t.duration_seconds IS NOT NULL ORDER BY t.duration_seconds ASC, t.meeting_date ASC LIMIT 1
+```
+
+================================================================================      
+
+ユーザー (User): その会議ではどんな結論が出ましたか？
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=True, intent_category=rag
+-> [内部状態] Detector: Rewritten Query='2026年5月の最も短い会議ではどんな結論が出ましたか？'
+-> [内部状態] Planner : Plan executed=partial (rag)
+
+アシスタント (Assistant):
+申し訳ありませんが、2026年5月15日の会議に関する詳細なログや内容は現在のデータから見つ かりませんでした。他の情報を提供していただけますと助かります。
+
+================================================================================      
+
+ユーザー (User): 今の結論を箇条書きで3つのポイントに要約して英語に翻訳してください。  
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=True, intent_category=pure_llm
+-> [内部状態] Detector: Rewritten Query='現在の結論を箇条書きで3つのポイントに要約して英語に翻訳してください。'
+-> [内部状態] Planner : Plan executed=none (pure_llm)
+
+アシスタント (Assistant):
+3つのポイントを要約し、英語に翻訳します：
+
+1. 2026年5月15日の会議に関する詳細な情報は見つかりませんでした。
+2. 「山田」さんが約17回発言したことが確認されました（正確な回数は不明）。
+3. 2026年5月のすべての会議の中で、一番短い会議の時間は約25秒でした。
+
+英語翻訳：
+1. Information about the meeting on May 15, 2026, is not available.
+2. Mr. Yamada spoke approximately 17 times during the meeting (the exact number is uncertain).
+3. The shortest meeting in May 2026 lasted approximately 25 seconds.
+
+================================================================================      
+
+ユーザー (User): その一番短い会議で、誰かが挨拶をしましたか？
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=True, intent_category=rag
+-> [内部状態] Detector: Rewritten Query='2026年5月の最も短い会議で、誰かが挨拶をしましたか？'
+-> [内部状態] Planner : Plan executed=partial (rag)
+
+アシスタント (Assistant):
+申し訳ありませんが、2026年5月のすべての会議の中で最も短い会議についての詳細なログや内 容は見つかりませんでした。具体的な情報が必要な場合は、関連するログを確認することをお勧めします。
+
+================================================================================      
+
+ユーザー (User): 最後にもう一度確認しますが、5月15日の会議の合計時間は何秒でしたか？  
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=True, intent_category=sql
+-> [内部状態] Detector: Rewritten Query='5月15日の会議の合計時間は何秒でしたか？'
+-> [内部状態] Planner : Plan executed=full (sql)
+
+アシスタント (Assistant):
+2026年5月15日の会議の合計時間は約3610秒でした。この情報は取得されたデータから得られた 結果です。
+
+**[LLM Generated SQL]**
+```sql
+SELECT SUM(duration_seconds) AS total_duration_seconds
+FROM transcripts
+WHERE meeting_date = '2023-05-15';
+```
+
+**[Pipeline Generated SQL]**
+```sql
+SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+```
+
+================================================================================ 

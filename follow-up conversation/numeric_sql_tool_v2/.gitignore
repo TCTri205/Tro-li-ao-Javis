@@ -1,0 +1,5 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+.restore_dump_sanitized.sql

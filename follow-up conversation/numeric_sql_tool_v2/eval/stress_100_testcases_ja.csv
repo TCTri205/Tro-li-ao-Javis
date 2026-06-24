@@ -1,0 +1,101 @@
+question,sql,category,difficulty,reason_ja,reason_vi
+第2四半期の予算に関する議論で、合計時間のうちどれくらいが合意形成に使われましたか？,"SKIP (operator=skip, target=none)",keyword_trap,hard,「合計時間」という数値キーワードを含むが、内容は予算合意の割合（RAG必要）を問う質問,「合計時間」というキーワードでRegexが誤認識するが、実際は定性的な内容の比率を問う（RAG必要）
+会議が何回かあった中で、一番重要な会議の要約を教えてください。,"SKIP (operator=skip, target=none)",keyword_trap,hard,「何回」というカウントキーワードを含むが、本質的には要約（semantic retrieval）を求めている,「何回」でRegexが count 判定するが、本質は要約(RAG)
+会議の平均時間について、長すぎる原因と対策を詳しく教えてください。,"SKIP (operator=skip, target=none)",keyword_trap,hard,「平均時間」で operator=avg になりうるが、実際は原因と対策（定性的）を問う,「平均時間」でRegex誤認識するが、本質は定性分析（RAG）
+5月の合計会議時間のうち、最も生産的だった会議について教えてください。,"SKIP (operator=skip, target=none)",keyword_trap,hard,「合計会議時間」があるが、「生産的だった会議」は意見・評価であり、SQLでは出せない,数値キーワードあり + 「生産的」という評価は RAG 必要
+最も長かった会議で決定されたアクションアイテムを教えてください。,"SKIP (operator=skip, target=none)",keyword_trap,hard,「最も長かった」は max/duration でヒットするが、アクションアイテムは内容（RAG必要）,「最も長い会議」はSQLで取れるが、会議内容（アクション）はRAG必要
+今月の会議件数が多かった理由を分析してください。,"SKIP (operator=skip, target=none)",keyword_trap,hard,「会議件数」は count にヒットするが、「理由を分析」は定性分析（RAG必要）,「会議件数」でcount判定されるが、「理由」はSQLで答えられない
+最も短い会議で何が決まりましたか？,"SKIP (operator=skip, target=none)",keyword_trap,hard,「最も短い」は min/duration でヒットするが、「何が決まりましたか」は内容確認（RAG）,「最短会議」はSQLで特定できるが、決定事項はRAG必要
+今週の会議件数は適切だと思いますか？その根拠を教えてください。,"SKIP (operator=skip, target=none)",keyword_trap,hard,「今週の会議件数」でcount+weekがヒットするが、「適切か根拠」は意見（RAG必要）,「今週の件数」でSQL判定されるが、適切かの根拠はRAG必要
+先月より今月の方が会議が多かった理由は何ですか？,"SKIP (operator=skip, target=none)",keyword_trap,hard,「会議が多かった」が count にヒットするが、「理由」は内容（RAG必要）,数値キーワードあり + 「理由」は定性的でSQLでは答えられない
+今月何件の会議があって、それぞれの議題は何でしたか？,"SKIP (operator=skip, target=none)",keyword_trap,hard,「今月何件」は count にヒットするが、「それぞれの議題」は内容（RAG必要）,「何件」でcount判定されるが、各議題はRAG必要（複合質問）
+昨日の会議の平均発言時間は何分でしたか？,"SKIP (operator=skip, target=none)",keyword_trap,hard,「平均」「何分」が数値キーワードだが、発言時間はturn-level（SQLではサポート外）,「平均」「何分」でSQL判定されるが、発言時間はDB構造上サポートされない
+今月最も長かった会議の参加者は誰で、何を話しましたか？,"SKIP (operator=skip, target=none)",keyword_trap,hard,「最も長かった」でmax/duration hit。参加者リストはDBにあるが「何を話した」はRAG必要,「最長会議」はSQLで取れるが「何を話した」はRAG必要
+5月26日の会議の合計発言回数は何回ですか？,"SKIP (operator=skip, target=none)",keyword_trap,hard,「何回」「合計」で count/sum にヒットするが、発言回数はturn-levelでSQLでは取れない,「何回」でcount判定されるが、発言回数はDB設計上集計不可
+会議の回数を増やすべきかどうか、データに基づいて分析してください。,"SKIP (operator=skip, target=none)",keyword_trap,hard,「回数」で count にヒット。しかし「増やすべきか分析」は意思決定・定性分析（RAG）,「回数」でcount判定されるが、増やすべきかの分析はRAG必要
+最も会議が多かった週について詳しく説明してください。,"SKIP (operator=skip, target=none)",keyword_trap,hard,「会議が多かった」でcountにヒットするが、「詳しく説明」は内容説明（RAG）,数値キーワードあり + 内容説明はRAG必要
+今月の会議の合計時間は効率的な使われ方をしていますか？,"SKIP (operator=skip, target=none)",keyword_trap,hard,「合計時間」でsum/durationにヒットするが、「効率的か」は価値判断（RAG）,「合計時間」でSQL判定されるが、効率性の評価はRAG必要
+会議の平均参加者数と、最も参加者が多かった会議のトピックを教えてください。,"SKIP (operator=skip, target=none)",keyword_trap,hard,「平均参加者数」は未サポートカラム、「トピック」はRAG。複合質問でskip必須,参加者数の平均はDB未対応 + トピックはRAG必要
+5月15日の会議で最も多く発言した人は誰で、何回発言しましたか？,"SKIP (operator=skip, target=none)",keyword_trap,hard,「何回発言」でcount誤認識。発言回数はturn-levelでSQLでは集計不可,「何回」でcount判定されるが、発言回数はSQLサポート外
+今月の会議件数は先月と比べてどう変化しましたか？その変化の背景も教えてください。,"SKIP (operator=skip, target=none)",keyword_trap,hard,「会議件数」でcountヒット。2期間比較+背景説明はSQL不可（複合質問）,「件数」でcount判定されるが、2期間比較+背景はRAG必要
+先週の会議で決まったことの要点を教えてください。何回の会議で決まりましたか？,"SKIP (operator=skip, target=none)",keyword_trap,hard,「何回の会議」でcountヒット。しかし「決まったことの要点」はRAG必要,「何回」でcount判定されるが、決まったことの要点はRAG必要
+5月の会議数の最大値と、その会議で話された主要な懸念事項を教えてください。,"SKIP (operator=skip, target=none)",keyword_trap,hard,「最大値」でmaxヒット。懸念事項はRAGが必要。複合質問,「最大値」でmax判定されるが、懸念事項はRAG必要（複合質問）
+一番長く議論された議題は何で、その会議の所要時間は何秒でしたか？,"SKIP (operator=skip, target=none)",keyword_trap,hard,「所要時間は何秒」でsum/durationヒット。「最も長く議論された議題」はRAG必要,「所要時間」でSQL判定されるが、議論時間はturn-level（RAG必要）
+今月の最短会議は何時間で、そこでどんな問題が提起されましたか？,"SKIP (operator=skip, target=none)",keyword_trap,hard,「最短」「何時間」でmin/durationヒット。「どんな問題」は内容（RAG）,「最短・何時間」でSQL判定されるが、問題内容はRAG必要
+5月の各会議の平均参加時間と、参加者のフィードバックを教えてください。,"SKIP (operator=skip, target=none)",keyword_trap,hard,「平均参加時間」は未サポートカラム。フィードバックはRAG必要,参加時間はDB未対応 + フィードバックはRAG必要
+鈴木さんが今月参加した会議の合計時間と、彼が担当したアクションを教えてください。,"SKIP (operator=skip, target=none)",keyword_trap,hard,「合計時間」でsum/durationヒット。アクション担当内容はRAG必要,「合計時間」でSQL判定されるが、担当アクションはRAG必要
+5月26日の予算会議の所要時間は何分で、決定された予算額はいくらですか？,"SKIP (operator=skip, target=none)",keyword_trap,hard,「所要時間は何分」でsum/durationヒット。「予算額」は会議内容（RAG必要）,「所要時間」でSQL判定されるが、予算額はRAG必要（複合質問）
+今週開催した会議の件数を数えて、その中で成果が出た会議はどれですか？,"SKIP (operator=skip, target=none)",keyword_trap,hard,「件数を数えて」でcountヒット。「成果が出た会議」は評価（RAG必要）,「件数」でcount判定されるが、成果評価はRAG必要
+会議の開催頻度は何回で、このペースについてどう思いますか？,"SKIP (operator=skip, target=none)",keyword_trap,hard,「何回」でcountヒット。「どう思いますか」は意見（RAG・LLM必要）,「何回」でcount判定されるが、意見はRAG必要
+5月の会議合計時間のトレンドと、改善提案を教えてください。,"SKIP (operator=skip, target=none)",keyword_trap,hard,「合計時間」でsum/durationヒット。「トレンドと改善提案」は定性分析（RAG）,「合計時間」でSQL判定されるが、改善提案はRAG必要
+今月の会議の平均時間と最長会議のトピックを日本語で詳しく説明してください。,"SKIP (operator=skip, target=none)",keyword_trap,hard,「平均時間」「最長会議」で複数SQL演算ヒット。「トピックを説明」はRAG必要,複数の数値キーワード + トピック説明はRAG必要
+今月の会議数は先月より何件多いですか？,"SKIP (operator=skip, target=none)",unsupported_ops,hard,2つの期間を比較して差を計算する → SQLテンプレートなし（2回のCOUNT計算が必要）,2期間の差を計算するSQLテンプレートがない
+今週の会議数は先週と比べて増えましたか？減りましたか？,"SKIP (operator=skip, target=none)",unsupported_ops,hard,2つの週の比較（差分）→ SQLテンプレートなし,2週間比較のSQLテンプレートなし
+5月の全会議のうち、鈴木さんが参加した割合は何パーセントですか？,"SKIP (operator=skip, target=none)",unsupported_ops,hard,割合（COUNT÷COUNT×100）を計算する → 除算演算はSQLテンプレートなし,パーセント計算（除算）はSQLテンプレート非対応
+田中さんが5月に発言した合計時間は何分ですか？,"SKIP (operator=skip, target=none)",unsupported_ops,hard,話者の発言合計時間はchunks_turnのturn-level集計が必要（duration_seconds≠発言時間）,発言時間の集計はchunks_turnから計算必要（現行SQLテンプレートでは不可）
+5月26日の会議で佐藤さんが発言した合計秒数を教えてください。,"SKIP (operator=skip, target=none)",unsupported_ops,hard,特定発言者の発言秒数はturn-level（time_end_sec - time_start_sec）の集計が必要,発言時間はturn-level計算（SQLテンプレート未対応）
+週ごとの合計会議時間を集計してください。,"SKIP (operator=skip, target=none)",unsupported_ops,hard,group_by=week は未実装（サポートは day/speaker/user_id のみ）,group_by=weekはサポートされていない
+5月の会議を週別に件数で教えてください。,"SKIP (operator=skip, target=none)",unsupported_ops,hard,group_by=week は未実装,group_by=weekはサポートされていない
+今月の会議数を曜日別に集計してください。,"SKIP (operator=skip, target=none)",unsupported_ops,hard,group_by=weekday（曜日）は未実装,group_by=曜日はサポートされていない
+今月の会議数が最も多かった曜日はいつですか？,"SKIP (operator=skip, target=none)",unsupported_ops,hard,曜日でのgroupはSQLテンプレートなし,曜日グループはSQLテンプレート未対応
+5月の会議の中で、30分以上続いた会議は何件ですか？,"SKIP (operator=skip, target=none)",unsupported_ops,hard,WHERE duration_seconds >= 1800 の条件フィルタはSQLテンプレートなし,期間フィルタ条件付きCOUNTはSQLテンプレート未対応
+5月で最も会議が多かった週はいつですか？,"SKIP (operator=skip, target=none)",unsupported_ops,hard,週単位でのgroup byはSQLテンプレートなし,週単位グループはSQLテンプレート未対応
+先月と今月の平均会議時間の差はどのくらいですか？,"SKIP (operator=skip, target=none)",unsupported_ops,hard,2期間のAVGを計算し差を求める → 複数演算でSQLテンプレートなし,2期間のAVG差はSQLテンプレート未対応
+5月の会議のうち、1時間を超えた会議だけの平均時間を教えてください。,"SKIP (operator=skip, target=none)",unsupported_ops,hard,フィルタ（>3600秒）してからAVGする複雑な条件 → SQLテンプレートなし,条件付きAVGはSQLテンプレート未対応
+山田さんと田中さん、どちらがより多くの会議に参加しましたか？,"SKIP (operator=skip, target=none)",unsupported_ops,hard,2人の比較（2つのCOUNT結果を比較）→ SQLテンプレートなし,2人比較はSQLテンプレート未対応
+今月の全会議時間の合計に占める最長会議の割合は何パーセントですか？,"SKIP (operator=skip, target=none)",unsupported_ops,hard,（最長会議時間 / 合計時間）× 100 という除算 → SQLテンプレートなし,割合計算（除算）はSQLテンプレート未対応
+5月の3つの会議の合計時間の比率を教えてください。,"SKIP (operator=skip, target=none)",unsupported_ops,hard,比率（割り算）はSQLテンプレート未対応,比率計算はSQLテンプレート未対応
+1回の会議あたりの平均参加者数は何人ですか？,"SKIP (operator=skip, target=none)",unsupported_ops,hard,参加者数の平均はparticipants配列の集計が必要 → 未実装,参加者数平均はparticipants配列処理が必要（未実装）
+佐藤さんと鈴木さんが両方参加した会議は何件ですか？,"SKIP (operator=skip, target=none)",unsupported_ops,hard,複数speaker条件のAND結合 → SQLテンプレートなし,複数speaker条件のAND結合は未対応
+5月の会議の合計時間は週ごとにどのように推移しましたか？,"SKIP (operator=skip, target=none)",unsupported_ops,hard,group_by=week は未実装 + トレンド分析,週単位グループ未対応 + トレンド分析
+今月の会議で、参加者が3人以上の会議は何件ですか？,"SKIP (operator=skip, target=none)",unsupported_ops,hard,参加者数フィルタはparticipants配列の集計が必要 → 未実装,参加者数フィルタは未実装
+5月15日から5月26日までの会議の日数と総件数の比（1日当たりの平均件数）は？,"SKIP (operator=skip, target=none)",unsupported_ops,hard,件数÷日数の除算 → SQLテンプレートなし（AVGとは異なる），除算演算はSQLテンプレート未対応
+今月の会議の95パーセンタイル時間を教えてください。,"SKIP (operator=skip, target=none)",unsupported_ops,hard,パーセンタイル計算は高度な集計 → SQLテンプレートなし（percentile_cont等が必要）,パーセンタイル計算はSQLテンプレート未対応
+5月の会議で、鈴木さんが発言した平均時間は何秒ですか？,"SKIP (operator=skip, target=none)",unsupported_ops,hard,turn-levelでのAVG（話者発言時間）→ SQLテンプレートなし,発言時間AVGはturn-level計算（未対応）
+5月の会議で毎回必ず参加していた人は誰ですか？,"SKIP (operator=skip, target=none)",unsupported_ops,hard,全会議への参加確認（HAVING COUNT=全件数）→ SQLテンプレートなし,全会議出席確認クエリは未実装
+5月の会議時間の中央値（メジアン）を教えてください。,"SKIP (operator=skip, target=none)",unsupported_ops,hard,中央値はpercentile_cont(0.5)など → SQLテンプレートなし,中央値はSQLテンプレート未対応
+今月の会議は先月と比べてどちらが合計時間が長いですか？,"SKIP (operator=skip, target=none)",unsupported_ops,hard,2期間のSUM比較 → SQLテンプレートなし（2回のクエリと比較が必要）,2期間SUM比較はSQLテンプレート未対応
+5月26日と5月15日の会議、どちらが長かったですか？,"SKIP (operator=skip, target=none)",unsupported_ops,hard,2つの特定日付の比較 → 単一クエリでは不可能,2日付の比較はSQLテンプレート未対応
+5月の会議参加者の延べ人数（重複あり）の合計を教えてください。,"SKIP (operator=skip, target=none)",unsupported_ops,hard,participants配列のunnest+集計 → SQLテンプレートなし,参加者配列の展開集計は未実装
+今月の会議の前半（1〜15日）と後半（16〜31日）で件数はどう違いますか？,"SKIP (operator=skip, target=none)",unsupported_ops,hard,同月内2つのサブ期間比較 → SQLテンプレートなし,同月内の期間分割比較は未対応
+5月の3回の会議のうち、2回目に長かった会議はどれですか？（2位のみ抽出）,"SKIP (operator=skip, target=none)",unsupported_ops,hard,OFFSET 1 LIMIT 1の順位抽出 → SQLテンプレートなし（LIMIT 1固定）,2位抽出（OFFSET）はSQLテンプレート未対応
+5月26日のミーティングで確認されたネクストアクションの具体的な中身を教えて。,"SKIP (operator=skip, target=none)",hidden_semantic,medium,「アクション」「議題」「要約」などのキーワードを避けているが、内容確認（RAG）が必要,「要約」「議題」を使わずにRAGが必要な内容を問う
+ASR開発の遅れについて懸念を述べたメンバーの名前を教えてください。,"SKIP (operator=skip, target=none)",hidden_semantic,medium,「誰」を避けて「メンバーの名前」と表現。内容検索（RAG）が必要,「誰」を回避したRAG必要な質問
+なぜクラウドコスト削減が急務になったのか、その背景を教えてください。,"SKIP (operator=skip, target=none)",hidden_semantic,medium,「理由は何」を避けて「背景」と表現。定性的な説明（RAG）が必要,「理由」を避けて「背景」と表現したRAG質問
+5月15日の会議の後に送られたフォローアップメールの内容は何でしたか？,"SKIP (operator=skip, target=none)",hidden_semantic,medium,フォローアップの内容はDBにない。skip必須,会議後のフォローアップはDBに存在せずRAG必要
+エネルギー政策の改善案を最初に提案したのはどの参加者ですか？,"SKIP (operator=skip, target=none)",hidden_semantic,medium,「誰」を「どの参加者」と言い換え。内容検索が必要（RAG）,「誰」の言い換えでRAG必要な質問
+AiVoice Proの発売後に想定される技術的な課題として挙げられたポイントは？,"SKIP (operator=skip, target=none)",hidden_semantic,medium,技術課題の特定はRAGが必要（「何について」「議題」を含まない）,技術課題の特定はRAG必要（Regexキーワード回避）
+5月20日のレビュー会議でQ1の達成率についてどのような評価がされていましたか？,"SKIP (operator=skip, target=none)",hidden_semantic,medium,「評価」はRAGが必要（「要約」「何について」を避けている）,評価内容はRAG必要（Regexキーワード回避）
+マーケティング予算のうち、デジタル広告に使う予定の金額はいくらと説明されていましたか？,"SKIP (operator=skip, target=none)",hidden_semantic,medium,「いくら」が含まれるが、これは会議内容の金額（RAG）。duration_secondsでない,「いくら」は金額（RAGで取得）、duration_secondsでない
+採用計画で特に強調されていたエンジニアのスキルセットは何でしたか？,"SKIP (operator=skip, target=none)",hidden_semantic,medium,スキルセットは会議内容（RAG）。数値キーワードなし,スキルセットはRAG必要（Regexキーワード回避）
+5月26日の会議の冒頭で司会者が最初に触れたテーマは何でしたか？,"SKIP (operator=skip, target=none)",hidden_semantic,medium,「冒頭のテーマ」は内容検索（RAG）。「議題」「要約」を使っていない,冒頭テーマはRAG必要（Regexキーワード回避）
+Q2予算のうち、承認されなかった項目があれば教えてください。,"SKIP (operator=skip, target=none)",hidden_semantic,medium,否認された予算項目は会議内容（RAG）。「予算はいくら」ではない,否認予算項目はRAG必要
+鈴木さんが5月20日の会議で強く反対した提案は何ですか？,"SKIP (operator=skip, target=none)",hidden_semantic,medium,参加者の賛否は内容検索（RAG）。「誰」を「鈴木さんが」と特定しても意味は同じ,賛否の詳細はRAG必要
+AiVoice Proのクローズドベータに参加した会社の名前を全部教えてください。,"SKIP (operator=skip, target=none)",hidden_semantic,medium,会社名はRAGが必要。「参加企業」をDBでは持っていない形,会社名はRAG必要
+5月15日の会議でローンチ日として合意された日付はいつですか？,"SKIP (operator=skip, target=none)",hidden_semantic,medium,「合意された日付」は内容（RAG）。「いつですか」でdate_rangeに引っかかる可能性あり,合意日付はRAG必要（DBのmeeting_dateではない）
+太陽光パネル導入に関する具体的なコスト削減の試算額を教えてください。,"SKIP (operator=skip, target=none)",hidden_semantic,medium,金額はRAGで取得。「合計時間」などの数値キーワードなし,金額詳細はRAG必要
+田中さんが5月20日の会議で最後に述べた締めくくりの言葉は？,"SKIP (operator=skip, target=none)",hidden_semantic,medium,発言内容はRAGが必要。「何秒目に発言」ではなく「最後の言葉」,発言内容はRAG必要
+Q2のマーケティング戦略において、SNS活用についてどのような指示がありましたか？,"SKIP (operator=skip, target=none)",hidden_semantic,medium,指示内容はRAGが必要（「アクション」「決まりましたか」を避けている）,指示内容はRAG必要（Regexキーワード回避）
+音声認識プロジェクトの遅れを解決するために合意されたアプローチは？,"SKIP (operator=skip, target=none)",hidden_semantic,medium,解決策はRAGが必要。「対策」「アクション」を使っていない,解決アプローチはRAG必要（Regexキーワード回避）
+5月26日の会議では、エネルギー問題について誰が最初に発言を開始しましたか？,"SKIP (operator=skip, target=none)",hidden_semantic,medium,発言者の特定はRAGが必要。「いつ発言」ではなく「最初に発言を開始」,発言者特定はRAG必要
+参加者の中で、5月の全ての会議に皆勤だったメンバーは誰ですか？,"SKIP (operator=skip, target=none)",hidden_semantic,medium,全会議皆勤者の確認はSQL不可（HAVINGクエリ必要）+ 「誰ですか」はRAGに近い,全会議出席者特定はSQL不可+RAG必要
+先々月の会議件数は何件ですか？,"SKIP (operator=skip, target=none)",temporal_edge,medium,「先々月」（2ヶ月前）はresolve_date_rangeでサポートされていない,「先々月」は日付解析未対応（2ヶ月前）
+5月の第2週の合計会議時間は何秒ですか？,"SKIP (operator=skip, target=none)",temporal_edge,hard,「第N週」（月内の特定週）はresolve_date_rangeでサポートされていない,「第2週」などの月内週番号は日付解析未対応
+5月15日から5月26日の間で、土日を除いた会議の件数は何件ですか？,"SKIP (operator=skip, target=none)",temporal_edge,hard,「土日除外」のフィルタはSQLテンプレートなし（EXTRACT(DOW)等が必要）,土日除外フィルタはSQLテンプレート未対応
+今年の第2四半期（4〜6月）の会議件数は何件ですか？,"SKIP (operator=skip, target=none)",temporal_edge,hard,「第2四半期」（Q2: 4月〜6月）はresolve_date_rangeでサポートされていない,「第2四半期」は日付解析未対応
+今月の最初の2週間で何件の会議がありましたか？,"SKIP (operator=skip, target=none)",temporal_edge,hard,「今月の最初の2週間」は動的期間（1〜14日）でresolve_date_rangeでサポートされていない,「最初の2週間」は日付解析未対応
+先月の最終週に会議はありましたか？,"SKIP (operator=skip, target=none)",temporal_edge,hard,「先月の最終週」はresolve_date_rangeで計算不可,「先月の最終週」は日付解析未対応
+5月の勤務日（平日のみ）の会議を日別に集計してください。,"SKIP (operator=skip, target=none)",temporal_edge,hard,平日フィルタはEXTRACT(DOW)が必要 → SQLテンプレートなし,平日フィルタはSQLテンプレート未対応
+今月の月初めから今日まで（累計）の会議件数は何件ですか？,"SKIP (operator=skip, target=none)",temporal_edge,medium,「月初めから今日まで」はresolve_date_rangeで解析できる可能性があるが、「累計」の意図確認が難しい,「累計」の意図と日付解析が曖昧
+2026年Q1（1月〜3月）の会議件数は何件ですか？,"SKIP (operator=skip, target=none)",temporal_edge,medium,「Q1」（第1四半期）はresolve_date_rangeでサポートされていない,「Q1」は日付解析未対応
+5月の後半2週間（16日〜31日）の合計会議時間は？,"SKIP (operator=skip, target=none)",temporal_edge,medium,「後半2週間」は動的期間でresolve_date_rangeでは対応困難（16〜31日）,「後半2週間」は日付解析が難しい
+直近3ヶ月の会議件数を月別に集計してください。,"SKIP (operator=skip, target=none)",temporal_edge,hard,「直近3ヶ月」＋「月別集計」は複合temporal（今月/先月/先々月のgroup）→ 未対応,「直近3ヶ月」の月別集計は未対応
+今年に入ってから今日まで（年累計）の会議件数は？,"SKIP (operator=skip, target=none)",temporal_edge,medium,「今年に入ってから今日まで」はresolve_date_rangeでサポートされていない（年度YTD）,「年累計（YTD）」は日付解析未対応
+5月3週目の合計会議時間は何秒ですか？,"SKIP (operator=skip, target=none)",temporal_edge,hard,「5月3週目」（月内の第3週）はresolve_date_rangeでサポートされていない,「月内第3週」は日付解析未対応
+先週と今週を合わせた合計会議件数は何件ですか？,"SKIP (operator=skip, target=none)",temporal_edge,hard,「先週＋今週」の合算は2期間のSUM → 単一クエリでは不可能,2週間合算のSUMは単一クエリで不可能
+5月の月曜日だけの会議件数は何件ですか？,"SKIP (operator=skip, target=none)",temporal_edge,hard,「月曜日のみ」はEXTRACT(DOW)=1フィルタ → SQLテンプレートなし,特定曜日フィルタはSQLテンプレート未対応
+先月末（最終5営業日）の会議件数は何件ですか？,"SKIP (operator=skip, target=none)",temporal_edge,hard,「最終5営業日」は非常に複雑な日付計算 → resolve_date_rangeでは不可能,「最終5営業日」は日付解析不可能
+今月の会議は毎週増えていますか？週ごとのトレンドを教えてください。,"SKIP (operator=skip, target=none)",temporal_edge,hard,「週ごとのトレンド」はgroup_by=weekが必要 → 未実装,週別トレンドはgroup_by=week（未実装）が必要
+5月中旬（11日〜20日）の会議件数は何件ですか？,"SKIP (operator=skip, target=none)",temporal_edge,medium,「中旬」（11〜20日）はresolve_date_rangeでサポートされていない特殊表現,「中旬」は日付解析未対応
+今日を含む今月残りの日数で予定されている会議件数は？,"SKIP (operator=skip, target=none)",temporal_edge,hard,「今月残り」は将来予測 → 過去データのみのDBには対応不可,「今月残り」の予測はDB対象外
+5月の会議の間隔（各会議の間の日数の平均）は何日ですか？,"SKIP (operator=skip, target=none)",temporal_edge,hard,「会議間隔の平均」は隣接行の差を計算するウィンドウ関数が必要 → SQLテンプレートなし,会議間隔の平均はウィンドウ関数（未対応）が必要

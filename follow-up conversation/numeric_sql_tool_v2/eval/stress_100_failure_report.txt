@@ -1,0 +1,10 @@
+=== ACCURACY BY CATEGORY ===
+hidden_semantic          : 20/20 correct (100%)
+keyword_trap             : 30/30 correct (100%)
+temporal_edge            : 20/20 correct (100%)
+unsupported_ops          : 30/30 correct (100%)
+
+=== TOTAL ===
+Total: 100/100 correct (100%)
+
+=== FAILURES (cac cau bi sai) ===

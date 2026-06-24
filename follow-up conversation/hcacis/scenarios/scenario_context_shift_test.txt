@@ -1,0 +1,23 @@
+# Context Group A: Cuộc họp ngày 15/5 (SQL & RAG)
+2026年5月15日の会議では、主にどんな内容が話し合われましたか？
+その会議の中で、「山田さん」は何回発言しましたか？
+
+# Context Group B: Đổi chủ đề Web Search (Web)
+話題は変わりますが、日本の「ソニー」の最新ニュースをインターネットで調べて。
+その会社のCEOは現在誰ですか？
+
+# Quay lại Context Group A (SQL)
+先ほどの5月15日の会議の話に戻りますが、山田さんの発言の平均時間はどれくらいでしたか？
+
+# Context Group C: Chuyển sang một cuộc họp khác (SQL & RAG)
+2026年5月のすべての会議の中で、一番短い会議の時間は何秒でしたか？
+その会議ではどんな結論が出ましたか？
+
+# Context Group D: Xử lý văn bản (Pure LLM Bypass)
+今の結論を箇条書きで3つのポイントに要約して英語に翻訳してください。
+
+# Quay lại Context Group C (RAG)
+その一番短い会議で、誰かが挨拶をしましたか？
+
+# Quay lại Context Group A (SQL)
+最後にもう一度確認しますが、5月15日の会議の合計時間は何秒でしたか？

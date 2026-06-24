@@ -1,0 +1,64 @@
+Connecting to database at: postgresql://app_user:app_password@localhost:54331/app_db
+Initializing HCACIS System...
+ -> Detector LLM : GROQ (llama-3.3-70b-versatile)
+ -> Generator LLM: OLLAMA (qwen2.5:7b)
+
+================ HCACIS MULTI-ENGINE & MULTI-LLM TEST ================
+
+Loading scenario from: scenarios\scenario_memory_test.txt
+
+ユーザー (User): 2026年5月のすべての会議の中で、一番短い会議の時間は何秒でしたか ？
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=False, intent_category=sql
+-> [内部状態] Detector: Rewritten Query='2026年5月の会議の中で、一番短い会議の時 間は何秒でしたか？'
+-> [内部状態] Planner : Plan executed=full (sql)
+
+アシスタント (Assistant):
+一番短い会議の時間は25.0秒です。この会議では、Eスタ建設とAJテクノロジーズの山下が電話で会話し、カセ氏の出社状況を確認しました。
+
+**[LLM Generated SQL]**
+```sql
+SELECT duration_seconds
+FROM transcripts
+WHERE meeting_date BETWEEN '2026-05-01' AND '2026-05-31'
+ORDER BY duration_seconds ASC
+LIMIT 1;
+```
+
+**[Pipeline Generated SQL]**
+```sql
+SELECT t.id::text AS transcript_id, t.session_id AS session_id, t.meeting_date::text AS meeting_date, t.participants AS participants, t.duration_seconds AS value, t.summary AS summary FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND t.duration_seconds IS NOT NULL ORDER BY t.duration_seconds ASC, t.meeting_date ASC LIMIT 1
+```
+
+================================================================================ 
+
+ユーザー (User): 話題は変わりますが、DuckDuckGoで最新のAIトレンドについて検索して、簡単に教えてください。
+思考中 (Thinking)...
+-> [内部状態] Web Engine: Searching DuckDuckGo for: '最新のAIトレンド'
+-> [内部状態] Detector: is_followup=False, intent_category=web
+-> [内部状態] Detector: Rewritten Query='最新のAIトレンドについて教えて'
+-> [内部状態] Planner : Plan executed=full (web)
+
+アシスタント (Assistant):
+DuckDuckGoでの検索結果から、2026年のAIトレンドについて簡単に説明します。
+
+生成AIの最新動向が注目されています。OpenAIやGoogleなどの企業の動向を追っており、 特に生成AIはDX推進の重要なツールとして期待されています。また、AI市場は2025年に2440億ドル規模になると予測されており、生成AI分野も急速に成長しています。
+
+さらに、マルチモーダルAIやエッジAIなどの技術トレンドも注目されています。これらの 技術は生産性向上と人材不足解消の切り札となり得る可能性があります。
+
+また、OpenAIとAnthropicの巨額資金調達がAI覇権争いを示唆しており、両社の最新技術動向やビジネス戦略も注目されています。MetaやDeepSeekなどの企業も躍進し、AI市場の勢 力図が変化しています。
+
+これらのトレンドは、AIの最新情報や具体的な導入事例を含めて詳しく解説されている記 事があります。
+
+================================================================================ 
+
+ユーザー (User): その一番短い会議で、どのような挨拶が交わされましたか？
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=True, intent_category=rag
+-> [内部状態] Detector: Rewritten Query='一番短い会議でどのような挨拶が交わされましたか'
+-> [内部状態] Planner : Plan executed=partial (rag)
+
+アシスタント (Assistant):
+一番短い会議では、Eスタ建設とAJテクノロジーズの山下が電話で会話し、カセ氏の出社状況を確認する内容でした。具体的な挨拶は記録されていませんが、ビジネス的な挨拶や簡 単な挨拶が交わされた可能性があります。
+
+================================================================================

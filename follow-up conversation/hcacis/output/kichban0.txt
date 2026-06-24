@@ -1,0 +1,101 @@
+(.venv) PS D:\javis_text2sql\hcacis> python main.py
+Connecting to database at: postgresql://app_user:app_password@localhost:54331/app_db
+Initializing HCACIS System...
+ -> Detector LLM : GROQ (llama-3.3-70b-versatile)
+ -> Generator LLM: OLLAMA (qwen2.5:7b)
+
+================ HCACIS MULTI-ENGINE & MULTI-LLM TEST ================
+
+ユーザー (User): Three Luster株式会社についてインターネットで調べて、どんな会社か教えてくだ さい。
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=False, intent_category=web
+-> [内部状態] Detector: Rewritten Query='Three Luster株式会社についてインターネットで調べて 、どんな会社か教えてください。'
+-> [内部状態] Planner : Plan executed=full (web)
+
+アシスタント (Assistant):
+ご指定の「Three Luster株式会社」に関する情報は、提供されたデータには含まれていません。ただし、類似した名称を持つ企業として、「Three Rings」や「三八株式会社」といった企業名がリストにあ ります。
+
+例えば、「三八株式会社」は日本の企業で、タキ・リビングという別の企業も同様の業界に属している可能性があります。また、ネットワールドやソフトバンクなども関連する企業として挙げられています。
+
+もし「Three Luster株式会社」という特定の企業について詳しく知りたい場合は、その名称をもう少し確認していただくか、他の詳細情報を提供していただけますと幸いです。それにより、より正確な情報をお伝えできるかもしれません。
+
+================================================================================
+
+ユーザー (User): 今の説明を1文で要約して。
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=True, intent_category=pure_llm
+-> [内部状態] Detector: Rewritten Query='現在の説明を1文で要約して'
+-> [内部状態] Planner : Plan executed=none (pure_llm)
+
+アシスタント (Assistant):
+申し訳ありませんが、「Three Luster株式会社」に関する具体的な情報は見つかりませんでした。類似企業や関連業界についての情報を提供しました。詳細な企業名を確認していただけますと助かります。
+
+================================================================================
+
+ユーザー (User): 今月の会議で最も長かったものはどれですか？ (2026年5月で最も長い通話)       
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=False, intent_category=sql
+-> [内部状態] Detector: Rewritten Query='2026年5月で最も長い通話はどれですか？'
+-> [内部状態] Planner : Plan executed=full (sql)
+
+アシスタント (Assistant):
+2026年5月の会議の中で最も長かったのは、2026年5月15日に開催された会議です。その会議の持続時間は3610秒でした。
+
+**[LLM Generated SQL]**
+```sql
+SELECT t.id::text AS transcript_id, t.session_id AS session_id, t.meeting_date::text AS meeting_date, t.duration_seconds AS duration_seconds, t.summary AS summary
+FROM transcripts t
+WHERE t.meeting_date >= '2026-05-01' AND t.meeting_date < '2026-06-01'
+ORDER BY t.duration_seconds DESC
+LIMIT 1;
+```
+
+**[Pipeline Generated SQL]**
+```sql
+SELECT t.id::text AS transcript_id, t.session_id AS session_id, t.meeting_date::text AS meeting_date, t.participants AS participants, t.duration_seconds AS value, t.summary AS summary FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND t.duration_seconds IS NOT NULL ORDER BY t.duration_seconds DESC, t.meeting_date DESC LIMIT 1  
+```
+
+================================================================================
+
+ユーザー (User): その最も長かった通話では、具体的にどんな内容が話されていましたか？詳細を教 えて。
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=True, intent_category=rag
+-> [内部状態] Detector: Rewritten Query='2026年5月の最も長かった会議ではどんな内容が話されていましたか？'
+-> [内部状態] Planner : Plan executed=partial (rag)
+
+アシスタント (Assistant):
+2026年5月15日に開催された会議で最も長かったのは、「定例会議」でした。この会議では、以下のよ うな内容が話し合われました：
+
+1. プロジェクトの進捗確認：各部門長に今日中にリマインダーを送る指示が出されました。
+2. 第二四半期の予算レビュー：予算に関する話題は終了しました。
+3. 新エネルギー政策への対応について：山田さんが、国から発表された新しいエネルギー政策につい て説明しました。具体的には、来年4月から従業員50名以上の企業に対してエネルギー使用量の報告義 務が課されること、そして再生可能エネルギーの使用比率を段階的に引き上げることが推奨されていることが述べられました。
+
+この会議は3610秒（約1時間）持続しました。
+
+================================================================================
+
+ユーザー (User): その電話の中で、梅田さんについては何回言及されていますか？
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=True, intent_category=sql
+-> [内部状態] Detector: Rewritten Query='今月の最も長かった会議の中で、梅田さんについては何 回言及されていますか？'
+-> [内部状態] Planner : Plan executed=partial (sql)
+
+アシスタント (Assistant):
+2026年5月15日の会議の中で、「梅田さん」という名前は0回言及されていません。
+
+**[LLM Generated SQL]**
+```sql
+SELECT COUNT(*) AS mention_count
+FROM chunks_turn ct
+JOIN transcripts t ON t.id = ct.transcript_id
+WHERE t.meeting_date = '2026-05-15' AND ct.text ILIKE '%梅田さん%';
+```
+
+このSQLクエリは、指定された日付の会議の中で「梅田さん」という言葉が何回言及されているかをカ ウントします。結果は0でした。
+
+**[Pipeline Generated SQL]**
+```sql
+SELECT COUNT(*) AS value FROM chunks_turn ct JOIN transcripts t ON t.id = ct.transcript_id WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ct.text ILIKE '%長かった会議%'
+```
+
+================================================================================

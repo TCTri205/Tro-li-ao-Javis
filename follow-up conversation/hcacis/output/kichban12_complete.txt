@@ -1,0 +1,166 @@
+Connecting to database at: postgresql://app_user:app_password@localhost:54331/app_db
+Initializing HCACIS System...
+ -> Detector LLM : GROQ (llama-3.3-70b-versatile)
+ -> Generator LLM: OLLAMA (qwen2.5:7b)
+
+================ HCACIS MULTI-ENGINE & MULTI-LLM TEST ================
+
+Loading scenario from: scenarios\scenario_complete.txt
+
+ユーザー (User): ユーザー (User): 2026年5月の会議の中で、会議の件数は合計でいくつ ありましたか？
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=False, intent_category=sql
+-> [内部状態] Detector: Rewritten Query='2026年5月の会議の中で、会議の件数は合計でいくつありましたか？'
+-> [内部状態] Planner : Plan executed=full (sql)
+
+アシスタント (Assistant):
+2026年5月の会議の中で、会議の件数は合計で5つでした。
+
+**[LLM Generated SQL]**
+```sql
+SELECT COUNT(*)
+FROM transcripts
+WHERE meeting_date BETWEEN '2026-05-01' AND '2026-05-31';
+```
+
+**[Pipeline Generated SQL]**
+```sql
+SELECT COUNT(DISTINCT t.id) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+```
+
+================================================================================  
+
+ユーザー (User): ユーザー (User): 2026年5月の会議の中で、「セキュリティ」について 言及された会議の合計時間は何秒ですか？
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=True, intent_category=sql
+-> [内部状態] Detector: Rewritten Query='2026年5月の会議の中で、「セキュリティ」について言及された会議の合計時間は何秒ですか？'
+-> [内部状態] Planner : Plan executed=partial (sql)
+
+アシスタント (Assistant):
+2026年5月の会議の中で、「セキュリティ」について言及された会議の合計時間は3610秒で した。
+
+**[LLM Generated SQL]**
+```sql
+SELECT SUM(t.duration_seconds) AS total_duration_seconds
+FROM transcripts t
+JOIN chunks_turn c ON t.id = c.transcript_id
+WHERE t.meeting_date BETWEEN '2026-05-01' AND '2026-05-31'
+  AND c.text ILIKE '%セキュリティ%';
+```
+
+**[Pipeline Generated SQL]**
+```sql
+SELECT COALESCE(SUM(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')      
+```
+
+================================================================================  
+
+ユーザー (User): ユーザー (User): それらの会議では、セキュリティのどんな問題について話し合われましたか？
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=True, intent_category=rag
+-> [内部状態] Detector: Rewritten Query='2026年5月のセキュリティについて言及された会議では、セキュリティのどんな問題について話し合われましたか？'
+-> [内部状態] Planner : Plan executed=partial (rag)
+
+アシスタント (Assistant):
+申し訳ありませんが、2026年5月の会議で「セキュリティ」について言及された具体的な内 容や話し合われた問題については、現在のデータから確認することができません。より詳細な情報を得るためには、当該会議のレポートまたは録音資料をご覧いただく必要があります。
+
+================================================================================  
+
+ユーザー (User): ユーザー (User): 2026年5月のすべての会議の中で、一番短い会議の時 間は何秒でしたか？
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=False, intent_category=sql
+-> [内部状態] Detector: Rewritten Query='2026年5月のすべての会議の中で、一番短い会議の時間は何秒でしたか？'
+-> [内部状態] Planner : Plan executed=full (sql)
+
+アシスタント (Assistant):
+2026年5月のすべての会議の中で、一番短い会議の時間は25秒でした。
+
+**[LLM Generated SQL]**
+```sql
+SELECT MIN(duration_seconds) AS shortest_meeting_duration
+FROM transcripts
+WHERE meeting_date BETWEEN '2026-05-01' AND '2026-05-31';
+```
+
+**[Pipeline Generated SQL]**
+```sql
+SELECT t.id::text AS transcript_id, t.session_id AS session_id, t.meeting_date::text AS meeting_date, t.participants AS participants, t.duration_seconds AS value, t.summary AS summary FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND t.duration_seconds IS NOT NULL ORDER BY t.duration_seconds ASC, t.meeting_date ASC LIMIT 1
+```
+
+================================================================================  
+
+ユーザー (User): ユーザー (User): その一番短い会議で、どのような挨拶が交わされましたか？
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=True, intent_category=rag
+-> [内部状態] Detector: Rewritten Query='2026年5月の最も短い会議でどのような挨拶が交わされましたか？'
+-> [内部状態] Planner : Plan executed=partial (rag)
+
+アシスタント (Assistant):
+申し訳ありませんが、2026年5月の会議の中で行われた具体的な挨拶内容については、現在 のデータから確認することができません。より詳細な情報を得るためには、当該会議のレポートや録音資料をご覧いただく必要があります。
+
+================================================================================  
+
+ユーザー (User): ユーザー (User): 2026年5月の一つの会議あたりの平均時間は何秒です か？
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=False, intent_category=sql
+-> [内部状態] Detector: Rewritten Query='2026年5月の一つの会議あたりの平均時間は何秒ですか？'
+-> [内部状態] Planner : Plan executed=full (sql)
+
+アシスタント (Assistant):
+2026年5月の一つの会議あたりの平均時間は1,645.2秒でした。
+
+**[LLM Generated SQL]**
+```sql
+SELECT AVG(duration_seconds) AS average_duration_seconds
+FROM transcripts
+WHERE meeting_date BETWEEN '2026-05-01' AND '2026-05-31';
+```
+
+**[Pipeline Generated SQL]**
+```sql
+SELECT COALESCE(AVG(t.duration_seconds), 0) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')      
+```
+
+================================================================================  
+
+ユーザー (User): ユーザー (User): 会議の中で、誰かが新しいソフトウェアの購入を提案した会議はありますか？
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=False, intent_category=rag
+-> [内部状態] Detector: Rewritten Query='会議の中で、新しいソフトウェアの購入を提 案した会議はありますか？'
+-> [内部状態] Planner : Plan executed=full (rag)
+
+アシスタント (Assistant):
+申し訳ありませんが、2026年5月の会議で誰かが新しいソフトウェアの購入を提案したかど うかについては、現在のデータから確認することができません。より詳細な情報を得るためには、当該会議のレポートや録音資料をご覧いただく必要があります。
+
+================================================================================  
+
+ユーザー (User): ユーザー (User): 話題は変わりますが、DuckDuckGoで最新のAIトレンドについて検索して、簡単に教えてください。
+思考中 (Thinking)...
+-> [内部状態] Web Engine: Searching DuckDuckGo for: '最新のAIトレンド'
+-> [内部状態] Detector: is_followup=False, intent_category=web
+-> [内部状態] Detector: Rewritten Query='最新のAIトレンド'
+-> [内部状態] Planner : Plan executed=full (web)
+
+アシスタント (Assistant):
+DuckDuckGoでの検索結果から、2026年のAIトレンドには以下のようなものがあります：    
+
+1. AIエージェントとマルチエージェントシステム：人間や他のAIエージェントとの協調作 業が進展しています。
+2. AIネイティブなソフトウェア開発：AIをより自然に組み込むための新しい開発手法が注 目されています。
+3. フィジカルAIとロボティクス：物理的な形を持つAIやロボット技術も急速に進化してい ます。
+4. 生成AIトレンド：マルチモーダルAI、AIエージェントによる業務プロセス支援、社内検 索・RAGの本格導入、顧客対応・営業など、生成AIの実用化が進んでいます。
+
+これらのトレンドは企業がAIとどのように向き合い、経営に組み込んでいくべきかという視点を示唆しています。
+
+================================================================================  
+
+ユーザー (User): ユーザー (User): もし新しいAIソフトウェアが1500ドルだとしたら、現在の為替レートで日本円でいくらになりますか？
+思考中 (Thinking)...
+-> [内部状態] Web Engine: Searching DuckDuckGo for: '1500ドル現在の為替レート'
+-> [内部状態] Detector: is_followup=False, intent_category=web
+-> [内部状態] Detector: Rewritten Query='1500ドルは現在の為替レートで日本円でいく らになりますか?'
+-> [内部状態] Planner : Plan executed=full (web)
+
+アシスタント (Assistant):
+ユーザーさん、1500ドル（USD）を現在の為替レートで日本円（JPY）に換算すると約203,400円になります。具体的な金額は為替レートによって変動しますが、この推定値は参考にし てください。最新の為替レートを確認したい場合は、信頼できる為替計算機をご利用ください。
+
+================================================================================

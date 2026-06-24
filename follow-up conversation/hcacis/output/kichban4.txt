@@ -1,0 +1,138 @@
+Connecting to database at: postgresql://app_user:app_password@localhost:54331/app_db
+Initializing HCACIS System...
+ -> Detector LLM : GROQ (llama-3.3-70b-versatile)
+ -> Generator LLM: OLLAMA (qwen2.5:7b)
+
+================ HCACIS MULTI-ENGINE & MULTI-LLM TEST ================
+
+Loading scenario from: scenarios\scenario_4.txt
+
+ユーザー (User): 2026年5月26日の会議では、主に何が話し合われましたか？
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=False, intent_category=rag
+-> [内部状態] Detector: Rewritten Query='2026年5月26日の会議では、主に何が話し合われましたか？'
+-> [内部状態] Planner : Plan executed=full (rag)
+
+アシスタント (Assistant):
+2026年5月26日の会議では、田中さんが本日の会議を終了し、お疲れ様でしたと挨拶しました。また、次回の定例会議は来週水曜日に同じ時間に開催されることが決定されました。
+
+会議の中で話し合われた主な内容としては、佐藤さんに五月末までにローンチイベントの会場選定と契約を完了するよう指示がありました。さらに、初年度の月次財務計画を作成するようにも依頼がありました。
+
+================================================================================
+
+ユーザー (User): その会議の中で、「佐藤さん」は何回発言しましたか？
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=True, intent_category=sql
+-> [内部状態] Detector: Rewritten Query='2026年5月26日の会議の中で、佐藤さんは何回発言しましたか？'
+-> [内部状態] Planner : Plan executed=partial (sql)
+
+アシスタント (Assistant):
+2026年5月26日の会議で、「佐藤さん」は11回発言しました。
+
+**[LLM Generated SQL]**  
+```sql
+SELECT COUNT(*) AS turn_count 
+FROM chunks_turn ct 
+JOIN transcripts t ON t.id = ct.transcript_id 
+WHERE t.meeting_date = '2026-05-26' AND ct.speaker = '佐藤';
+```
+
+**[Pipeline Generated SQL]**
+```sql
+SELECT COUNT(*) AS value FROM chunks_turn ct JOIN transcripts t ON t.id = ct.transcript_id WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ct.speaker = '佐藤'
+```
+
+================================================================================
+
+ユーザー (User): 佐藤さんは予算やコストについてどのような意見を持っていましたか？
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=True, intent_category=rag
+-> [内部状態] Detector: Rewritten Query='佐藤さんは予算やコストについてどのような意見を持っていましたか？'
+-> [内部状態] Planner : Plan executed=partial (rag)
+
+アシスタント (Assistant):
+2026年5月26日の会議では、佐藤さんはセキュリティ基盤の実装コストについて具体的な金額を提示せずに、「その件については後ほど予算のセクションで詳しく話しましょう。数字を持ってきています」と述べました。また、太陽光パネルの設置コストについても「どの程度を想定していますか？」と質問しましたが、具体的な見通しは示していませんでした。
+
+================================================================================
+
+ユーザー (User): その会議で、佐藤さんの発言の中で一番長かったものは何秒でしたか？
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=True, intent_category=sql
+-> [内部状態] Detector: Rewritten Query='佐藤さんの発言の中で一番長かったものは何秒でしたか？'
+-> [内部状態] Planner : Plan executed=partial (sql)
+
+アシスタント (Assistant):
+2026年5月26日の会議で、「佐藤さん」が行った発言の中で最も長いものは60秒でした。
+
+**[LLM Generated SQL]**  
+```sql
+SELECT ROUND(MAX(ct.time_end_sec - ct.time_start_sec)::numeric, 2) AS turn_duration 
+FROM chunks_turn ct 
+JOIN transcripts t ON t.id = ct.transcript_id 
+WHERE t.meeting_date = '2026-05-26' AND ct.speaker = '佐藤';
+```
+
+このSQLクエリは、指定された日付の会議で「佐藤さん」が行った発言の中で最も長い時間を取得します。
+
+**[Pipeline Generated SQL]**
+```sql
+SELECT ROUND(MAX(ct.time_end_sec - ct.time_start_sec)::numeric, 2) AS value FROM chunks_turn ct JOIN transcripts t ON t.id = ct.transcript_id WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%') AND ct.speaker = '佐藤'
+```
+
+================================================================================
+
+ユーザー (User): 話題を変えますが、「Microsoft」の最新動向をインターネットで検索して。
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=False, intent_category=web
+-> [内部状態] Detector: Rewritten Query='Microsoftの最新動向'
+-> [内部状態] Planner : Plan executed=full (web)
+
+アシスタント (Assistant):
+Microsoftの最新動向について、以下のような情報があります：
+
+1. **Microsoft 365 Family**: 2025年8月27日から提供が始まりました。このサービスは、Microsoft Officeアプリケーションに加え、1 TBのクラウドストレージを含むパッケージで、AIに基づいた新しい機能を利用できます。
+
+2. **Windows 11**: このオペレーティングシステムは2021年10月5日にリリースされ、現在で5周年を迎えています。しかし、ユーザーからの反響は様々で、一部のユーザーからは不満の声も聞かれています。
+
+3. **将来的な計画**: 2025年11月20日には、Microsoftが新しいWindowsの計画についての詳細を公表しました。この計画は、AI技術の進化に合わせてシステムを強化する方針です。
+
+これらの情報は、2025年10月1日から2025年11月20日の間のインターネット検索結果に基づいています。最新の動向については、Microsoftの公式ウェブサイトやプレスリリースをご確認いただくことをおすすめします。
+
+================================================================================
+
+ユーザー (User): その内容を英語で1文に要約してください。
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=True, intent_category=pure_llm
+-> [内部状態] Detector: Rewritten Query='現在の会話内容を英語で1文に要約してください。'
+-> [内部状態] Planner : Plan executed=none (pure_llm)
+
+アシスタント (Assistant):
+The latest developments for Microsoft include the release of Microsoft 365 Family in August 2025, the ongoing use and feedback on Windows 11 since its October 2021 launch, and plans to enhance systems with AI technology in November 2025.
+
+================================================================================
+
+ユーザー (User): 2026年5月のすべての会議のうち、参加者（スピーカー数）が5人以上だった会議はいくつありますか？
+思考中 (Thinking)...
+-> [内部状態] Detector: is_followup=False, intent_category=sql
+-> [内部状態] Detector: Rewritten Query='2026年5月の会議で参加者が5人以上だった会議は何件ありますか？'
+-> [内部状態] Planner : Plan executed=full (sql)
+
+アシスタント (Assistant):
+2026年5月のすべての会議の中で、参加者（スピーカー数）が5人以上だった会議は5件です。
+
+**[LLM Generated SQL]**
+```sql
+SELECT COUNT(DISTINCT t.id) AS meeting_count
+FROM transcripts t
+WHERE t.meeting_date BETWEEN '2026-05-01' AND '2026-05-31'
+  AND (SELECT COUNT(*) FROM chunks_turn ct WHERE ct.transcript_id = t.id AND ct.speaker IS NOT NULL) > 5;
+```
+
+このSQLクエリは、指定された期間の会議の中でスピーカー数が5人以上だった会議の件数を取得します。
+
+**[Pipeline Generated SQL]**
+```sql
+SELECT COUNT(DISTINCT t.id) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+```
+
+================================================================================

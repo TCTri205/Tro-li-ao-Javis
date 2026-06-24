@@ -1,0 +1,32 @@
+Failed count: 8
+Q: 今年の5月の会議は何件ですか？
+  GT:     SELECT COUNT(DISTINCT t.id) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+  Actual: SKIP (operator=skip, target=none)
+
+Q: 今年の5月の会議件数を教えてください。
+  GT:     SELECT COUNT(DISTINCT t.id) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+  Actual: SKIP (operator=skip, target=none)
+
+Q: 今年の5月は何回会議がありましたか？
+  GT:     SELECT COUNT(DISTINCT t.id) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+  Actual: SKIP (operator=skip, target=none)
+
+Q: 今年の5月には会議が何件ありますか？
+  GT:     SELECT COUNT(DISTINCT t.id) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+  Actual: SKIP (operator=skip, target=none)
+
+Q: 今年の5月の会議は記録されていますか？
+  GT:     SELECT COUNT(DISTINCT t.id) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+  Actual: SKIP (operator=skip, target=none)
+
+Q: 私の今年の5月の会議数は？
+  GT:     SELECT COUNT(DISTINCT t.id) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+  Actual: SKIP (operator=skip, target=none)
+
+Q: 今年の5月、会議はありましたか？
+  GT:     SELECT COUNT(DISTINCT t.id) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+  Actual: SKIP (operator=skip, target=none)
+
+Q: 今年の5月、何か会議がありましたか？
+  GT:     SELECT COUNT(DISTINCT t.id) AS value FROM transcripts t WHERE ($1::uuid IS NULL OR t.user_id = $1::uuid) AND ($2::date IS NULL OR t.meeting_date >= $2::date) AND ($3::date IS NULL OR t.meeting_date <= $3::date) AND ($4::text IS NULL OR t.summary ILIKE '%' || $4 || '%' OR t.raw_text ILIKE '%' || $4 || '%')
+  Actual: SKIP (operator=skip, target=none)

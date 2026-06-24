@@ -1,0 +1,14 @@
+langchain
+langchain-community
+langchain-google-genai
+langchain-groq
+langchain-ollama
+langgraph
+pydantic
+networkx
+chromadb
+python-dotenv
+asyncpg
+duckduckgo-search
+neo4j
+redis
