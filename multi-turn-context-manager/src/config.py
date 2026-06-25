@@ -62,3 +62,20 @@ SQL_FRIENDLY_KEYS = {
 MAX_CACHE_SLOTS = 5
 CACHE_TTL_WEB = 3600  # 1 hour
 CACHE_TTL_SQL = 86400 # 24 hours
+
+def get_adaptive_max_tokens(model_name: str) -> int:
+    # ponytail: Determine max_tokens adaptively based on model type (Reasoning vs Chat)
+    if not model_name:
+        return 800
+    model_name_lower = model_name.lower()
+    
+    # Check reasoning model patterns
+    if any(p in model_name_lower for p in ["reasoning", "-r1", "o1-", "o3-", "qwq"]):
+        return 1500
+        
+    # Check chat model patterns
+    if any(p in model_name_lower for p in ["flash", "llama", "mini", "haiku", "qwen", "gpt", "claude"]):
+        return 300
+        
+    return 800
+

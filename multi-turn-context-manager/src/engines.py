@@ -216,12 +216,12 @@ class SQLEngine:
         sql_query = sql_query.strip().replace("```sql", "").replace("```", "").strip()
         
         # Clean up double SQL query wrapper if any
-        if sql_query.lower().startswith("select") and "from" in sql_query.lower():
-            # It's a valid SELECT query
+        if (sql_query.lower().startswith("select") or sql_query.lower().startswith("with")) and "from" in sql_query.lower():
+            # It's a valid SELECT or WITH query
             pass
         else:
-            # Try to extract the SELECT query
-            match = re.search(r'(SELECT\s+.*)', sql_query, re.IGNORECASE | re.DOTALL)
+            # Try to extract the SELECT or WITH query
+            match = re.search(r'((?:SELECT|WITH)\s+.*)', sql_query, re.IGNORECASE | re.DOTALL)
             if match:
                 sql_query = match.group(1)
                 
@@ -229,16 +229,22 @@ class SQLEngine:
         if ";" in sql_query:
             sql_query = sql_query.split(";")[0].strip() + ";"
             
-        # Safety guard: only SELECT queries are allowed
-        if not sql_query.strip().upper().startswith("SELECT"):
-            raise ValueError(f"Generated SQL is not a SELECT statement. Query rejected: {sql_query[:100]}")
+        # Safety guard: only SELECT or WITH queries are allowed
+        if not (sql_query.strip().upper().startswith("SELECT") or sql_query.strip().upper().startswith("WITH")):
+            raise ValueError(f"Generated SQL is not a SELECT or WITH statement. Query rejected: {sql_query[:100]}")
             
         logger.info(f"SQLEngine: Executing generated SQL:\n{sql_query}")
         
         # 2. Execute SQL query on PostgreSQL
         # Since we might have connection-level transactions, we execute on the connection passed via kwargs if present, else pool
         conn = kwargs.get("conn") or self.db_pool
-        rows = await conn.fetch(sql_query)
+        
+        # Use nested transaction (savepoint) if inside a transaction to prevent transaction abort on syntax errors
+        if hasattr(conn, 'is_in_transaction') and conn.is_in_transaction():
+            async with conn.transaction():
+                rows = await conn.fetch(sql_query)
+        else:
+            rows = await conn.fetch(sql_query)
         
         # Convert records to dictionary list
         rows_dict = [dict(r) for r in rows]

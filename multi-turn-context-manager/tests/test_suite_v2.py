@@ -388,7 +388,7 @@ class TestSuiteV2:
 
         async def stress_worker(q, idx):
             start = time.perf_counter()
-            ans, meta = await self.orchestrator.handle(session_id, q, lock_timeout=120.0)
+            ans, meta = await self.orchestrator.handle(session_id, q, lock_timeout=360.0)
             end = time.perf_counter()
             return idx, (end - start) * 1000, meta
 

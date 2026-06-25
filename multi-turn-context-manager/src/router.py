@@ -27,6 +27,8 @@ PRONOUNS = [
     "このドキュメント", "そのドキュメント", "あのドキュメント",
     "この通話", "その通話", "あの通話", "先ほどの通話", "さっきの通話",
     "この会話", "その会話", "あの会話", "先ほどの会話", "さっきの会話",
+    "この打ち合わせ", "その打ち合わせ", "あの打ち合わせ", "先ほどの打ち合わせ", "さっきの打ち合わせ",
+    "この連絡", "その連絡", "あの連絡", "先ほどの連絡", "さっきの連絡",
     "その件", "あの件", "この件", "その話", "あの話", "この話",
     "そのcall", "このcall", "あのcall", "さっきのcall", "先ほどのcall",
     "その", "この", "あの", "その物件", "この物件", "あの物件",
@@ -100,6 +102,8 @@ def heuristic_pipeline_guess(query: str) -> str:
     elif any(k in query_lower for k in SQL_KEYWORDS):
         return "SQL"
     elif any(k in query_lower for k in RAG_KEYWORDS):
+        return "RAG"
+    if SESSION_REGEX.search(query):
         return "RAG"
     return "MODEL"
 
@@ -228,6 +232,40 @@ def is_gt_mismatch(query: str, topic_key: str, summary_context=None, matched_ent
     return True
 
 
+async def update_entity_interaction_counts(db, session_id: str, active_entity_id: str):
+    """
+    ponytail: Updates interaction count and decay for session entities in session_entity_index.
+    The active entity gets mention_count += 1 and its timestamp updated.
+    Other entities get mention_count *= 0.5 as time-decay.
+    """
+    try:
+        rows = await db.fetch("""
+            SELECT entity_id, mention_count 
+            FROM session_entity_index 
+            WHERE session_id = $1
+        """, session_id)
+        
+        for r in rows:
+            eid = r['entity_id']
+            curr_count = float(r['mention_count'] if r['mention_count'] is not None else 1.0)
+            if eid == active_entity_id:
+                new_count = curr_count + 1.0
+                await db.execute("""
+                    UPDATE session_entity_index
+                    SET mention_count = $1, last_interacted_at = NOW()
+                    WHERE session_id = $2 AND entity_id = $3
+                """, new_count, session_id, eid)
+            else:
+                new_count = curr_count * 0.5
+                await db.execute("""
+                    UPDATE session_entity_index
+                    SET mention_count = $1
+                    WHERE session_id = $2 AND entity_id = $3
+                """, new_count, session_id, eid)
+    except Exception as e:
+        logger.error(f"Error updating entity interaction counts: {e}")
+
+
 class LLMManager:
     async def generate_chat_completion(self, messages, response_format=None, max_retries=5, **kwargs):
         raise NotImplementedError
@@ -338,29 +376,30 @@ class Router:
         self.llm_manager = llm_manager
         self.embedding_model = embedding_model
 
-    async def route(self, session_id: str, query: str) -> dict:
+    async def route(self, session_id: str, query: str, conn=None) -> dict:
         """
         Routes the user query using the 2-Tier routing process.
         """
+        db = conn if conn is not None else self.db_pool
         # Get query embedding first (ensures embedding timeout/failures are logged immediately)
         query_emb = await _safe_embed(query, self.embedding_model)
         embedding_failed = (query_emb is None)
 
         if embedding_failed:
             logger.warning("Tier 1: Embedding failed. Downgrading to Tier 2 immediately.")
-            return await self._route_tier_2(session_id, query, routing_reason="embedding_failure", embedding_failed=True)
+            return await self._route_tier_2(session_id, query, routing_reason="embedding_failure", embedding_failed=True, conn=conn)
 
         # --- Tier 1: Fast Filter ---
         
         # 1. Heuristic hard switching check
         if SWITCH_KEYWORDS_PATTERN.search(query):
             logger.info("Tier 1: Hard-switching keyword detected. Routing to Tier 2 for full rewrite.")
-            return await self._route_tier_2(session_id, query, routing_reason="hard_switch_keyword", embedding_failed=embedding_failed)
+            return await self._route_tier_2(session_id, query, routing_reason="hard_switch_keyword", embedding_failed=embedding_failed, conn=conn)
             
         # 2. Lightweight Entity Index Lookup
-        entities = await self.db_pool.fetch("""
+        entities = await db.fetch("""
             SELECT e.cache_slot_id, e.entity_id, e.entity_type, e.display_names, c.topic_key, c.last_pipeline, p.summary_context,
-                   c.last_accessed_at, c.refreshed_at
+                   c.last_accessed_at, c.refreshed_at, e.mention_count, e.last_interacted_at
             FROM session_entity_index e
             JOIN session_context_cache c ON e.cache_slot_id = c.id
             LEFT JOIN session_context_payload p ON c.id = p.cache_id
@@ -528,8 +567,8 @@ class Router:
                 female_names = set()
                 male_names = set()
                 try:
-                    # Run DB query on self.db_pool to get all known participants
-                    rows = await self.db_pool.fetch("SELECT DISTINCT participants FROM transcripts WHERE participants IS NOT NULL")
+                    # Run DB query on db to get all known participants
+                    rows = await db.fetch("SELECT DISTINCT participants FROM transcripts WHERE participants IS NOT NULL")
                     all_participants = set()
                     for r in rows:
                         p_val = r['participants']
@@ -657,7 +696,7 @@ class Router:
 
         if (has_pronoun or is_ellipsis) and len(matched_entities) == 0 and not has_explicit_gt:
             logger.info("Tier 1: Query contains pronoun or ellipsis but no entity matches in DB. Bypassing to Tier 2.")
-            return await self._route_tier_2(session_id, query, routing_reason="unresolved_pronoun", embedding_failed=embedding_failed)
+            return await self._route_tier_2(session_id, query, routing_reason="unresolved_pronoun", embedding_failed=embedding_failed, conn=conn)
             
         if len(matched_entities) == 1:
             matched_ent = list(matched_entities.values())[0]
@@ -686,7 +725,7 @@ class Router:
 
             if is_sess_mismatch or is_gt_mismatch(query, matched_ent['topic_key'], matched_ent['summary_context'], matched_entity_id=matched_ent['entity_id']) or is_date_mismatch(query, matched_ent['summary_context']):
                 logger.info("Tier 1: Detected GT, Date, or Session mismatch vs matched entity. Forwarding to Tier 2.")
-                return await self._route_tier_2(session_id, query, routing_reason="metadata_mismatch", embedding_failed=embedding_failed)
+                return await self._route_tier_2(session_id, query, routing_reason="metadata_mismatch", embedding_failed=embedding_failed, conn=conn)
 
             logger.info(f"Tier 1: Entity lookup matched exactly one entity: {matched_ent['entity_id']} (slot: {matched_ent['topic_key']})")
             
@@ -700,6 +739,9 @@ class Router:
             
             guessed_pipeline = heuristic_pipeline_guess(query)
             target_pipeline = guessed_pipeline if guessed_pipeline != "MODEL" else matched_ent['last_pipeline']
+
+            # ponytail: Update entity interaction counts and decay other entities in DB
+            await update_entity_interaction_counts(db, session_id, matched_ent['entity_id'])
 
             return {
                 "is_follow_up": True,
@@ -716,25 +758,44 @@ class Router:
                 "embedding_failed": embedding_failed
             }
         elif len(matched_entities) > 1:
-            logger.info("Tier 1: Multiple entities matched. Bypass to Tier 2 to resolve ambiguity.")
-            return await self._route_tier_2(session_id, query, routing_reason="ambiguous_entities", embedding_failed=embedding_failed)
+            # ponytail: Apply Dynamic Entity Boosting to rank and choose the best entity from multiple matches
+            ranked_entities = []
+            for eid, ent in matched_entities.items():
+                last_acc = ent['last_accessed_at']
+                if last_acc.tzinfo is None:
+                    last_acc = last_acc.replace(tzinfo=timezone.utc)
+                recency_hours = (datetime.now(timezone.utc) - last_acc).total_seconds() / 3600.0
+                score_raw = 1.0 / (1.0 + recency_hours)
+                
+                count = ent['mention_count'] if ent.get('mention_count') is not None else 1.0
+                beta = 0.5
+                import math
+                score_boosted = score_raw * (1.0 + beta * math.log(max(float(count), 1.0)))
+                ranked_entities.append((score_boosted, ent))
+                
+            ranked_entities.sort(key=lambda x: x[0], reverse=True)
+            logger.info(f"Dynamic Entity Boosting: Ranked entities: {[(e[1]['entity_id'], e[0]) for e in ranked_entities]}")
+            
+            # Select the top one to resolve ambiguity
+            best_score, best_ent = ranked_entities[0]
+            matched_entities = {best_ent['entity_id']: best_ent}
 
         # 3. Semantic Embedding Distance (pgvector)
         # Check if we have active caches first
-        cache_count = await self.db_pool.fetchval(
+        cache_count = await db.fetchval(
             "SELECT COUNT(*) FROM session_context_cache WHERE session_id = $1", session_id
         )
         if cache_count == 0:
             logger.info("No active cache slots for this session. Bypass to Tier 2.")
-            return await self._route_tier_2(session_id, query, routing_reason="new_session", embedding_failed=embedding_failed)
+            return await self._route_tier_2(session_id, query, routing_reason="new_session", embedding_failed=embedding_failed, conn=conn)
             
         if embedding_failed:
             logger.warning("Tier 1: Embedding failed. Downgrading to Tier 2.")
-            return await self._route_tier_2(session_id, query, routing_reason="embedding_failure", embedding_failed=True)
+            return await self._route_tier_2(session_id, query, routing_reason="embedding_failure", embedding_failed=True, conn=conn)
             
         # Run cosine distance query joining Cold table payload for mismatch checks
         query_emb_str = "[" + ",".join(map(str, query_emb)) + "]"
-        closest_slots = await self.db_pool.fetch("""
+        closest_slots = await db.fetch("""
             SELECT c.id, c.topic_key, c.last_pipeline, (c.query_embedding <=> $1::vector) as distance, p.summary_context
             FROM session_context_cache c
             LEFT JOIN session_context_payload p ON c.id = p.cache_id
@@ -784,7 +845,7 @@ class Router:
 
             if is_gt_mismatch(query, closest_slot['topic_key'], closest_slot['summary_context']) or is_date_mismatch(query, closest_slot['summary_context']) or len(query_gts) > 1:
                 logger.info("Tier 1: Detected GT or Date mismatch. Forwarding to Tier 2.")
-                return await self._route_tier_2(session_id, query, routing_reason="metadata_mismatch", embedding_failed=embedding_failed)
+                return await self._route_tier_2(session_id, query, routing_reason="metadata_mismatch", embedding_failed=embedding_failed, conn=conn)
                 
             if d1 < 0.35 and (d2 is None or gap < 0.65):
                 logger.info(f"Tier 1: Confident semantic match hit! d1={d1:.4f}, gap={gap:.4f}")
@@ -813,7 +874,8 @@ class Router:
                         speculative_guess={
                             "target_pipeline": guessed_p if guessed_p != "MODEL" else closest_slot['last_pipeline'],
                             "target_topic_key": closest_slot['topic_key']
-                        }
+                        },
+                        conn=conn
                     )
                 else:
                     logger.info(f"Tier 1: Semantic shift detected! Distance {d1:.4f} > 0.55")
@@ -843,19 +905,21 @@ class Router:
                     speculative_guess={
                         "target_pipeline": guessed_p if guessed_p != "MODEL" else closest_slot['last_pipeline'],
                         "target_topic_key": closest_slot['topic_key']
-                    }
+                    },
+                    conn=conn
                 )
-                
-        return await self._route_tier_2(session_id, query, routing_reason="gray_area_no_closest_slots", embedding_failed=embedding_failed)
+                 
+        return await self._route_tier_2(session_id, query, routing_reason="gray_area_no_closest_slots", embedding_failed=embedding_failed, conn=conn)
 
-    async def _route_tier_2(self, session_id: str, query: str, routing_reason: str, embedding_failed: bool = False, speculative_guess: dict = None) -> dict:
+    async def _route_tier_2(self, session_id: str, query: str, routing_reason: str, embedding_failed: bool = False, speculative_guess: dict = None, conn=None) -> dict:
         """
         Tier 2: LLM Router & Rewriter (Groq llama-3.3-70b-versatile).
         """
         logger.info(f"Starting Tier 2 routing. Reason: {routing_reason}")
+        db = conn if conn is not None else self.db_pool
         
         # 1. Fetch Chat History (last 16 messages)
-        history_rows = await self.db_pool.fetch("""
+        history_rows = await db.fetch("""
             SELECT role, content, rewritten_content
             FROM chat_history
             WHERE session_id = $1
@@ -870,7 +934,7 @@ class Router:
             history_str += f"{role}: {content}\n"
             
         # 2. Fetch Active Caches Metadata and Entities
-        cache_rows = await self.db_pool.fetch("""
+        cache_rows = await db.fetch("""
             SELECT c.id, c.topic_key, c.last_pipeline, c.last_accessed_at, c.refreshed_at, p.summary_context
             FROM session_context_cache c
             LEFT JOIN session_context_payload p ON c.id = p.cache_id
@@ -879,7 +943,7 @@ class Router:
         """, session_id)
         
         # Fetch entities for these caches
-        entity_rows = await self.db_pool.fetch("""
+        entity_rows = await db.fetch("""
             SELECT entity_id, entity_type, display_names, cache_slot_id
             FROM session_entity_index
             WHERE session_id = $1

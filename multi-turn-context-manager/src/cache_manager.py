@@ -186,3 +186,126 @@ def check_cache_ttl(refreshed_at: datetime, ttl_seconds: int = 3600) -> bool:
     
     age_seconds = (now - refreshed_at).total_seconds()
     return age_seconds <= ttl_seconds
+
+
+async def update_cache_slot_ema(conn, session_id: str, topic_key: str, query_embedding: list):
+    """
+    ponytail: Updates the representative query embedding of a cache slot using EMA.
+    Formula: V_new = alpha * V_current + (1 - alpha) * V_query with alpha = 0.8.
+    Applies drift mitigation and similarity safeguards.
+    """
+    if not query_embedding:
+        return
+        
+    if topic_key:
+        topic_key = topic_key.strip().strip('"').strip("'")
+        
+    # Fetch current embedding (as text) and summary_context
+    row = await conn.fetchrow("""
+        SELECT c.id, c.query_embedding::text as query_embedding_str, p.summary_context
+        FROM session_context_cache c
+        LEFT JOIN session_context_payload p ON c.id = p.cache_id
+        WHERE c.session_id = $1 AND c.topic_key = $2
+    """, session_id, topic_key)
+    
+    if not row:
+        return
+        
+    cache_id = row['id']
+    current_emb_str = row['query_embedding_str']
+    summary_context = json.loads(row['summary_context']) if row['summary_context'] else {}
+    
+    import numpy as np
+    
+    # Get current embedding
+    if current_emb_str:
+        try:
+            V_current = np.array(json.loads(current_emb_str))
+        except Exception:
+            V_current = None
+    else:
+        V_current = None
+        
+    V_query = np.array(query_embedding)
+    
+    # 1. Store original embedding if not already present
+    original_emb_list = summary_context.get("original_query_embedding")
+    if not original_emb_list:
+        if V_current is not None:
+            summary_context["original_query_embedding"] = V_current.tolist()
+            V_orig = V_current
+        else:
+            summary_context["original_query_embedding"] = V_query.tolist()
+            V_orig = V_query
+    else:
+        V_orig = np.array(original_emb_list)
+        
+    # 2. Check update count
+    update_count = summary_context.get("ema_update_count", 0)
+    
+    if update_count >= 5:
+        # Vector is locked, do not update the vector but we can update summary_context
+        logger.info(f"EMA Update: Vector for slot '{topic_key}' is locked (count={update_count}).")
+        return
+        
+    # 3. Calculate distance between V_query and V_current
+    if V_current is not None:
+        # Cosine distance = 1 - Cosine similarity
+        norm_curr = np.linalg.norm(V_current)
+        norm_q = np.linalg.norm(V_query)
+        if norm_curr > 0 and norm_q > 0:
+            cos_dist = 1.0 - (np.dot(V_current, V_query) / (norm_curr * norm_q))
+        else:
+            cos_dist = 0.0
+            
+        if cos_dist > 0.5:
+            # Bypass EMA update to force Tier 2 routing in subsequent turns if needed
+            logger.info(f"EMA Update: Distance ({cos_dist:.4f}) > 0.5, bypassing EMA update.")
+            return
+            
+        # Compute EMA
+        alpha = 0.8
+        V_new = alpha * V_current + (1.0 - alpha) * V_query
+        # Normalize V_new
+        norm_new = np.linalg.norm(V_new)
+        if norm_new > 0:
+            V_new /= norm_new
+    else:
+        V_new = V_query
+        
+    # 4. Check absolute similarity bound with V_orig
+    if V_orig is not None:
+        norm_new = np.linalg.norm(V_new)
+        norm_orig = np.linalg.norm(V_orig)
+        if norm_new > 0 and norm_orig > 0:
+            orig_similarity = np.dot(V_new, V_orig) / (norm_new * norm_orig)
+        else:
+            orig_similarity = 1.0
+            
+        if orig_similarity < 0.60:
+            logger.info(f"EMA Update: Similarity with original vector ({orig_similarity:.4f}) < 0.60. Resetting to original vector.")
+            V_new = V_orig
+            update_count = 0
+        else:
+            update_count += 1
+    else:
+        update_count += 1
+        
+    # Save the updated embedding and count
+    summary_context["ema_update_count"] = update_count
+    
+    # Update query_embedding and summary_context in the DB
+    emb_str = "[" + ",".join(map(str, V_new.tolist())) + "]"
+    await conn.execute("""
+        UPDATE session_context_cache
+        SET query_embedding = $1::vector, last_accessed_at = NOW(), refreshed_at = NOW()
+        WHERE id = $2
+    """, emb_str, cache_id)
+    
+    await conn.execute("""
+        UPDATE session_context_payload
+        SET summary_context = $1
+        WHERE cache_id = $2
+    """, json.dumps(summary_context), cache_id)
+    
+    logger.info(f"EMA Update success for slot '{topic_key}': update_count={update_count}")

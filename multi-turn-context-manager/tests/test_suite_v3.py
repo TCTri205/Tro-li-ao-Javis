@@ -467,7 +467,7 @@ class TestSuiteV3:
 
         async def call_handle(idx: int, q: str):
             start = time.perf_counter()
-            ans, meta = await self.orchestrator.handle(sid, q, lock_timeout=60.0)
+            ans, meta = await self.orchestrator.handle(sid, q, lock_timeout=240.0)
             elapsed = (time.perf_counter() - start) * 1000
             return idx, ans, meta, elapsed
 

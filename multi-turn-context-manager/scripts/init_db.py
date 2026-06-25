@@ -93,13 +93,15 @@ async def main():
         print("Creating table session_entity_index...")
         await conn.execute("""
             CREATE TABLE session_entity_index (
-                id              BIGSERIAL PRIMARY KEY,
-                session_id      VARCHAR(64) NOT NULL,
-                entity_id       TEXT NOT NULL,
-                entity_type     VARCHAR(50) NOT NULL CHECK (entity_type IN ('meeting_transcript', 'person', 'document', 'sql_result')),
-                display_names   TEXT[] NOT NULL,
-                cache_slot_id   BIGINT REFERENCES session_context_cache(id) ON DELETE CASCADE,
-                created_at      TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                id                 BIGSERIAL PRIMARY KEY,
+                session_id         VARCHAR(64) NOT NULL,
+                entity_id          TEXT NOT NULL,
+                entity_type        VARCHAR(50) NOT NULL CHECK (entity_type IN ('meeting_transcript', 'person', 'document', 'sql_result')),
+                display_names      TEXT[] NOT NULL,
+                cache_slot_id      BIGINT REFERENCES session_context_cache(id) ON DELETE CASCADE,
+                mention_count      NUMERIC DEFAULT 1.0,
+                last_interacted_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                created_at         TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE (session_id, entity_id)
             );
         """)
