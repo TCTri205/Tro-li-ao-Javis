@@ -162,9 +162,9 @@ class IntelligentOrchestrator:
         self.entity_extractor = EntityExtractor(db_pool, llm_manager)
         
         # Initialize engines and wrap them in circuit breakers
-        self.sql_engine = EngineCircuitBreaker(SQLEngine(db_pool, llm_manager))
-        self.rag_engine = EngineCircuitBreaker(RAGEngine(db_pool, embedding_model))
-        self.web_engine = EngineCircuitBreaker(WebEngine(llm_manager))
+        self.sql_engine = EngineCircuitBreaker(SQLEngine(db_pool, llm_manager), timeout_seconds=60.0)
+        self.rag_engine = EngineCircuitBreaker(RAGEngine(db_pool, embedding_model), timeout_seconds=60.0)
+        self.web_engine = EngineCircuitBreaker(WebEngine(llm_manager), timeout_seconds=60.0)
 
     async def handle(self, session_id: str, query: str, lock_timeout: float = 8.0) -> tuple[str, dict]:
         """
@@ -478,17 +478,27 @@ class IntelligentOrchestrator:
                     session_id = None
                     for val in rows[0].values():
                         if isinstance(val, str) and SESSION_REGEX.match(val):
-                            session_id = val
+                            session_id = val.upper()
                             break
                     if session_id:
                         summary = {
                             "entity_type": "meeting_transcript",
                             "entity_id": session_id,
                             "display_name": f"{session_id}の通話",
-                            "key_attributes": {
-                                "participants": rows[0].get("participants", [])
-                            }
+                            "key_attributes": {}
                         }
+                        # Populate participants if in rows, or query database
+                        participants = rows[0].get("participants", [])
+                        if not participants:
+                            try:
+                                t_row = await self.db_pool.fetchrow("SELECT participants, summary FROM transcripts WHERE session_id = $1", session_id)
+                                if t_row:
+                                    raw_parts = t_row["participants"]
+                                    participants = json.loads(raw_parts) if isinstance(raw_parts, str) else raw_parts
+                                    summary["key_attributes"]["summary"] = t_row["summary"]
+                            except Exception as ex:
+                                logger.error(f"Error querying transcript metadata in _build_summary_context: {ex}")
+                        summary["key_attributes"]["participants"] = participants
         elif pipeline == "RAG":
             docs = payload.get("documents", [])
             if docs:
@@ -675,7 +685,7 @@ class IntelligentOrchestrator:
         
         try:
             verdict_text = await self.llm_manager.generate_chat_completion(
-                messages=messages, response_format={"type": "json_object"}, max_tokens=150
+                messages=messages, response_format={"type": "json_object"}, max_tokens=1000
             )
             verdict = extract_json(verdict_text)
             passed = verdict.get("passed", True)

@@ -59,7 +59,14 @@ class EntityExtractor:
                     canonical_session,
                     f"{canonical_session}.txt",
                     f"{canonical_session}の通話",
-                    f"{canonical_session}の会話"
+                    f"{canonical_session}の会話",
+                    "その通話",
+                    "その会話",
+                    "先ほどの通話",
+                    "先ほどの会話",
+                    "その件",
+                    "その話",
+                    "それ"
                 ]
                 
                 if t_row:
@@ -146,7 +153,14 @@ class EntityExtractor:
                         entity_id,
                         f"{entity_id}.txt",
                         f"{entity_id}の通話",
-                        f"{entity_id}の会話"
+                        f"{entity_id}の会話",
+                        "その通話",
+                        "その会話",
+                        "先ほどの通話",
+                        "先ほどの会話",
+                        "その件",
+                        "その話",
+                        "それ"
                     ]
                         
                     if SESSION_REGEX.match(entity_id):

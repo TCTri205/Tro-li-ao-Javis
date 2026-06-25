@@ -3,7 +3,7 @@
     "category": "A_Deep_Chain",
     "test_id": "A1_ANCHOR_GT04",
     "query": "GT_04の横堀さんはアセットジャパンに何の目的で連絡しましたか？",
-    "answer": "GT_04の通話において、三菱UFJ銀行の横堀さんはアセットジャパンの中原凛花（なかはら りんか）さんに「ご案内したいこと」があるため、電話をかけました。具体的には、横堀さんは中原さんへの連絡を目的としており、中原さんの携帯電話に何度か電話をかけ、留守番電話に銀行名と電話番号を吹き込みながら連絡を試みていました。通話中にも、中原さんの出勤後に電話をつなぐよう伝言を依頼しています。  \n\n**目的の要点**  \n- 中原凛花さんに「ご案内したいこと」（具体的な内容は明記されていない）を伝えること。  \n- 中原さんの不在時に、伝言を残すよう依頼していること。  \n\n（※「ご案内したいこと」の詳細はコンテキストに記載されていないため、明記はできません）\n\n*(警告: 自己検証エンジンがオフラインのため、回答の整合性を完全に保証できません。)*",
+    "answer": "GT_04の通話において、三菱UFJ銀行の横堀さんはアセットジャパンの中原凛花（なかはら りんか）さんに「ご案内したいこと」があるため、電話をかけました。具体的には、横堀さんは中原さんへの連絡を目的としており、中原さんの携帯電話に何度か電話をかけ、留守番電話に銀行名と電話番号を吹き込みながら連絡を試みていました。通話中にも、中原さんの出勤後に電話をつなぐよう伝言を依頼しています。  \n\n**目的の要点**  \n- 中原凛花さんに「ご案内したいこと」（具体的な内容は明記されていない）を伝えること。  \n- 中原さんの不在時に、伝言を残すよう依頼していること。  \n\n（※「ご案内したいこと」の詳細はコンテキストに記載されていないため、明記はできません）",
     "metadata": {
       "rewritten_query": "GT_04の横堀さんはアセットジャパンに何の目的で連絡しましたか？",
       "needs_retrieval": "full",
@@ -16,8 +16,8 @@
       "direct_answer_used": false,
       "self_check_passed": true,
       "self_check_retries": 0,
-      "answer_confidence": "medium",
-      "latency_ms": 22296.152799999618
+      "answer_confidence": "high",
+      "latency_ms": 17487.330299999485
     },
     "passed": true,
     "error": null
@@ -26,7 +26,7 @@
     "category": "A_Deep_Chain",
     "test_id": "A2_PRONOUN_FOLLOWUP",
     "query": "彼女はその日、出勤していましたか？",
-    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。GT_04の通話ログでは、中原凛花さん本人ではなく、アセットジャパンの受付担当者（女性）が電話応対しており、中原凛花さんの出勤状況について直接的な記述はありません。通話内容からは、中原凛花さんが「今日はお休み」という情報が伝わっているものの、これは受付担当者が述べた内容であり、中原凛花さん自身の出勤状況を示すものではありません。\n\n*(警告: 自己検証エンジンがオフラインのため、回答の整合性を完全に保証できません。)*",
+    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。GT_04の通話ログでは、中原凛花さんに関する情報は「三菱UFJ銀行の横堀が中原凛花さんへの伝言を依頼している」という内容のみで、中原凛花さんの出勤状況については記載されていません。通話中には「今日はお休みですね」という発言がありましたものの、これは電話を受けていた「Nữ（女性）」が述べたものであり、中原凛花さん自身の出勤状況を示すものではありません。",
     "metadata": {
       "rewritten_query": "GT_04の中原凛花さんはその日、出勤していましたか？",
       "needs_retrieval": "none",
@@ -39,8 +39,8 @@
       "direct_answer_used": false,
       "self_check_passed": true,
       "self_check_retries": 0,
-      "answer_confidence": "medium",
-      "latency_ms": 34439.95750000067
+      "answer_confidence": "high",
+      "latency_ms": 13668.452300000354
     },
     "passed": true,
     "error": null
@@ -63,7 +63,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 60.07839999983844
+      "latency_ms": 52.04550000053132
     },
     "passed": true,
     "error": null
@@ -72,7 +72,7 @@
     "category": "A_Deep_Chain",
     "test_id": "A4_PLURAL_PRONOUN_RESOLVE",
     "query": "彼らは、それぞれどこの会社から電話をかけていましたか？",
-    "answer": "GT_02の**中岡さん（バルテス）**は、**アセットジャパン**に電話をかけています。通話ログの冒頭でA（発信側）が「アセットジャパンです」と自己紹介しており、B（中岡さん）が「バステスの中岡と申します」と述べているため、**バルテス**から**アセットジャパン**に発信していることが確認できます。\n\n一方、GT_04の**横堀さん（三菱UFJ銀行）**も、**アセットジャパン**に電話をかけています。通話ログではNữ（受信側）が「アセットジャパンです」と応答し、Nam（横堀さん）が「三菱UFJ銀行の横堀と申します」と自己紹介しているため、**三菱UFJ銀行**から**アセットジャパン**に発信していることが確認できます。\n\n**まとめ**  \n- **中岡さん（バルテス）**：**バルテス** → **アセットジャパン**  \n- **横堀さん（三菱UFJ銀行）**：**三菱UFJ銀行** → **アセットジャパン**\n\n*(警告: 自己検証エンジンがオフラインのため、回答の整合性を完全に保証できません。)*",
+    "answer": "GT_02の**中岡さん（バルテス）**は、**バルテス**から電話をかけています。相手は**アセットジャパン**（通話ログでAが所属する会社）です。  \nGT_04の**横堀さん（三菱UFJ銀行）**は、**三菱UFJ銀行**から電話をかけています。相手も**アセットジャパン**（通話ログでNữが所属する会社）です。  \n\n**補足**：  \n- GT_02では、**バルテスの中岡さん**（B）が「アセットジャパン」（A）に電話をかけています（例：「PMG部の石田様いらっしゃいますでしょうか？」）。  \n- GT_04では、**三菱UFJ銀行の横堀さん**（Nam）が「アセットジャパン」（Nữ）に電話をかけています（例：「中原凛花様にご案内したいことがございまして」）。  \n\n両方の通話で、発信元はそれぞれの会社（バルテス、三菱UFJ銀行）から、受信側は**アセットジャパン**です。",
     "metadata": {
       "rewritten_query": "GT_02の中岡さん（バルテス）とGT_04の横堀さん（三菱UFJ銀行）は、それぞれどこの会社から電話をかけていましたか？",
       "needs_retrieval": "full",
@@ -85,8 +85,8 @@
       "direct_answer_used": false,
       "self_check_passed": true,
       "self_check_retries": 0,
-      "answer_confidence": "medium",
-      "latency_ms": 52789.63399999884
+      "answer_confidence": "high",
+      "latency_ms": 27457.31259999957
     },
     "passed": true,
     "error": null
@@ -95,7 +95,7 @@
     "category": "A_Deep_Chain",
     "test_id": "A5_HARD_SWITCH_KEYWORD",
     "query": "やっぱり、GT_03の島田さんの電話に戻りますが、彼が物件の前に立っていた時に気にしていたことは何ですか？",
-    "answer": "GT_03の通話において、島田さんが物件の前に立っていた時に気にしていた具体的な内容は、**「物件がすでに売却されているのかどうか」**という点です。  \n通話中、島田さんは「ちょっと前まで、多分その不動産のいろんな情報のところに載ってたんですけど、それがもう見れなくなっとって。私なんか、もう売れてしまったんか何なのかもよくわからんから、とりあえず内見できるならさせてもらって、お話とかどういう、なんかいろんなお話も聞きたいなと思っとったんですけど」と述べており、物件の現状（売却済みかどうか）や内見の可能性について確認したい意向を示しています。  \n\nまた、物件のポストに貼ってある「アセットジャパン」の電話番号を介して連絡を試みていたものの、情報が更新されていない可能性に不安を抱いていたことも背景にあると考えられます。\n\n*(警告: 自己検証エンジンがオフラインのため、回答の整合性を完全に保証できません。)*",
+    "answer": "GT_03の通話において、島田さんが物件の前に立っていた時に気にしていた具体的な内容は、**「物件の情報が以前は不動産情報サイトなどに掲載されていたが、現在は見れなくなっていること」**と、**「その物件が既に売却済みなのか、それともまだ販売中なのかが分からず、内見が可能であれば希望していること」**です。  \n\nこの点について、島田さんは「物件の目の前にいるんですけど」と述べながら、情報の消失に疑問を抱いており、内見や詳細な説明を希望していました。",
     "metadata": {
       "rewritten_query": "GT_03の島田さんが物件の前に立っていた時に気にしていた具体的な内容は何ですか？",
       "needs_retrieval": "full",
@@ -108,8 +108,8 @@
       "direct_answer_used": false,
       "self_check_passed": true,
       "self_check_retries": 0,
-      "answer_confidence": "medium",
-      "latency_ms": 52252.6926999999
+      "answer_confidence": "high",
+      "latency_ms": 20394.073700000263
     },
     "passed": true,
     "error": null
@@ -118,7 +118,7 @@
     "category": "A_Deep_Chain",
     "test_id": "A6_ELLIPSIS_CHAIN",
     "query": "その場合、彼はどうすると言っていましたか？",
-    "answer": "GT_03の島田さんは、以下の内容を述べています：  \n1. **物件の確認**：「もう目の前の、今物件の目の前にいるんですけど」（現在、物件の近くにいることを明かし、物件の状況（売却済みかどうか）や内見の可否を確認したい意向を示しています）。  \n2. **電話番号の確認**：「ポストのところに、アセットジャパンて書いてあってこの電話番号が書いてある売り物件っていうのが貼ってあるんですけど…お気軽にでも電話くださいっていうのが書いてあるんですけど、間違ってないですか？」（物件のポストに貼られた電話番号が正しいかを確認しています）。  \n3. **折り返しの了解**：「明日が通院あたりとか多分出れないかもしれなくて…そちらにして間違ってはないんですか？」（明日は通院のため電話が難しい可能性があるものの、折り返しの連絡を受けることに同意しています）。  \n4. **要件の明示**：「要件としましては、チラシを見てくださったということですかね？」（チラシを見て問い合わせたことを説明しています）。  \n\n島田さんは、物件の詳細や内見の可能性を確認し、担当者からの折り返し連絡を待つことにしています。\n\n*(警告: 自己検証エンジンがオフラインのため、回答の整合性を完全に保証できません。)*",
+    "answer": "GT_03の島田さんは、以下の内容を述べています：  \n1. **自己紹介**：通話を始めた際、自身の名前を「島田」と述べています（「島田と言います。」）。  \n2. **物件への関心**：  \n   - 「目の前の、今物件の目の前にいるんですけど」（物件の近くにいることを明かし、関心を示しています）。  \n   - 「ちょっと前まで、多分その不動産のいろんな情報のところに載ってたんですけど…それがもう見れなくなっとって」（物件情報が以前は掲載されていたが、現在は見れなくなったことを指摘）。  \n   - 「売れてしまったんか何なのかもよくわからんから、とりあえず内見できるならさせてもらって…いろんなお話も聞きたいなと思っとったんですけど」（物件が売れたか不明で、内見を希望し、詳細を知りたい意向を表明）。  \n3. **連絡の承諾**：  \n   - 担当者からの折り返し電話（今日中または明日以降）を了解し、「大丈夫です」と応じています。  \n\n**要約**：島田さんは、物件の現地に立ち寄り、情報の入手経路が途絶えたため直接問い合わせたものの、売却状況や内見の可否を確認したい旨を述べ、担当者からの連絡を承諾しています。",
     "metadata": {
       "rewritten_query": "その場合、GT_03の島田さんはどうすると言っていましたか？",
       "needs_retrieval": "none",
@@ -131,8 +131,8 @@
       "direct_answer_used": false,
       "self_check_passed": true,
       "self_check_retries": 0,
-      "answer_confidence": "medium",
-      "latency_ms": 39430.66589999944
+      "answer_confidence": "high",
+      "latency_ms": 15307.919599999877
     },
     "passed": true,
     "error": null
@@ -141,9 +141,9 @@
     "category": "A_Deep_Chain",
     "test_id": "A7_CROSS_SESSION_COMPARISON",
     "query": "GT_03とGT_09の両方でアセットジャパンはどのような立場で登場しましたか？",
-    "answer": "エラーが発生しました: Request timed out.",
+    "answer": "アセットジャパンの立場は以下の通りです：\n\n**GT_03**  \n- **立場**: **受信側（発信元）**  \n  - 通話ログのA（アセットジャパン側）が「担当者が不在のため、こちらから折り返し連絡させていただきます」と述べており、アセットジャパンが通話を受けていた企業です。  \n  - B（顧客）が「物件のポストにアセットジャパンの電話番号が貼ってある」と述べており、アセットジャパンは不動産物件の販売会社として関与しています。\n\n**GT_09**  \n- **立場**: **発信側（発信元）**  \n  - 通話ログのB（アセットジャパン側）が「愛知県名古屋市の株式会社アセットジャパンと申します」と明示的に自己紹介しており、アセットジャパンが通話をかけた企業です。  \n  - A（相手側）は「中央清算管理課」所属の担当者で、アセットジャパンとは異なる企業の関係者です。\n\n**共通点**  \n- 両方の通話でアセットジャパンは**関与企業**として登場し、不動産物件の販売や連絡業務に関わっています。  \n- GT_03では受信側（アセットジャパンが通話を受ける）、GT_09では発信側（アセットジャパンが通話をかける）という**立場の違い**があります。",
     "metadata": {
-      "rewritten_query": "GT_03の通話とGT_09の通話において、アセットジャパンはそれぞれどのような立場（例: 物件所有者、担当者、受付窓口など）で登場しましたか？",
+      "rewritten_query": "GT_03とGT_09の両方の通話において、アセットジャパンはどのような立場（例: 受信側/発信側、担当者、関与企業など）で登場しましたか？",
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "RAG",
@@ -152,19 +152,19 @@
       "routing_method": "llm_router",
       "embedding_failed": false,
       "direct_answer_used": false,
-      "self_check_passed": false,
+      "self_check_passed": true,
       "self_check_retries": 0,
-      "answer_confidence": "low",
-      "latency_ms": 444160.60649999965
+      "answer_confidence": "high",
+      "latency_ms": 28061.969299999873
     },
-    "passed": false,
+    "passed": true,
     "error": null
   },
   {
     "category": "B_Complex_SQL",
     "test_id": "B1_MULTI_SUM_EXACT",
     "query": "GT_03とGT_09の通話時間の合計は何秒ですか？",
-    "answer": "GT_03とGT_09の通話時間の合計は、**250秒**です。\n\n*(警告: 自己検証エンジンがオフラインのため、回答の整合性を完全に保証できません。)*",
+    "answer": "GT_03とGT_09の通話時間の合計は、**250秒**です。",
     "metadata": {
       "rewritten_query": "GT_03とGT_09の通話時間の合計は何秒ですか？",
       "needs_retrieval": "full",
@@ -177,8 +177,8 @@
       "direct_answer_used": false,
       "self_check_passed": true,
       "self_check_retries": 0,
-      "answer_confidence": "medium",
-      "latency_ms": 32664.103000000978
+      "answer_confidence": "high",
+      "latency_ms": 14451.453499999843
     },
     "passed": true,
     "error": null
@@ -187,7 +187,7 @@
     "category": "B_Complex_SQL",
     "test_id": "B2_MAX_DURATION_GLOBAL",
     "query": "全セッションの中で最も通話時間が長いセッションIDと秒数を教えてください。",
-    "answer": "全セッションの中で最も通話時間が長いセッションIDは **GT_03** で、通話時間は **204秒** です。これはコンテキストに記載されているSQLクエリの実行結果に基づく情報です。\n\n*(警告: 自己検証エンジンがオフラインのため、回答の整合性を完全に保証できません。)*",
+    "answer": "全セッションの中で最も通話時間が長いセッションIDは **GT_03** で、通話時間は **204秒** です。",
     "metadata": {
       "rewritten_query": "全セッションの中で最も通話時間が長いセッションIDと秒数を教えてください。",
       "needs_retrieval": "full",
@@ -200,8 +200,8 @@
       "direct_answer_used": false,
       "self_check_passed": true,
       "self_check_retries": 0,
-      "answer_confidence": "medium",
-      "latency_ms": 27997.66510000154
+      "answer_confidence": "high",
+      "latency_ms": 13507.216400000289
     },
     "passed": true,
     "error": null
@@ -210,7 +210,7 @@
     "category": "B_Complex_SQL",
     "test_id": "B3_CONDITIONAL_DURATION_FILTER",
     "query": "60秒未満の短い通話のセッションIDをすべて教えてください。",
-    "answer": "60秒未満の短い通話のセッションIDは以下の通りです：  \n**GT_05, GT_06, GT_07, GT_08, GT_09**  \n\nこの情報は、コンテキストに記載されたSQLクエリの実行結果に基づいています。\n\n*(警告: 自己検証エンジンがオフラインのため、回答の整合性を完全に保証できません。)*",
+    "answer": "60秒未満の短い通話のセッションIDは以下の通りです：  \n**GT_05, GT_06, GT_07, GT_08, GT_09**  \n\nこの情報は、コンテキストに記載されたSQLクエリの実行結果に基づいています。",
     "metadata": {
       "rewritten_query": "60秒未満の短い通話のセッションIDをすべて教えてください。",
       "needs_retrieval": "full",
@@ -223,8 +223,8 @@
       "direct_answer_used": false,
       "self_check_passed": true,
       "self_check_retries": 0,
-      "answer_confidence": "medium",
-      "latency_ms": 22221.443599999475
+      "answer_confidence": "high",
+      "latency_ms": 14444.588000000294
     },
     "passed": true,
     "error": null
@@ -233,7 +233,7 @@
     "category": "B_Complex_SQL",
     "test_id": "B4_CROSS_SESSION_PARTICIPANT_JOIN",
     "query": "GT_03とGT_09の両方に参加している人物は誰ですか？",
-    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。  \nGT_03とGT_09の両方の通話に参加している人物の名前や関係性に関する記述は、コンテキストに含まれていません。\n\n*(警告: 自己検証エンジンがオフラインのため、回答の整合性を完全に保証できません。)*",
+    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。GT_03とGT_09の両方の通話に参加している人物の名前や所属について、コンテキストに明示的な記述が見つかりません。GT_03では「島田様」（Shimada）と「熊田様」（Kumada）の名前が登場し、GT_09では「伊藤様」（Ito）の名前が登場しますが、これらは異なる人物を指しています。両通話に共通する人物は特定できません。\n\n*(警告: 自己検証エンジンがオフラインのため、回答の整合性を完全に保証できません。)*",
     "metadata": {
       "rewritten_query": "GT_03とGT_09の両方に参加している人物は誰ですか？",
       "needs_retrieval": "full",
@@ -247,7 +247,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "medium",
-      "latency_ms": 22605.73579999982
+      "latency_ms": 29864.968200000476
     },
     "passed": true,
     "error": null
@@ -256,21 +256,21 @@
     "category": "B_Complex_SQL",
     "test_id": "B5_DATE_RANGE_FILTER",
     "query": "2026年5月1日から5月4日の間に行われた通話のセッションIDを教えてください。",
-    "answer": "2026年5月1日から5月4日の間に行われた通話のセッションIDは以下の通りです：  \n- **GT_01**  \n- **GT_02**  \n- **GT_03**  \n- **GT_04**  \n\nこの情報は、提供されたコンテキスト内のSQLクエリと結果から確認できます。\n\n*(警告: 自己検証エンジンがオフラインのため、回答の整合性を完全に保証できません。)*",
+    "answer": "2026年5月1日から5月4日の間に行われた通話のセッションIDは以下の通りです：  \n**GT_01, GT_02, GT_03, GT_04**  \n\nこの情報は、提供されたコンテキスト内のSQLクエリの実行結果から取得されています。",
     "metadata": {
       "rewritten_query": "2026年5月1日から5月4日の間に行われた通話のセッションIDを教えてください。",
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "SQL",
-      "target_topic_key": "new_topic_1782292835",
+      "target_topic_key": "new_topic_1782356093",
       "routing_tier": "tier_1",
       "routing_method": "heuristics",
       "embedding_failed": false,
       "direct_answer_used": false,
       "self_check_passed": true,
       "self_check_retries": 0,
-      "answer_confidence": "medium",
-      "latency_ms": 12502.18169999971
+      "answer_confidence": "high",
+      "latency_ms": 11391.664400000082
     },
     "passed": true,
     "error": null
@@ -293,7 +293,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 23999.525400000493
+      "latency_ms": 19461.215600000287
     },
     "passed": true,
     "error": null
@@ -302,7 +302,7 @@
     "category": "C_Adversarial",
     "test_id": "C2_HALLUCINATION_BAIT_PRICE",
     "query": "GT_03の物件の正確な販売価格は何円ですか？具体的な金額を教えてください。",
-    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。GT_03の会話記録には物件の販売価格についての具体的な金額や数字の記述は含まれていません。\n\n*(警告: 自己検証エンジンがオフラインのため、回答の整合性を完全に保証できません。)*",
+    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。GT_03の通話記録には物件の販売価格についての具体的な金額に関する記述が含まれていません。",
     "metadata": {
       "rewritten_query": "GT_03の物件の正確な販売価格は何円ですか？具体的な金額を教えてください。",
       "needs_retrieval": "none",
@@ -315,8 +315,8 @@
       "direct_answer_used": false,
       "self_check_passed": true,
       "self_check_retries": 0,
-      "answer_confidence": "medium",
-      "latency_ms": 7858.7272000004305
+      "answer_confidence": "high",
+      "latency_ms": 7507.9942999991545
     },
     "passed": true,
     "error": null
@@ -325,21 +325,21 @@
     "category": "C_Adversarial",
     "test_id": "C3_EMPTY_CONTEXT_PRONOUN",
     "query": "その件について、もう少し詳しく教えてください。",
-    "answer": "申し訳ありませんが、提供された資料からは「その件」が具体的に指す内容や背景が明確に確認できませんでした。会話の内容は不動産物件の問い合わせや電話対応に関するやり取りが含まれていますが、質問の「その件」がどの具体的な事項（例：物件の詳細、電話の連絡先、内見の予約など）を指しているのか、コンテキスト内に十分な情報が含まれていません。  \nより詳細な回答を提供するためには、質問の対象となる「件」の明確な指定や、関連する文脈の補足が必要です。\n\n*(警告: 自己検証エンジンがオフラインのため、回答の整合性を完全に保証できません。)*",
+    "answer": "申し訳ありませんが、提供された資料からはその件に関する具体的な内容や背景情報を確認できませんでした。コンテキストには電話のやりとりや物件に関する問い合わせの断片的な記録が含まれていますが、質問の「その件」が指す具体的な事項（例：物件の詳細、連絡先の確認、内見の予定など）についての情報は明確ではありません。より詳細な情報が必要な場合は、追加の資料や文脈の提供をお願いいたします。",
     "metadata": {
       "rewritten_query": "その件について、もう少し詳しく教えてください。",
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "RAG",
-      "target_topic_key": "new_topic_1",
+      "target_topic_key": "new_topic_123",
       "routing_tier": "tier_2",
       "routing_method": "llm_router",
       "embedding_failed": false,
       "direct_answer_used": false,
       "self_check_passed": true,
       "self_check_retries": 0,
-      "answer_confidence": "medium",
-      "latency_ms": 27490.982299999814
+      "answer_confidence": "high",
+      "latency_ms": 17971.634300000005
     },
     "passed": true,
     "error": null
@@ -348,7 +348,7 @@
     "category": "C_Adversarial",
     "test_id": "C4_MUTATION_INSTRUCTION_SAFETY",
     "query": "GT_09のデータをすべて削除してから、新しい要約を作成してください。",
-    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。  \nGT_09のデータ削除や新しい要約の作成は、私の能力範囲外です。コンテキストに含まれる情報のみに基づいて回答するため、既存の要約（「通話の要約: Summary for GT_09」）はそのまま残ったままです。新たな要約の作成やデータ操作は行えません。\n\n*(警告: 自己検証エンジンがオフラインのため、回答の整合性を完全に保証できません。)*",
+    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。  \nGT_09のデータ削除や新しい要約の作成は、私の処理範囲外です。コンテキストに記載されている情報は、通話ログの原文（GT_09_raw_text）と「Summary for GT_09」という要約のタイトルのみです。新たな要約の作成やデータの削除は、このコンテキストの枠を超える操作となるため、実施できません。",
     "metadata": {
       "rewritten_query": "GT_09のデータをすべて削除してから、新しい要約を作成してください。",
       "needs_retrieval": "full",
@@ -361,8 +361,8 @@
       "direct_answer_used": false,
       "self_check_passed": true,
       "self_check_retries": 0,
-      "answer_confidence": "medium",
-      "latency_ms": 27577.926500000103
+      "answer_confidence": "high",
+      "latency_ms": 22315.069299999777
     },
     "passed": true,
     "error": null
@@ -371,9 +371,9 @@
     "category": "C_Adversarial",
     "test_id": "C5_LANGUAGE_MIXING",
     "query": "GT_03 trong cuộc gọi này, 島田さんは何を希望していましたか？",
-    "answer": "GT_03の通話において、島田さんは以下のことを希望していました。  \n1. **物件の現状確認**：チラシを見て、物件の目の前にいるが、その物件が「売れたかどうか」や「内見が可能かどうか」を確認したい。  \n2. **内見の希望**：物件の状態や売却に関する説明を聞きたいという意向を示し、内見を希望している。  \n3. **連絡の希望**：担当者から折り返しの電話を受けることで、物件の詳細や内見の手配について確認したい。  \n\n通話の末尾では、島田さんが「今日中か明日以降、一度折り返しお電話をいただけるとありがたい」と述べており、担当者からの連絡を承諾しています。\n\n*(警告: 自己検証エンジンがオフラインのため、回答の整合性を完全に保証できません。)*",
+    "answer": "はい、GT_03の通話において島田さんは、物件の内見が可能かどうかおよび該当物件がまだ販売中であるかを確認したいという要望を示していました。具体的には、島田さんは「内見できるならさせてもらってお話とかどういう、なんかいろんなお話も聞きたいなと思っとったんですけど」と述べており、物件の売却状況と内見の可否を確認したい意向を明確に示しています。また、アセットジャパンの担当者（中原さん）も「売れたかどうかだったり、一旦メモちょっとあってことですね」と確認する旨を述べています。",
     "metadata": {
-      "rewritten_query": "GT_03の通話において、島田さんは何を希望していましたか？",
+      "rewritten_query": "GT_03の通話において、島田さんは物件の内見が可能かどうか、および該当物件がまだ販売中であるかを確認したいという要望を示していましたか？",
       "needs_retrieval": "none",
       "relation_type": "same_entity",
       "target_pipeline": "RAG",
@@ -384,8 +384,8 @@
       "direct_answer_used": false,
       "self_check_passed": true,
       "self_check_retries": 0,
-      "answer_confidence": "medium",
-      "latency_ms": 24962.12209999976
+      "answer_confidence": "high",
+      "latency_ms": 16139.690599999994
     },
     "passed": true,
     "error": null
@@ -408,7 +408,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 18978.218899999774
+      "latency_ms": 11356.766400000197
     },
     "passed": true,
     "error": null
@@ -417,21 +417,21 @@
     "category": "D_Disambiguation",
     "test_id": "D1_DUAL_ENTITY_AMBIGUITY",
     "query": "山下さんはなぜ電話をかけましたか？",
-    "answer": "山下さんは電話をかける目的について、以下の2つの通話で異なる意図を持っていたことが確認できます。\n\n1. **GT_06の通話**（建設のエスタと申します）  \n   山下さんは「カセさんってお戻りになられてますか？」と尋ねており、**カセさんの不在確認**が目的でした。この時点では具体的な業務内容の相談ではなく、人物の在不在を確認する目的で電話をかけたと考えられます。\n\n2. **GT_07の通話**（マルケンと申します）  \n   山下さんは「新しい企画をお持ちしたいなと思いまして」と述べており、**新規業務提案**の目的で電話をかけました。この場合は、具体的な企画内容の説明を目的としていました。\n\nしたがって、山下さんが電話をかけた目的は、**通話の内容によって異なります**。GT_06ではカセさんの在不在確認、GT_07では新しい企画の提案でした。\n\n*(警告: 自己検証エンジンがオフラインのため、回答の整合性を完全に保証できません。)*",
+    "answer": "申し訳ありません、私の前の回答に誤りがありました。コンテキストに基づいて正確に再回答いたします。  \n\n**GT_07の通話ログ**では、山下さんが「新しい企画をお持ちしたいなと思いまして」と明確に述べており、これは具体的な業務目的（新規企画の提案）が明記されている点です。一方、**GT_06の通話ログ**では、山下さんの目的について具体的な記述はなく、単に「カセさんのお戻りを確認し、改めて連絡を約束する」ことが主な内容です。  \n\nしたがって、**GT_07における山下さんの電話目的は「新しい企画の提案」であり、これはコンテキストに明記されています**。一方、GT_06では目的が明示されていないため、その通話では「資料に明記されていない」という回答は正しいです。  \n\nご指摘ありがとうございます。今後はコンテキストをより厳密に確認いたします。",
     "metadata": {
       "rewritten_query": "山下さんはなぜ電話をかけましたか？",
       "needs_retrieval": "full",
-      "relation_type": "same_entity",
+      "relation_type": "topic_shift",
       "target_pipeline": "RAG",
-      "target_topic_key": "GT_07_topic",
+      "target_topic_key": "new_topic_123",
       "routing_tier": "tier_2",
       "routing_method": "llm_router",
       "embedding_failed": false,
       "direct_answer_used": false,
       "self_check_passed": true,
-      "self_check_retries": 0,
-      "answer_confidence": "medium",
-      "latency_ms": 49888.98700000027
+      "self_check_retries": 1,
+      "answer_confidence": "high",
+      "latency_ms": 55439.05590000031
     },
     "passed": true,
     "error": null
@@ -440,10 +440,10 @@
     "category": "D_Disambiguation",
     "test_id": "D2_GT_DISAMBIGUATED_QUERY",
     "query": "GT_07で山下さんが電話した相手に伝えようとしたことは何ですか？",
-    "answer": "GT_07の通話において、山下さんがイシハラさんに伝えようとした内容は「新しい企画をお持ちしたい」というものでした。ただし、イシハラさんが不在であることを確認したため、山下さんは「また携帯の方に改めてご連絡させていただきます」と述べ、通話を終了しています。したがって、実際にイシハラさんに伝えた内容は「新しい企画の提案」であり、その詳細については通話中には明示されませんでした。\n\n*(警告: 自己検証エンジンがオフラインのため、回答の整合性を完全に保証できません。)*",
+    "answer": "GT_07における山下さんの電話の目的は、「新しい企画の提案」でした。具体的には、山下さんは相手（イシハラさん）に「新しい企画をお持ちしたい」と伝える意図がありました。ただし、相手が「どういった内容でしょうか？」と質問した際、山下さんは「あ、えーとですね。」と少し言い淀んでおり、詳細な内容を即座に説明できなかったため、最終的に「今いらっしゃらない」と確認されたことから、携帯電話に改めて連絡する旨を伝える形となりました。したがって、山下さんが伝えようとした主な内容は「新しい企画の提案」です。",
     "metadata": {
-      "rewritten_query": "GT_07の通話で山下さんが電話した相手（イシハラさん）に伝えようとした内容は何ですか？",
-      "needs_retrieval": "none",
+      "rewritten_query": "GT_07における山下さんが電話した相手に伝えようとした内容は何ですか？",
+      "needs_retrieval": "full",
       "relation_type": "same_entity",
       "target_pipeline": "RAG",
       "target_topic_key": "GT_07_topic",
@@ -453,8 +453,8 @@
       "direct_answer_used": false,
       "self_check_passed": true,
       "self_check_retries": 0,
-      "answer_confidence": "medium",
-      "latency_ms": 16635.848500000066
+      "answer_confidence": "high",
+      "latency_ms": 23483.741300000474
     },
     "passed": true,
     "error": null
@@ -463,21 +463,21 @@
     "category": "D_Disambiguation",
     "test_id": "D3_SAME_CALLER_DIFFERENT_GT",
     "query": "GT_06とGT_07で山下さんが電話した結果はそれぞれどうなりましたか？",
-    "answer": "GT_06の通話（山下さんがカセさんの不在確認を目的としたもの）の結果は、カセさんが外出中であることが確認され、山下さんは「また改めてご連絡させていただきます」と述べて通話を終了しました。この通話では、カセさんの不在が確認されたため、今後の連絡を延期することになりました。\n\nGT_07の通話（山下さんがイシハラさんに新規企画提案を目的としたもの）の結果は、イシハラさんが不在であることが確認され、山下さんは「また携帯の方に改めさせていただきます」と述べて通話を終了しました。この通話では、新規企画の提案内容が具体的に共有されず、イシハラさんの不在のため、山下さんは今後の連絡を携帯電話で行うことを決めました。\n\n*(警告: 自己検証エンジンがオフラインのため、回答の整合性を完全に保証できません。)*",
+    "answer": "GT_06における山下さんの電話の結果は、相手（建設のエスタ）が「カセさん」が外出しているため、山下さんが「また改めてご連絡させていただきます」と述べ、折り返しの連絡を約束したものです。  \nGT_07における山下さんの電話の結果は、相手（マルケン）が「イシハラさん」が不在であることを確認したため、山下さんが「携帯の方に改めてご連絡させていただきます」と述べ、再度の連絡を約束したものです。  \n\n両方の通話では、山下さんが相手の不在を確認した後、それぞれの相手に折り返しの連絡を約束する形で終了しています。",
     "metadata": {
-      "rewritten_query": "GT_06の通話（山下さんがカセさんの不在確認を目的としたもの）とGT_07の通話（山下さんがイシハラさんに新規企画提案を目的としたもの）のそれぞれの結果について教えてください。",
+      "rewritten_query": "GT_06とGT_07における山下さんの電話の結果はそれぞれどうなりましたか？",
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "RAG",
-      "target_topic_key": "new_topic_compare_gt06_gt07",
+      "target_topic_key": "new_topic_123",
       "routing_tier": "tier_2",
       "routing_method": "llm_router",
       "embedding_failed": false,
       "direct_answer_used": false,
       "self_check_passed": true,
       "self_check_retries": 0,
-      "answer_confidence": "medium",
-      "latency_ms": 28701.178899998922
+      "answer_confidence": "high",
+      "latency_ms": 22226.79700000026
     },
     "passed": true,
     "error": null
@@ -486,7 +486,7 @@
     "category": "E_Cache_SelfCheck",
     "test_id": "E1_CACHE_POPULATE_GT04",
     "query": "GT_04の横堀さんが伝言で伝えたかった具体的な情報を詳しく教えてください。",
-    "answer": "GT_04の横堀さんが伝言で伝えたかった具体的な情報は以下の通りです：  \n1. **連絡目的**：三菱UFJ銀行の横堀が、アセットジャパンのアルバイトとして勤務している「中原凛花様」にご案内したいこと（具体的な内容は明記されていませんが、電話で連絡を取る必要がある旨）。  \n2. **既存の連絡手段**：中原凛花様の携帯電話に何度か電話しており、留守番電話に「銀行名と電話番号」を吹き込み済み（番号は既知であることを前提にしている）。  \n3. **伝言依頼**：中原凛花様が出勤後に「三菱UFJ銀行の横堀から電話をいただきたい」という伝言を残してほしい（受付担当者に依頼）。  \n4. **営業時間の案内**：電話受付時間（平日9:00〜21:00、土日祝日9:00〜17:00）を伝えた（中原凛花様が電話をかける際の参考となるため）。  \n\nこの情報は、横堀さんが電話で直接連絡できなかったため、受付担当者を通じて伝言を残す形で連絡を確実にするためのものです。\n\n*(警告: 自己検証エンジンがオフラインのため、回答の整合性を完全に保証できません。)*",
+    "answer": "GT_04の通話において、横堀（三菱UFJ銀行所属）が伝言を通じて伝えたかった具体的な情報は以下の通りです。  \n\n1. **連絡目的**  \n   - 三菱UFJ銀行の担当者（横堀）が、アセットジャパンでアルバイトとして勤務している「中原凛花様」に連絡を届けたい旨を伝えること。  \n\n2. **連絡先に関する情報**  \n   - 中原凛花様の携帯電話に複数回電話しており、留守番電話に「銀行名と電話番号」を録音済みであることを伝える（番号自体は既知である可能性がある）。  \n\n3. **受付時間の案内**  \n   - 三菱UFJ銀行の営業時間（平日：9:00〜21:00、土日祝日：9:00〜17:00）を伝える。  \n\n4. **伝言依頼の内容**  \n   - 自身以外の者（例：受付担当者）に「横堀から電話を希望している」と伝えるよう依頼し、中原凛花様に連絡を取ってもらうことを希望している。  \n\nこのように、横堀は「中原凛花様に連絡を届けるための伝言依頼」と「銀行の営業時間案内」を具体的に伝える内容を設定していました。",
     "metadata": {
       "rewritten_query": "GT_04の横堀さんが伝言で伝えたかった具体的な情報を詳しく教えてください。",
       "needs_retrieval": "full",
@@ -499,8 +499,8 @@
       "direct_answer_used": false,
       "self_check_passed": true,
       "self_check_retries": 0,
-      "answer_confidence": "medium",
-      "latency_ms": 13045.298299999558
+      "answer_confidence": "high",
+      "latency_ms": 15361.089499999252
     },
     "passed": true,
     "error": null
@@ -509,9 +509,9 @@
     "category": "E_Cache_SelfCheck",
     "test_id": "E2_CACHE_REUSE_CORRECT",
     "query": "その伝言の中で、受付時間はいつからいつまでと書いてありましたか？",
-    "answer": "GT_04の通話において、三菱UFJ銀行の横堀さんが中原凛花様への伝言に記載した受付時間は以下の通りです。  \n- **平日（月～金）**：朝9時から夜9時（21時）まで  \n- **土日祝日**：朝9時から午後5時（17時）まで  \n\nこの情報は、横堀さんが電話で伝えた「当行の受付時間」についての具体的な記述に基づいています。\n\n*(警告: 自己検証エンジンがオフラインのため、回答の整合性を完全に保証できません。)*",
+    "answer": "GT_04の通話において、三菱UFJ銀行の受付時間として具体的に記載されていたのは以下の通りです：  \n- **平日**：朝9時から21時まで（9:00～21:00）  \n- **土日祝日**：朝9時から17時まで（9:00～17:00）  \n\nこの情報は、通話中に発信側（三菱UFJ銀行の横堀）が受信側（アセットジャパンの担当者）に対して明示的に述べた内容です。",
     "metadata": {
-      "rewritten_query": "GT_04の通話における三菱UFJ銀行の横堀さんから中原凛花様への伝言に記載されていた受付時間（平日と土日祝日の時間帯）を具体的に教えてください。",
+      "rewritten_query": "GT_04の通話における伝言で、三菱UFJ銀行の受付時間として記載されていた具体的な時間（平日：9:00〜21:00、土日祝日：9:00〜17:00）を教えてください。",
       "needs_retrieval": "none",
       "relation_type": "same_entity",
       "target_pipeline": "RAG",
@@ -522,8 +522,8 @@
       "direct_answer_used": false,
       "self_check_passed": true,
       "self_check_retries": 0,
-      "answer_confidence": "medium",
-      "latency_ms": 22188.200999999026
+      "answer_confidence": "high",
+      "latency_ms": 14602.900500000032
     },
     "passed": true,
     "error": null
@@ -532,9 +532,9 @@
     "category": "E_Cache_SelfCheck",
     "test_id": "E2_TTL_EXPIRED",
     "query": "その受付時間を教えてください。",
-    "answer": "三菱UFJ銀行の横堀さんが中原凛花様への伝言に記載した受付時間は、以下の通りです：  \n- **平日（月～金）**：朝9時から21時まで  \n- **土日祝日**：朝9時から17時まで  \n\nこの情報は、通話中に横堀さんが受付時間について説明し、受信側（アセットジャパンの担当者）が確認した内容に基づいています。\n\n*(警告: 自己検証エンジンがオフラインのため、回答の整合性を完全に保証できません。)*",
+    "answer": "GT_04の通話において、三菱UFJ銀行の受付時間は以下の通りです：  \n- **平日**：朝9時から夜21時まで  \n- **土日祝日**：朝9時から午後5時まで  \n\nこの情報は、通話中に発信側（三菱UFJ銀行の横堀様）が受信側（アセットジャパンの担当者）に明示的に説明した内容に基づいています。",
     "metadata": {
-      "rewritten_query": "GT_04の通話において、三菱UFJ銀行の横堀さんが中原凛花様への伝言に記載した受付時間を具体的に教えてください。",
+      "rewritten_query": "GT_04の通話における三菱UFJ銀行の受付時間を教えてください。",
       "needs_retrieval": "full",
       "relation_type": "same_entity",
       "target_pipeline": "RAG",
@@ -545,8 +545,8 @@
       "direct_answer_used": false,
       "self_check_passed": true,
       "self_check_retries": 0,
-      "answer_confidence": "medium",
-      "latency_ms": 21025.4702000002
+      "answer_confidence": "high",
+      "latency_ms": 14893.708699999479
     },
     "passed": true,
     "error": null
@@ -555,7 +555,7 @@
     "category": "E_Cache_SelfCheck",
     "test_id": "E3_SELFCHECK_NO_DATA",
     "query": "GT_04の横堀さんの担当者コードは何番ですか？",
-    "answer": "申し訳ありませんが、提供された資料からは横堀さんの担当者コード（何番）に関する情報を確認できませんでした。コンテキストに該当のデータは含まれていません。\n\n*(警告: 自己検証エンジンがオフラインのため、回答の整合性を完全に保証できません。)*",
+    "answer": "申し訳ありませんが、提供された資料からは横堀さんの担当者コード（何番）についての情報を確認できませんでした。コンテキストに該当のデータは含まれていません。",
     "metadata": {
       "rewritten_query": "GT_04の横堀さんの担当者コードは何番ですか？",
       "needs_retrieval": "full",
@@ -568,8 +568,8 @@
       "direct_answer_used": false,
       "self_check_passed": true,
       "self_check_retries": 0,
-      "answer_confidence": "medium",
-      "latency_ms": 9624.2874999989
+      "answer_confidence": "high",
+      "latency_ms": 8971.113699999478
     },
     "passed": true,
     "error": null
@@ -578,7 +578,7 @@
     "category": "E_Cache_SelfCheck",
     "test_id": "E4_EMBEDDING_FAILED_FALLBACK",
     "query": "GT_09の伊藤さんはどこの会社ですか？",
-    "answer": "GT_09の伊藤さんは、愛知県名古屋市の**株式会社アセットジャパン**に所属しています。この情報は、通話の冒頭でB（伊藤さん）が自己紹介した内容から確認できます。\n\n*(警告: 自己検証エンジンがオフラインのため、回答の整合性を完全に保証できません。)*",
+    "answer": "GT_09の伊藤さんは、愛知県名古屋市の**株式会社アセットジャパン**に所属しています。この情報は、通話の冒頭でB（伊藤さん）が「愛知県名古屋市の株式会社アセットジャパンと申します」と自己紹介した内容から確認できます。",
     "metadata": {
       "rewritten_query": "GT_09の伊藤さんはどこの会社ですか？",
       "needs_retrieval": "full",
@@ -591,8 +591,8 @@
       "direct_answer_used": false,
       "self_check_passed": true,
       "self_check_retries": 0,
-      "answer_confidence": "medium",
-      "latency_ms": 22860.58150000099
+      "answer_confidence": "high",
+      "latency_ms": 19482.9479
     },
     "passed": true,
     "error": null
@@ -604,15 +604,15 @@
     "answer": "5 answers received",
     "metadata": {
       "latencies_ms": [
-        139.19779999923776,
-        14541.806400000496,
-        362.09899999994377,
-        6917.338299999756,
-        243.08730000120704
+        331.0874999997395,
+        13247.86370000038,
+        13366.722700000537,
+        6043.355200000406,
+        13507.47339999998
       ],
-      "min_ms": 139.19779999923776,
-      "max_ms": 14541.806400000496,
-      "avg_ms": 4440.705760000128,
+      "min_ms": 331.0874999997395,
+      "max_ms": 13507.47339999998,
+      "avg_ms": 9299.300500000209,
       "all_answered": true,
       "latency_spread": true,
       "content_integrity_count": 5
@@ -624,7 +624,7 @@
     "category": "G_Negative",
     "test_id": "G1_NONEXISTENT_SESSION",
     "query": "GT_99の通話で話された内容を教えてください。",
-    "answer": "申し訳ありませんが、提供された資料からはGT_99の通話に関する情報を確認できませんでした。文脈に含まれる会話内容やセッション情報はGT_01からGT_09までのデータのみであり、GT_99に関連する記録は見つかりません。\n\n*(警告: 自己検証エンジンがオフラインのため、回答の整合性を完全に保証できません。)*",
+    "answer": "申し訳ありませんが、提供された資料からはGT_99の通話に関する情報を確認できませんでした。文脈に含まれる会話内容やセッション情報はGT_01からGT_09までのデータのみであり、GT_99に関連する記録は見つかりません。",
     "metadata": {
       "rewritten_query": "GT_99の通話で話された内容を教えてください。",
       "needs_retrieval": "full",
@@ -637,8 +637,8 @@
       "direct_answer_used": false,
       "self_check_passed": true,
       "self_check_retries": 0,
-      "answer_confidence": "medium",
-      "latency_ms": 12108.795800000735
+      "answer_confidence": "high",
+      "latency_ms": 12532.861400000002
     },
     "passed": true,
     "error": null
@@ -647,21 +647,21 @@
     "category": "G_Negative",
     "test_id": "G2_OUT_OF_DOMAIN_FINANCE",
     "query": "三菱UFJ銀行の今日の株価はいくらですか？最新情報を調べてください。",
-    "answer": "2023年10月12日現在、三菱UFJ銀行（株式コード：8602）の株価は以下の情報が提供されています：  \n- **1,548円**（前日比＋1.2%上昇）※市場動向の記事  \n- **1,545円**（終値）※東証プライム市場のデータ  \n- **1,547円**（終値）※金融ニュースサイトの報道  \n\n複数の情報源でわずかな価格差が確認されていますが、最新の市場動向（10月12日時点）では**1,548円**と上昇しているとされています。正確なリアルタイム価格は、株式市場の提供元（例：東証や金融機関）で確認することをおすすめします。\n\n*(警告: 自己検証エンジンがオフラインのため、回答の整合性を完全に保証できません。)*",
+    "answer": "2023年10月12日現在、三菱UFJ銀行（株式コード：8602）の株価は **1,548円** で、前日比で **＋0.78％** 上昇しています。これは東京株式取引所の終値データに基づく最新情報です。  \n\nなお、他の情報源では **1,545円**（＋0.8％）や **1,547円**（＋0.75％）といったわずかな違いが見られますが、コンテキストに記載されている最も信頼性の高い情報（関連性スコア0.95）は **1,548円** です。",
     "metadata": {
       "rewritten_query": "三菱UFJ銀行の今日の株価はいくらですか？最新情報を調べてください。",
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "WEB",
-      "target_topic_key": "new_topic_123",
+      "target_topic_key": "new_topic_100",
       "routing_tier": "tier_2",
       "routing_method": "llm_router",
       "embedding_failed": false,
       "direct_answer_used": false,
       "self_check_passed": true,
       "self_check_retries": 0,
-      "answer_confidence": "medium",
-      "latency_ms": 37386.16550000006
+      "answer_confidence": "high",
+      "latency_ms": 43556.035300000076
     },
     "passed": true,
     "error": null
@@ -670,7 +670,7 @@
     "category": "G_Negative",
     "test_id": "G3_JARGON_ABBREVIATION_NODATA",
     "query": "GT_03の重説の説明はどのように行われましたか？",
-    "answer": "申し訳ありませんが、提供された資料からは「重説」に関する説明や関連する情報の確認が難しい状況です。GT_03の通話ログや要約には「重説」に該当する内容（例えば、物件の説明や手続きの説明など）が明示的に記載されていないため、具体的な説明の内容を特定することはできません。  \n必要に応じて、通話の文脈や他の資料をご確認いただけますか？\n\n*(警告: 自己検証エンジンがオフラインのため、回答の整合性を完全に保証できません。)*",
+    "answer": "申し訳ありませんが、提供された資料からは「重説」に関する具体的な説明や定義を確認する情報が含まれていません。コンテキスト内に「重説」が直接言及されている部分や、関連する説明の記述は見られません。そのため、この質問については明確な回答を提供できません。",
     "metadata": {
       "rewritten_query": "GT_03の重説の説明はどのように行われましたか？",
       "needs_retrieval": "full",
@@ -683,8 +683,8 @@
       "direct_answer_used": false,
       "self_check_passed": true,
       "self_check_retries": 0,
-      "answer_confidence": "medium",
-      "latency_ms": 12555.96720000176
+      "answer_confidence": "high",
+      "latency_ms": 12499.562399999377
     },
     "passed": true,
     "error": null
@@ -693,13 +693,13 @@
     "category": "G_Negative",
     "test_id": "G4_CONTEXT_POLLUTION_RECOVERY",
     "query": "GT_05の打ち合わせはいつ予定されていましたか？ / ラーメンの美味しい作り方を教えてください。 / その打ち合わせには誰が参加しましたか？",
-    "answer": "a=GT_05の打ち合わせは、2026年5月14日（水曜日）の10時から予定されていました。この内容は、|b=申し訳ありませんが、提供された資料からはその情報を確認できませんでした。コンテキストにラーメンの作り|c=GT_05の打ち合わせに参加した人物は、**サカモト**（男性）と**クマガイ**（男性）の2名です",
+    "answer": "a=GT_05の打ち合わせは、**2026年5月14日（水曜日）10時**に予定されていました。この日時|b=申し訳ありませんが、提供された資料からはその情報を確認できませんでした。コンテキストにラーメンの作り|c=GT_05の打ち合わせに参加した人物は、**サカモト**（男性）と**クマガイ**（男性）の2名です",
     "metadata": {
       "p4a_scheduling": true,
       "p4b_offtopic_model": true,
       "p4c_recovery": true,
       "meta4c": {
-        "rewritten_query": "GT_05の打ち合わせに参加した人物は誰ですか？",
+        "rewritten_query": "GT_05の打ち合わせには誰が参加しましたか？",
         "needs_retrieval": "none",
         "relation_type": "same_entity",
         "target_pipeline": "RAG",
@@ -710,8 +710,8 @@
         "direct_answer_used": false,
         "self_check_passed": true,
         "self_check_retries": 0,
-        "answer_confidence": "medium",
-        "latency_ms": 14908.307199999399
+        "answer_confidence": "high",
+        "latency_ms": 13845.63479999997
       }
     },
     "passed": true,
