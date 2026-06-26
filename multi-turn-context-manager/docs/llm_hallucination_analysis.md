@@ -207,126 +207,54 @@ Dưới đây là bảng phân tích chi tiết các kịch bản lỗi, nguyên
 | Mã lỗi | Kịch bản lỗi (Failure Scenario) | Nguyên nhân gốc rễ (Root Cause) | Mức độ nghiêm trọng | Cơ chế phòng thủ hiện tại | Rủi ro còn lại (Remaining Risk) |
 | :--- | :--- | :--- | :---: | :--- | :--- |
 | **V-01** | **Ảo giác thông tin Web tuyệt đối** | `WebEngine` tự sinh dữ liệu và URL từ trọng số mô hình khi không tích hợp API tìm kiếm thực tế. | **High** | Không có (Hoàn toàn phụ thuộc vào tri thức huấn luyện của mô hình). | Cực kỳ cao đối với các câu hỏi về thông tin thời gian thực hoặc chi tiết kỹ thuật mới. |
-| **V-02** | **Bỏ lọt ảo giác do Fail-Open** | Verifier gặp lỗi (Rate Limit, Timeout, Network Error), hàm trả về `True` để tránh deadlock. | **Medium** | Tự động trả về `True, None` khi xảy ra exception. | Câu trả lời bị ảo giác nặng vẫn có thể được trả trực tiếp cho người dùng mà không có cảnh báo. |
+| **V-02** | **Bỏ lọt ảo giác do Fail-Open** | Verifier gặp lỗi (Rate Limit, Timeout, Network Error), hàm trả về `True` để tránh deadlock. | **Medium** | Tự động trả về `True` kèm theo thông tin ngoại lệ lỗi; Trợ lý thêm disclaimer cảnh báo lỗi hệ thống ở cuối câu trả lời và hạ độ tin cậy xuống 'medium'. | Mặc dù có disclaimer và giảm độ tự tin, câu trả lời bị ảo giác vẫn có thể được trả về cho người dùng thay vì chặn đứng hoàn toàn. |
 | **V-03** | **Đảo ngược vai trò hội thoại (Role Reversal)** | Generator hiểu sai chủ ngữ/vị ngữ trong các cuộc gọi tiếng Nhật có cấu trúc câu lược bỏ chủ từ. | **High** | Quy tắc hệ thống số 6 & 7 ép mô hình phân biệt bên gọi/bên nghe. | LLM vẫn có thể bị nhầm lẫn khi gặp các cuộc gọi có cấu trúc đàm thoại phức tạp hoặc gián đoạn giữa chừng. |
 | **V-04** | **Lỗi cú pháp SQL hoặc Cột ảo** | LLM Generator tạo ra các cột không có trong schema DB (ví dụ: `transcript_chunks` thay vì `chunks_turn`). | **High** | Heuristic SQL Bypass cho các câu lệnh đơn giản; Lọc cú pháp SQL; Fallback tự động sang RAG khi lỗi. | Các câu lệnh phức tạp đòi hỏi logic gom nhóm (group by) hoặc lọc lồng nhau vẫn có nguy cơ bị lỗi cú pháp cao. |
 | **V-05** | **Ô nhiễm thực thể chéo (Cross-Session Pollution)** | Router giải quyết đại từ chỉ định sai lệch, tham chiếu nhầm nhân vật ở một session cũ hơn. | **Medium** | Phân giải đại từ chỉ định ưu tiên chọn thực thể ở lượt gần nhất; Loại bỏ từ khóa trừu tượng. | Khi lịch sử trò chuyện kéo dài và phức tạp, việc nhầm lẫn giữa các nhân vật có tên giống hoặc gần giống nhau vẫn có thể xảy ra. |
 | **V-06** | **Bỏ quên kiểm tra TTL Cache (Bypass TTL)** | Hàm `check_cache_ttl` trong `cache_manager.py` không bao giờ được gọi ở `Orchestrator`, khiến cache được lưu vĩnh viễn. | **High** | Eviction bằng thuật toán LRU (tối đa 5 slots). | Ảo giác do context cũ/lỗi thời (stale context) khi người dùng hỏi các thông tin thời gian thực. |
-| **V-07** | **Giới hạn vòng lặp thế đại từ chỉ định (Loop Break)** | Lệnh `break` trong luồng thay thế đại từ chỉ định ở `router.py` dừng ngay sau đại từ đầu tiên được khớp. | **Medium** | Sắp xếp danh sách đại từ theo chiều dài giảm dần. | Các đại từ chỉ định tiếp theo trong câu hỏi phức hợp không được giải quyết, dẫn đến truy xuất sai/thiếu ngữ cảnh. |
+| **V-07** | **Quy nạp tất cả đại từ về một thực thể (Same Entity Constraint)** | Vòng lặp thay thế đại từ thay thế tất cả đại từ khớp bằng cùng một `entity_id` duy nhất được phân giải. | **Medium** | Sắp xếp danh sách đại từ theo chiều dài giảm dần và thay thế hàng loạt. | Nếu câu hỏi chứa nhiều đại từ của các đối tượng khác nhau (như '彼' và '彼女'), tất cả sẽ bị thay thế thành cùng một session_id/entity_id gây lỗi ngữ nghĩa. |
 | **V-08** | **Direct-Answer Path bypass lập luận khi Cache Hit** | `should_use_direct_path` tự động kích hoạt nếu cached payload là SQL kết quả có 1 dòng, bỏ qua LLM Generator. | **Low** | Ràng buộc từ khóa `DIRECT_PATH_SPECIFIC_FIELDS` để phát hiện câu hỏi chi tiết. | Khi người dùng hỏi câu hỏi lập luận trên kết quả cached, hệ thống trả về thông tin thô từ cache thay vì câu trả lời lập luận. |
+| **V-09** | **Nhập nhèm nguồn gốc Web Search Fallback** | `WebEngine` khi gặp ngoại lệ sẽ sinh dữ liệu mock mặc định nhưng vẫn gán nhãn `source = "google_search_api"`. | **Low** | fallback = True trong payload (Đã được vá trong V3). | Trình Generator phía sau trước đây không nhận diện được để xử lý đặc biệt (như hạ độ tin cậy ngay từ nguồn). |
+| **V-09** | **Nhập nhèm nguồn gốc Web Search Fallback** | `WebEngine` khi gặp ngoại lệ sẽ sinh dữ liệu mock mặc định nhưng vẫn gán nhãn `source = "google_search_api"`. | **Low** | fallback = True trong payload (Đã được vá trong V3). | Trình Generator phía sau trước đây không nhận diện được để xử lý đặc biệt (như hạ độ tin cậy ngay từ nguồn). |
 
 ---
 
-## 🛠️ 4. Kiến nghị Cải tiến và Sơ đồ Giải pháp Kỹ thuật
+## 🛠️ 4. Cải tiến Kỹ thuật Đã thực hiện và Kiến nghị Giải pháp
 
-Để giải quyết triệt để các rủi ro ảo giác trên, chúng tôi đề xuất 2 cải tiến kỹ thuật cốt lõi:
+Chúng tôi đã thực hiện các cải tiến kỹ thuật cốt lõi và đề xuất các giải pháp lâu dài sau:
 
-### 1. Loại bỏ rủi ro Fail-Open của Verifier bằng Nhãn Cảnh báo Tường minh
-Trong hàm [_verify_hallucination](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/src/orchestrator.py#L606), khi xảy ra exception, thay vì trả về `True, None` (cho qua âm thầm), hệ thống cần trả về `True, "Verifier Connection Error"` để điều phối viên có thể đính kèm một nhãn cảnh báo tường minh lên giao diện người dùng.
+### 1. Phân biệt rõ ràng lỗi hệ thống của Verifier bằng Nhãn Cảnh báo Tường minh (Đã tối ưu)
+Khi xảy ra exception, hệ thống trả về `True` kèm theo issue `"Verifier system encountered an exception: ..."`. Lớp Generator tự động bắt lấy thông tin này để đính kèm cảnh báo tiếng Nhật ở cuối câu trả lời và đặt mức độ tin cậy về `medium` nhằm cảnh báo trực quan cho người dùng.
 
-#### Đề xuất chỉnh sửa mã nguồn tại [_verify_hallucination](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/src/orchestrator.py#L606):
+### 2. Định nghĩa cấu trúc dữ liệu đầu ra bằng Pydantic Models (Kiến nghị lâu dài)
+Hiện tại, payload trao đổi giữa các engine và generator là các Python dictionary không định kiểu. Đề xuất định nghĩa cấu trúc dữ liệu đầu ra của các Engine bằng Pydantic Models để tăng tính chặt chẽ của mã nguồn (Data Contract), tránh các lỗi runtime truy xuất thuộc tính.
+
+### 3. Kích hoạt kiểm tra TTL Cache cho luồng Partial Fetch (Đã vá lỗi)
+Chúng tôi đã tích hợp bước gọi hàm `check_cache_ttl` vào luồng xử lý `needs_retrieval == "partial"` trong [orchestrator.py](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/src/orchestrator.py#L254-L260):
 ```python
-        except Exception as e:
-            logger.error(f"Error during self-check verification: {e}")
-            # Trả về True kèm theo issue mô tả lỗi kết nối để ghi nhận cảnh báo
-            return True, f"Verifier system encountered an exception: {str(e)}"
-```
-
-#### Xử lý tại Generator [_generate_llm_answer_with_self_check](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/src/orchestrator.py#L533):
-```python
-                passed, issues = await self._verify_hallucination(response, context_str)
-                if passed:
-                    if issues and "Verifier system" in issues:
-                        # Hệ thống chạy bình thường nhưng đính kèm disclaimer cảnh báo verifier lỗi
-                        disclaimer = "\n\n*(警告: 自己検証エンジンがオフラインのため、回答の整合性を完全に保証できません。)*"
-                        return response + disclaimer, "medium", True, retries
-                    return response, "high", True, retries
-```
-
----
-
-### 2. Tích hợp Lớp Xác thực Schema dữ liệu bằng Pydantic (Data Contract)
-Hiện tại, payload trao đổi giữa các engine và generator là các Python dictionary không định kiểu. Việc này dễ dẫn đến các lỗi runtime khi truy xuất thuộc tính (ví dụ: `payload.get("rows")` bị trả về `None` hoặc sai cấu trúc danh sách).
-
-Chúng tôi đề xuất định nghĩa cấu trúc dữ liệu đầu ra của các Engine bằng Pydantic Models:
-
-```python
-from pydantic import BaseModel, Field, HttpUrl
-from typing import List, Optional, Dict, Any
-
-class SQLResultPayload(BaseModel):
-    generated_sql: str
-    rows: List[Dict[str, Any]] = Field(default_factory=list)
-
-class WebSearchResultItem(BaseModel):
-    title: str
-    url: HttpUrl
-    snippet: str
-    relevance: float
-
-class WebResultPayload(BaseModel):
-    results: List[WebSearchResultItem]
-    source: str
-    query_used: str
-
-class RAGDocumentItem(BaseModel):
-    chunk_id: str
-    text: str
-    score: float
-    metadata: Dict[str, Any]
-
-class RAGResultPayload(BaseModel):
-    documents: List[RAGDocumentItem]
-```
-
-Việc tích hợp Pydantic đảm bảo dữ liệu đầu vào của Generator và Verifier luôn tuân thủ đúng định dạng, giúp tránh các lỗi xử lý dữ liệu dẫn đến việc LLM Generator tự suy diễn thông tin bị thiếu (ảo giác).
-
----
-
-### 3. Kích hoạt kiểm tra TTL Cache trong Orchestrator
-Hiện tại cache được tái sử dụng vô thời hạn do bỏ quên bước kiểm tra TTL. Chúng tôi đề xuất gọi hàm `check_cache_ttl` trong `orchestrator.py` trước khi chấp nhận Cache Hit:
-
-```python
-            if needs_retrieval == "none" and use_cache:
-                cache_slot = await get_cache_slot(conn, session_id, target_topic_key)
-                if cache_slot:
-                    # Kiểm tra tính tươi mới của cache (TTL)
+                    # Check cache TTL freshness for partial fetch
                     ttl = CACHE_TTL_SQL if cache_slot["last_pipeline"] == "SQL" else CACHE_TTL_WEB
                     is_fresh = check_cache_ttl(cache_slot["refreshed_at"], ttl)
-                    
                     if not is_fresh:
-                        logger.info(f"Cache slot '{target_topic_key}' expired. Downgrading to full retrieval.")
+                        logger.info(f"Cache slot '{target_topic_key}' expired for partial fetch. Downgrading to full retrieval.")
                         needs_retrieval = "full"
-                        use_cache = False
-                    else:
-                        # Tiếp tục kiểm tra Empty Payload và Granularity...
 ```
+Giờ đây, nếu cache đã hết hạn, hệ thống sẽ tự động hạ cấp xuống full retrieval để lấy lại toàn bộ dữ liệu tươi mới.
+
+### 4. Phân biệt nguồn dữ liệu Web Search thành công và Web Search Fallback (Đã vá lỗi)
+Trong [engines.py](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/src/engines.py#L591-L598), khi quá trình parse kết quả giả lập Web thất bại, hệ thống sẽ gán nhãn `source = "google_search_api_fallback"` thay vì `"google_search_api"` như trước đây để các cấu phần phía sau nhận diện chính xác nguồn dữ liệu lỗi.
+
+### 5. Kiến nghị cải tiến giải quyết đa đại từ chỉ định trong router.py (Kiến nghị lâu dài)
+Cần cải tiến thuật toán giải quyết đại từ ở `_route_tier_1` và `_route_tier_2` để nhận biết sự khác biệt giữa các đại từ khác nhau (như đại từ nam/nữ, đại từ chỉ vật/chỉ người) thay vì thay thế tất cả đại từ tìm thấy bằng cùng một Session/Entity ID duy nhất.
 
 ---
 
-### 4. Loại bỏ câu lệnh break trong vòng lặp thay thế đại từ chỉ định
-Để hỗ trợ việc thay thế nhiều đại từ chỉ định khác nhau trong cùng một câu hỏi phức hợp, cần gỡ bỏ từ khóa `break` trong hàm xử lý của `router.py`:
+## 📈 5. Kế hoạch Hành động (Action Plan) và Trạng thái Thực hiện
 
-```python
-                if gt_id and gt_id not in rewritten.upper():
-                    has_pronoun = any(re.search(re.escape(p), rewritten.lower()) for p in PRONOUNS)
-                    if has_pronoun:
-                        sorted_pronouns = sorted(PRONOUNS, key=len, reverse=True)
-                        for pron in sorted_pronouns:
-                            if pron in rewritten:
-                                rewritten = rewritten.replace(pron, gt_id)
-                                # Bỏ break ở đây để tiếp tục thay thế các đại từ khác nếu có
-                        result["rewritten_query"] = rewritten
-```
-
----
-
-## 📈 5. Kế hoạch Hành động (Action Plan) đề xuất
-
-Để áp dụng các đề xuất trên vào dự án Javis V3, chúng tôi khuyến nghị thực hiện theo lộ trình 2 bước sau:
-
-1. **Bước 1 (Ưu tiên Cao):** Khắc phục các lỗ hổng hệ thống và lỗi logic ảnh hưởng trực tiếp đến dữ liệu và tính trung thực của câu trả lời:
-   - Sửa đổi hàm `_verify_hallucination` và `_generate_llm_answer_with_self_check` để cảnh báo tường minh khi Verifier lỗi (Rate Limit/Network Error).
-   - Kích hoạt kiểm tra TTL cache bằng cách gọi `check_cache_ttl` trong luồng xử lý Cache Hit của `Orchestrator.handle`.
-   - Gỡ bỏ lệnh `break` trong vòng lặp thay thế đại từ của `router.py` để hỗ trợ giải quyết nhiều đại từ đồng thời.
-2. **Bước 2 (Ưu tiên Thấp):** Refactor toàn bộ dữ liệu đầu ra của các Engine sử dụng Pydantic Models để tăng tính chặt chẽ của mã nguồn (Data Contract).
+1. **Bước 1 (Ưu tiên Cao - Đã hoàn thành):** Khắc phục các lỗ hổng hệ thống và lỗi logic ảnh hưởng trực tiếp đến dữ liệu và tính trung thực của câu trả lời:
+   - [x] Tích hợp kiểm tra TTL cache bằng cách gọi `check_cache_ttl` trong luồng xử lý Cache của `Orchestrator.handle` cho cả hai nhánh Full Hit và Partial Fetch.
+   - [x] Phân tách nguồn dữ liệu Web Search Fallback bằng nhãn `google_search_api_fallback` trong `WebEngine`.
+   - [x] Làm rõ tài liệu phân tích ảo giác để loại bỏ các phân tích sai lệch về lỗi `break` không có thật trong mã nguồn.
+2. **Bước 2 (Ưu tiên Thấp - Kế hoạch tương lai):** 
+   - [ ] Refactor toàn bộ dữ liệu đầu ra của các Engine sử dụng Pydantic Models để tăng tính chặt chẽ của mã nguồn.
+   - [ ] Tối ưu hóa bộ phân giải đại từ để hỗ trợ các câu hỏi phức hợp có nhiều đại từ chỉ định hướng tới các đối tượng khác nhau.

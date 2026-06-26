@@ -251,36 +251,43 @@ class IntelligentOrchestrator:
                     logger.warning(f"Cache slot '{target_topic_key}' not found in database for partial fetch. Falling back to full retrieval.")
                     needs_retrieval = "full"
                 else:
-                    old_payload = cache_slot["payload"] if cache_slot else {}
-                    
-                    # Run target engine with partial filter params
-                    engine_res = await self._run_engine(
-                        target_pipeline, query, session_id=session_id, partial_params=partial_params, conn=conn
-                    )
-                    payload = engine_res.payload
-                    
-                    if target_pipeline == "SQL" and not payload.get("rows"):
-                        logger.info("SQLEngine returned empty rows in partial retrieval. Falling back to RAGEngine.")
-                        target_pipeline = "RAG"
-                        if target_topic_key.startswith("sql_"):
-                            target_topic_key = target_topic_key.replace("sql_", "rag_", 1)
+                    # Check cache TTL freshness for partial fetch
+                    ttl = CACHE_TTL_SQL if cache_slot["last_pipeline"] == "SQL" else CACHE_TTL_WEB
+                    is_fresh = check_cache_ttl(cache_slot["refreshed_at"], ttl)
+                    if not is_fresh:
+                        logger.info(f"Cache slot '{target_topic_key}' expired for partial fetch. Downgrading to full retrieval.")
+                        needs_retrieval = "full"
+                    else:
+                        old_payload = cache_slot["payload"] if cache_slot else {}
+                        
+                        # Run target engine with partial filter params
                         engine_res = await self._run_engine(
-                            "RAG", rewritten_query or query, session_id=session_id
+                            target_pipeline, query, session_id=session_id, partial_params=partial_params, conn=conn
                         )
                         payload = engine_res.payload
-                    
-                    # Merge or supplement payload (simple override or merge if dict)
-                    if isinstance(old_payload, dict) and isinstance(payload, dict):
-                        merged_payload = {**old_payload, **payload}
-                        payload = merged_payload
-                    
-                    # Step 5: Entity Indexing
-                    summary_context = await self._build_summary_context(target_pipeline, payload, rewritten_query=rewritten_query or query)
-                    await self.entity_extractor.extract_and_index(conn, session_id, cache_slot["id"], target_pipeline, payload, query=rewritten_query or query, summary_context=summary_context)
-                    
-                    # Step 6: Cache Update with new embedding
-                    new_emb = await _safe_embed(rewritten_query, self.embedding_model)
-                    await update_cache_slot(conn, session_id, target_topic_key, payload, summary_context, query_embedding=new_emb)
+                        
+                        if target_pipeline == "SQL" and not payload.get("rows"):
+                            logger.info("SQLEngine returned empty rows in partial retrieval. Falling back to RAGEngine.")
+                            target_pipeline = "RAG"
+                            if target_topic_key.startswith("sql_"):
+                                target_topic_key = target_topic_key.replace("sql_", "rag_", 1)
+                            engine_res = await self._run_engine(
+                                "RAG", rewritten_query or query, session_id=session_id
+                            )
+                            payload = engine_res.payload
+                        
+                        # Merge or supplement payload (simple override or merge if dict)
+                        if isinstance(old_payload, dict) and isinstance(payload, dict):
+                            merged_payload = {**old_payload, **payload}
+                            payload = merged_payload
+                        
+                        # Step 5: Entity Indexing
+                        summary_context = await self._build_summary_context(target_pipeline, payload, rewritten_query=rewritten_query or query)
+                        await self.entity_extractor.extract_and_index(conn, session_id, cache_slot["id"], target_pipeline, payload, query=rewritten_query or query, summary_context=summary_context)
+                        
+                        # Step 6: Cache Update with new embedding
+                        new_emb = await _safe_embed(rewritten_query, self.embedding_model)
+                        await update_cache_slot(conn, session_id, target_topic_key, payload, summary_context, query_embedding=new_emb)
                 
             if needs_retrieval == "full":
                 # Topic Shift / New Query: Run engine from scratch

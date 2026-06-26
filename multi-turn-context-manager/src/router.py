@@ -864,36 +864,18 @@ class Router:
                     "embedding_failed": False
                 }
             elif d1 > 0.55:  # Similarity < 0.45
-                if cache_count > 0:
-                    logger.info(f"Tier 1: Semantic shift detected (d1={d1:.4f} > 0.55), but active caches exist. Escalating to Tier 2 to check for switchback.")
-                    guessed_p = heuristic_pipeline_guess(query)
-                    return await self._route_tier_2(
-                        session_id, query, 
-                        routing_reason="semantic_shift_with_active_caches", 
-                        embedding_failed=embedding_failed,
-                        speculative_guess={
-                            "target_pipeline": guessed_p if guessed_p != "MODEL" else closest_slot['last_pipeline'],
-                            "target_topic_key": closest_slot['topic_key']
-                        },
-                        conn=conn
-                    )
-                else:
-                    logger.info(f"Tier 1: Semantic shift detected! Distance {d1:.4f} > 0.55")
-                    guessed_pipeline = heuristic_pipeline_guess(query)
-                    return {
-                        "is_follow_up": False,
-                        "relation_type": "topic_shift",
-                        "use_cache": False,
-                        "needs_retrieval": "full",
-                        "context_reuse_type": "none",
-                        "rewritten_query": query,
-                        "target_topic_key": None,
-                        "target_pipeline": guessed_pipeline,
-                        "partial_fetch_params": None,
-                        "routing_tier": "tier_1",
-                        "routing_method": "embeddings",
-                        "embedding_failed": False
-                    }
+                logger.info(f"Tier 1: Semantic shift detected (d1={d1:.4f} > 0.55), but active caches exist. Escalating to Tier 2 to check for switchback.")
+                guessed_p = heuristic_pipeline_guess(query)
+                return await self._route_tier_2(
+                    session_id, query, 
+                    routing_reason="semantic_shift_with_active_caches", 
+                    embedding_failed=embedding_failed,
+                    speculative_guess={
+                        "target_pipeline": guessed_p if guessed_p != "MODEL" else closest_slot['last_pipeline'],
+                        "target_topic_key": closest_slot['topic_key']
+                    },
+                    conn=conn
+                )
             else:
                 logger.info(f"Tier 1: Ambiguity or gray area detected (d1={d1:.4f}, gap={gap:.4f}). Forwarding to Tier 2.")
                 # Add heuristic guess for speculative execution

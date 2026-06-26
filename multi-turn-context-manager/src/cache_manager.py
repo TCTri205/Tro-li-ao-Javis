@@ -44,7 +44,7 @@ async def touch_cache_slot(conn, session_id: str, topic_key: str):
 
 async def insert_cache_slot(conn, session_id: str, topic_key: str, last_pipeline: str, last_routing_method: str, payload: dict, summary_context: dict, query_embedding: list = None):
     """
-    Inserts a new cache slot, performing LRU eviction if the session exceeds 3 slots.
+    Inserts a new cache slot, performing LRU eviction if the session exceeds MAX_CACHE_SLOTS slots.
     """
     if topic_key:
         topic_key = topic_key.strip().strip('"').strip("'")

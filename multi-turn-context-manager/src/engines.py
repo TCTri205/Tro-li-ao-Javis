@@ -588,11 +588,12 @@ class WebEngine:
                 "fallback": True
             }
             
-        payload["source"] = "google_search_api"
+        source_name = "google_search_api_fallback" if payload.get("fallback") else "google_search_api"
+        payload["source"] = source_name
         payload["ttl_seconds"] = 3600
         payload["query_used"] = search_query
         
         return EngineResult(
-            source="google_search_api",
+            source=source_name,
             payload=payload
         )
