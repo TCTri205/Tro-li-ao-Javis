@@ -89,7 +89,10 @@ Lưu trữ dữ liệu JSON lớn và chỉ được tải khi cần thiết.
 | `entity_id` | `TEXT` | Định danh duy nhất (e.g., GT_04, Person_Name) |
 | `entity_type` | `VARCHAR(50)` | meeting_transcript, person, document, sql_result |
 | `display_names` | `TEXT[]` | Mảng các đại từ và tên hiển thị (GIN INDEX) |
-| `cache_slot_id` | `BIGINT` | REFERENCES `session_context_cache`(id) |
+| `cache_slot_id` | `BIGINT` | REFERENCES `session_context_cache`(id) ON DELETE CASCADE |
+| `mention_count` | `NUMERIC` | DEFAULT 1.0, số lần thực thể được nhắc đến |
+| `last_interacted_at` | `TIMESTAMP WITH TIME ZONE` | DEFAULT CURRENT_TIMESTAMP |
+| `created_at` | `TIMESTAMP WITH TIME ZONE` | DEFAULT CURRENT_TIMESTAMP |
 
 **Constraint:** `UNIQUE (session_id, entity_id)` để hỗ trợ cơ chế UPSERT.
 
@@ -97,5 +100,5 @@ Lưu trữ dữ liệu JSON lớn và chỉ được tải khi cần thiết.
 
 *   **Phân tách Hot/Cold:** metadata nhẹ nằm ở bảng Hot để pgvector search nhanh, dữ liệu nặng nằm ở bảng Cold để tránh phình bộ nhớ khi quét index.
 *   **Chỉ mục GIN:** Áp dụng cho `display_names` giúp tra cứu đại từ chỉ định ("nó", "người đó") cực nhanh qua toán tử `@>`.
-*   **LRU Limit:** Hệ thống giới hạn 3 slot cache trên mỗi `session_id` thông qua kiểm tra số lượng bản ghi trước khi chèn mới trong `upsert_cache_slot`.
+*   **LRU Limit:** Hệ thống giới hạn **5 slot cache** (`MAX_CACHE_SLOTS = 5` tại [config.py](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/src/config.py)) trên mỗi `session_id`. Khi vượt quá ngưỡng, slot có `last_accessed_at` xa nhất sẽ bị xóa (LRU Eviction).
 *   **Transaction Advisory Locks:** Sử dụng `pg_try_advisory_xact_lock(bigint)` để đảm bảo chỉ một tiến trình được xử lý một phiên tại một thời điểm.
