@@ -270,23 +270,38 @@ Hệ thống có thể tinh chỉnh hành vi thông qua các tham số cấu hì
 
 ## 🧪 Hệ thống Kiểm thử & Đánh giá (Evaluation & Testing)
 
-Hệ thống tích hợp bộ kiểm thử nâng cao toàn diện (V1, V2, V3) kiểm thử các khía cạnh nghiệp vụ, khả năng phục hồi lỗi, bảo mật, và tương tranh.
+Hệ thống tích hợp bộ kiểm thử nâng cao toàn diện (V1, V2, V3, V4) kiểm thử các khía cạnh nghiệp vụ, khả năng phục hồi lỗi, bảo mật, và tương tranh.
 
 ### 1. Các bộ kiểm thử hiện có
 - [test_suite.py](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/tests/test_suite.py): Bộ kiểm thử tiêu chuẩn V1 (16 kịch bản, 26 lượt hỏi).
 - [test_suite_v2.py](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/tests/test_suite_v2.py): Bộ kiểm thử nâng cao V2 (8 kịch bản, 22 lượt hỏi).
-- [test_suit_v3.py](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/tests/test_suit_v3.py): **Bộ kiểm thử Hard Mode V3** (7 nhóm kịch bản lớn, 30 lượt hỏi) bao gồm:
-  - *Deep Chain:* Phân giải đại từ liên tiếp qua 7 lượt hỏi, chuyển đổi chủ đề đan xen, phân giải đại từ số nhiều "彼ら" qua các session khác nhau.
-  - *Complex SQL:* Phép tính tổng hợp (SUM, MAX, COUNT, INTERSECT, BETWEEN), lọc khoảng thời gian, tìm kiếm cuộc gọi dài nhất.
-  - *Adversarial (Bảo mật):* Chống SQL Injection độc hại (`DROP TABLE`), từ chối bịa đặt giá cả (Hallucination Control), chống lệnh đột biến dữ liệu.
-  - *Disambiguation:* Phân biệt trùng tên người ("山下") ở các mã GT/Session ID khác nhau.
-  - *Cache & Error Recovery:* Tái sử dụng cache, tự động hạ cấp xuống Tier 2 khi embedding lỗi (Zero vector).
-  - *Concurrency:* Xử lý đồng thời 5 luồng tranh chấp khóa Advisory Lock một cách tuần tự và an toàn.
+- [test_suite_v3.py](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/tests/test_suite_v3.py): **Bộ kiểm thử Hard Mode V3** (7 nhóm kịch bản lớn, 30 lượt hỏi) bao gồm các tình huống tương tranh, phân giải trùng tên người chéo, chuỗi đại từ phức tạp và bảo mật SQL Injection.
+- [test_suite_v4.py](file:///D:/VJ/Tro-li-ao-Javis/multi-turn-context-manager/tests/test_suite_v4.py): **Bộ kiểm thử Kiểm định Ảo giác & Lỗ hổng V4** (Scenario H với 16 kịch bản kiểm thử cực hạn) bao gồm:
+  - *H1_WEB_SIMULATED_URL:* Kiểm định trả về URL giả lập của Web Engine khi tìm kiếm tin tức AI.
+  - *H2_FAIL_OPEN_WARNING:* Cảnh báo độ tin cậy khi tự kiểm tra (Self-Check Verifier) gặp exception (Fail-Open).
+  - *H3_DOUBLE_PRONOUN_REPLACEMENT:* Phân giải đại từ lặp kép trong cùng một truy vấn ("彼がそれについて...").
+  - *H4_CACHE_TTL_STALE_FILTER:* Loại bỏ context cache cũ hết hạn (TTL > 24h đối với SQL, > 1h đối với WEB).
+  - *H5_ROLE_REVERSAL_CHECK:* Kiểm soát không bị ảo giác đổi vai trò người gọi/người nhận (Yamashita gọi cho receptionist).
+  - *H6_DIRECT_PATH_REASONING_BYPASS:* Bỏ qua Direct Path khi câu hỏi yêu cầu giải thích/lý do chi tiết.
+  - *H7_CONCURRENT_SESSION_LOCK_TIMEOUT:* Đảm bảo kiểm soát thời gian chờ (lock_timeout) khi bị tranh chấp khóa Advisory Lock.
+  - *H8_CIRCUIT_BREAKER_TRANSITIONS:* Kiểm tra chuyển đổi trạng thái của Circuit Breaker khi có lỗi liên tiếp (CLOSED -> OPEN -> HALF_OPEN -> CLOSED).
+  - *H9_WEB_RELEVANCE_AND_FALLBACK:* Chỉ dùng Direct Path cho Web Search khi có duy nhất 1 kết quả có độ liên quan cao (> 0.85).
+  - *H10_GENDER_AWARE_PRONOUN_RESOLUTION:* Ánh xạ chính xác đại từ "彼" (nam) và "彼女" (nữ) dựa trên dữ liệu giới tính người tham gia trong DB và hậu tố tiếng Nhật.
+  - *H11_CACHE_EMPTY_PAYLOAD_DOWNGRADE:* Hạ cấp xuống tải đầy đủ khi cache hit nhưng payload rỗng.
+  - *H12_CACHE_GRANULARITY_DETAILS_UPGRADE:* Nâng cấp lên full retrieval khi truy vấn yêu cầu chi tiết/lượt thoại nhưng cache chỉ chứa metadata thô.
+  - *H13_CROSS_POLLINATION_HALT:* Ngăn chặn ảo giác chéo session (không gán người thuộc session này cho session khác).
+  - *H14_ABSENT_ACTOR_HALLUCINATION_TRAP:* Từ chối bịa đặt phát ngôn cho người vắng mặt (holiday).
+  - *H15_OUT_OF_CONTEXT_COMPANY_INFO_REFUSAL:* Từ chối trả lời thông tin công ty ngoài ngữ cảnh (cutoff parametric knowledge).
+  - *H16_VERIFIER_CORRECTION_LOOP:* Kiểm tra vòng lặp tự sửa lỗi ảo giác khi verifier phát hiện sai lệch thông tin.
 
 ### 2. Chạy kiểm thử
-Để chạy bộ kiểm thử Hard Mode V3:
+Để chạy các bộ kiểm thử:
 ```bash
-python tests/test_suit_v3.py
+# Chạy bộ kiểm thử V3 Hard Mode
+python tests/test_suite_v3.py
+
+# Chạy bộ kiểm thử V4 Hallucination & Vulnerabilities
+python tests/test_suite_v4.py
 ```
 
 ### 3. Xuất báo cáo kết quả kiểm thử sang Excel chuyên nghiệp
@@ -300,17 +315,17 @@ python scripts/convert_test_summary_to_excel_v2.py
 
 ## 📈 Kết quả Kiểm thử & Phân tích KPIs
 
-Bảng so sánh hiệu năng và độ chính xác qua 3 phiên bản kiểm thử cải tiến:
+Bảng so sánh hiệu năng và độ chính xác qua 4 phiên bản kiểm thử cải tiến:
 
-| Chỉ số (Metric) | Phiên bản V1 | Phiên bản V2 | Phiên bản V3 (Hard Mode & Cải tiến) |
-| :--- | :--- | :--- | :--- |
-| **Số lượng kịch bản kiểm thử** | 16 Scenarios | 8 Scenarios | 7 Scenarios |
-| **Tổng số lượt hỏi (Total Turns)** | 26 Turns | 22 Turns | 30 Turns |
-| **Tỷ lệ vượt qua (Passed Rate)** | **26/26 (100.0%)** | **22/22 (100.0%)** | **30/30 (100.0%)** |
-| **Tỷ lệ lỗi (Failed Rate)** | 0.0% | 0.0% | 0.0% |
-| **Độ trễ trung bình (Avg Latency)**| ~6,146ms | ~8,467ms | ~9,485ms |
-| **Tỷ lệ trúng Cache (Cache Hit Rate)** | 23.08% | 27.27% | 20.0% |
-| **Khóa tương tranh & Bảo mật** | Đạt | Đạt | Đạt (Ngăn chặn 100% SQL Injection & Concurrent Deadlocks) |
+| Chỉ số (Metric) | Phiên bản V1 | Phiên bản V2 | Phiên bản V3 (Hard Mode & Cải tiến) | Phiên bản V4 (Ảo giác & Lỗ hổng cực hạn) |
+| :--- | :--- | :--- | :--- | :--- |
+| **Số lượng kịch bản kiểm thử** | 16 Scenarios | 8 Scenarios | 7 Scenarios | 1 Scenario (Scenario H với 16 kịch bản con) |
+| **Tổng số lượt hỏi (Total Turns)** | 26 Turns | 22 Turns | 30 Turns | 16 Turns (12 cuộc gọi thật, 4 mock) |
+| **Tỷ lệ vượt qua (Passed Rate)** | **26/26 (100.0%)** | **22/22 (100.0%)** | **30/30 (100.0%)** | **16/16 (100.0%)** |
+| **Tỷ lệ lỗi (Failed Rate)** | 0.0% | 0.0% | 0.0% | 0.0% |
+| **Độ trễ trung bình (Avg Latency)**| ~6,146ms | ~8,467ms | ~9,485ms | ~18,923ms (gọi thật) / ~14,192ms (tất cả) |
+| **Tỷ lệ trúng Cache (Cache Hit Rate)** | 23.08% | 27.27% | 20.0% | 25.0% (gọi thật) / 18.75% (tất cả) |
+| **Khóa tương tranh & Bảo mật** | Đạt | Đạt | Đạt (Ngăn chặn 100% SQL Injection & Concurrent Deadlocks) | Đạt (Kiểm định Lock Timeout, Circuit Breaker, Phân giải giới tính động) |
 
 ---
 *Phát triển bởi Gemini CLI Agent cho dự án Trợ lý ảo Javis.*
