@@ -17,7 +17,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 6223.997499999996
+      "latency_ms": 6676.358400000026
     },
     "passed": true,
     "error": null
@@ -26,21 +26,21 @@
     "category": "Standard",
     "test_id": "SCENARIO_1_T2",
     "query": "誰がその通話を行いましたか？",
-    "answer": "通話時間: 105秒。",
+    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。  \nコンテキストに記載されている情報には、GT_04の通話に参加した人物の名前や所属に関する記述が含まれていません。",
     "metadata": {
-      "rewritten_query": "誰がGT_04を行いましたか？",
+      "rewritten_query": "GT_04の2026年5月4日の通話に参加した人物は誰ですか？",
       "needs_retrieval": "none",
       "relation_type": "same_entity",
-      "target_pipeline": "SQL",
+      "target_pipeline": "RAG",
       "target_topic_key": "new_topic_04",
-      "routing_tier": "tier_1",
-      "routing_method": "heuristics",
+      "routing_tier": "tier_2",
+      "routing_method": "llm_router",
       "embedding_failed": false,
-      "direct_answer_used": true,
+      "direct_answer_used": false,
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 50.93539999984387
+      "latency_ms": 23348.50540000025
     },
     "passed": true,
     "error": null
@@ -55,7 +55,7 @@
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "SQL",
-      "target_topic_key": "new_topic_1782368533",
+      "target_topic_key": "new_topic_1782460594",
       "routing_tier": "tier_1",
       "routing_method": "heuristics",
       "embedding_failed": false,
@@ -63,7 +63,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 57.49909999985903
+      "latency_ms": 47.93969999991532
     },
     "passed": true,
     "error": null
@@ -72,9 +72,9 @@
     "category": "Standard",
     "test_id": "SCENARIO_4_T4",
     "query": "では、先ほどの通話を受けたのは誰ですか？",
-    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。GT_04の通話に関与した人物や受信側の情報はコンテキストに記載されていません。",
+    "answer": "申し訳ありません、提供された資料からはGT_04の通話に関与した人物の情報（横堀さんを含むすべての名前や立場）は確認できませんでした。コンテキストに会話相手や関与者の記録が一切含まれていないため、回答できません。",
     "metadata": {
-      "rewritten_query": "では、GT_04を受けたのは誰ですか？",
+      "rewritten_query": "では、GT_04の横堀さん通話を受けたのは誰ですか？",
       "needs_retrieval": "none",
       "relation_type": "same_entity",
       "target_pipeline": "SQL",
@@ -84,9 +84,9 @@
       "embedding_failed": false,
       "direct_answer_used": false,
       "self_check_passed": true,
-      "self_check_retries": 0,
+      "self_check_retries": 1,
       "answer_confidence": "high",
-      "latency_ms": 10664.313199999924
+      "latency_ms": 18319.54450000012
     },
     "passed": true,
     "error": null
@@ -95,9 +95,9 @@
     "category": "NEG",
     "test_id": "NEG_001",
     "query": "彼は何と言いましたか？",
-    "answer": "申し訳ありませんが、提供された資料からは「GT_03_彼」という人物の存在や発言内容を確認する情報が含まれていません。GT_03は会話のセッションIDであり、会話参加者（AとB）の名前や性別に関する具体的な記述もありません。ご質問の対象となる人物が会話ログに明記されていないため、回答できません。",
+    "answer": "申し訳ありませんが、提供された資料からは「GT_03の彼」が誰を指しているかを特定する情報が確認できませんでした。会話ログでは「A」と「B」の2人の話者しか記録されておらず、どちらかが男性であるという明示的な記述もありません。そのため、「彼」がどちらの人物を指しているかを判断する根拠が不足しています。",
     "metadata": {
-      "rewritten_query": "GT_03の通話で、GT_03_彼は何と言いましたか？",
+      "rewritten_query": "GT_03の彼は何と言いましたか？",
       "needs_retrieval": "full",
       "relation_type": "same_entity",
       "target_pipeline": "RAG",
@@ -109,7 +109,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 33319.26180000005
+      "latency_ms": 26100.174600000173
     },
     "passed": true,
     "error": null
@@ -118,7 +118,7 @@
     "category": "NEG",
     "test_id": "NEG_002",
     "query": "あ、やっぱり、ネットで歌手A of 情報を検索してください。",
-    "answer": "歌手Aに関する最新情報は以下の通りです：  \n\n1. **ツアー情報**  \n   - 2023年秋のツアー「A TOUR 2023」が10月15日から開催されます。東京・大阪・名古屋の3都市で計12公演が予定されており、チケットは9月1日から一般発売されています（[公式サイト](https://aofficialsite.com/tour)）。  \n\n2. **アルバム売上**  \n   - 最新アルバム『New Horizon』が発売初週で15万枚を売り上げ、オリコン週間アルバムランキングで第1位を獲得しました（2023年8月27日時点）（[ORICON](https://oricon.co.jp/artist/a)）。  \n\n3. **プロフィール**  \n   - 1990年に生まれ、2012年にデビュー。2015年には「Hit Song」で日本レコード大賞最優秀新人賞を受賞。現在は自身のレーベル「A Records」を運営しています（[Music News](https://musicnews.jp/artist/a)）。  \n\n以上が提供された情報です。",
+    "answer": "以下は、ネットで歌手Aに関する情報検索した結果です：\n\n1. **最新ツアー情報**  \n   公式サイト（[https://aofficialsite.com/tour](https://aofficialsite.com/tour)）によると、歌手Aの「A TOUR 2023」が2023年10月15日から東京・大阪・名古屋の3都市で計12公演開催されます。チケットは2023年9月1日から一般発売。\n\n2. **デビュー10周年記念アルバム**  \n   オリコン（[https://oricon.co.jp/artist/a](https://oricon.co.jp/artist/a)）によると、2023年8月10日にデビュー10周年記念アルバム『Decade』がリリースされ、初週売上15万枚を記録しアルバムチャートで首位を獲得。\n\n3. **NHK紅白歌合戦出演**  \n   音楽新聞（[https://musicnews.jp/news/a](https://musicnews.jp/news/a)）によると、歌手Aは2023年12月31日放送の「第70回NHK紅白歌合戦」に今年初出場することが10月5日に発表されました（2003年から10回連続出場経験あり）。\n\n以上が現在確認可能な主要な情報です。",
     "metadata": {
       "rewritten_query": "ネットで歌手A of 情報を検索してください",
       "needs_retrieval": "full",
@@ -132,7 +132,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 34629.27660000014
+      "latency_ms": 43205.418100000315
     },
     "passed": true,
     "error": null
@@ -147,7 +147,7 @@
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "SQL",
-      "target_topic_key": "new_topic_1782368611",
+      "target_topic_key": "new_topic_1782460681",
       "routing_tier": "tier_1",
       "routing_method": "heuristics",
       "embedding_failed": false,
@@ -155,7 +155,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 51.52249999991909
+      "latency_ms": 25.925500000084867
     },
     "passed": true,
     "error": null
@@ -170,7 +170,7 @@
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "RAG",
-      "target_topic_key": "fallback_1782368611",
+      "target_topic_key": "fallback_1782460681",
       "routing_tier": "tier_2",
       "routing_method": "fallback",
       "embedding_failed": false,
@@ -178,7 +178,7 @@
       "self_check_passed": false,
       "self_check_retries": 2,
       "answer_confidence": "low",
-      "latency_ms": 2757.4006999998346
+      "latency_ms": 1316.4948000003278
     },
     "passed": true,
     "error": null
@@ -193,7 +193,7 @@
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "RAG",
-      "target_topic_key": "fallback_1782368614",
+      "target_topic_key": "fallback_1782460683",
       "routing_tier": "tier_2",
       "routing_method": "embeddings",
       "embedding_failed": false,
@@ -201,7 +201,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "medium",
-      "latency_ms": 1609.257399999933
+      "latency_ms": 1529.5593000000736
     },
     "passed": true,
     "error": null
@@ -224,7 +224,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 5679.644100000132
+      "latency_ms": 5952.975899999728
     },
     "passed": true,
     "error": null
@@ -233,10 +233,10 @@
     "category": "NEG",
     "test_id": "NEG_007",
     "query": "そのcallはいつendしましたか？",
-    "answer": "GT_04の通話は**2026年5月4日**に終了しました。  \n（通話終了時刻は105秒目と記録されています）",
+    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。コンテキストに記載されている情報は「GT_04の通話の録音時間（105秒）」のみであり、具体的な開始時刻や終了時刻に関する記述は含まれていません。",
     "metadata": {
       "rewritten_query": "GT_04の通話はいつ終了しましたか？",
-      "needs_retrieval": "full",
+      "needs_retrieval": "none",
       "relation_type": "same_entity",
       "target_pipeline": "SQL",
       "target_topic_key": "GT_04_topic",
@@ -247,7 +247,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 41217.6300000001
+      "latency_ms": 16731.479099999888
     },
     "passed": true,
     "error": null
@@ -256,13 +256,13 @@
     "category": "NEG",
     "test_id": "NEG_008",
     "query": "GT_04とGT_06の通話を比較してください。",
-    "answer": "GT_04（2026年5月4日終了、105秒）とGT_06（2026年5月6日終了、25秒）の比較結果は以下の通りです：  \n\n### **1. 日付・通話時間**  \n- **GT_04**: 2026年5月4日終了、105秒（約1分35秒）。  \n- **GT_06**: 2026年5月6日終了、25秒（約4分25秒）。  \n→ **日付は2日違い**、**通話時間はGT_04がGT_06の約4倍**と大きく異なる。  \n\n---\n\n### **2. 参加者**  \n- **GT_04**:  \n  - 発信側: **三菱UFJ銀行の横堀**（男性）。  \n  - 受信側: **アセットジャパンの担当者**（女性）。  \n  - 会話中に「中原凛花（なかはら りんか）」という人物が登場するが、**通話中は不在**（出勤前）で、**受信側の担当者とは別の人物**。  \n  - 参加者リストに「中原凛花」「凛花」「中原」の名前が複数記載されているが、**同一人物か不明**（データの不一致可能性あり）。  \n\n- **GT_06**:  \n  - 発信側: **AJテクノロジーズの山下**（男性）。  \n  - 受信側: **建設のエスタ**（男性、名前不明）。  \n  - 会話中に「カセさん」（不在）が登場するが、**受信側の担当者とは別の人物**。  \n\n→ **所属会社が異なる**（GT_04: 三菱UFJ銀行、GT_06: AJテクノロジーズ）。  \n\n---\n\n### **3. 内容**  \n- **GT_04**:  \n  - 横堀（三菱UFJ銀行）が、**中原凛花**（不在）に代わって**伝言を依頼**。  \n  - 会話内容に**営業時間（平日9:00〜21:00、土日祝日9:00〜17:00）**の確認が含まれる。  \n  - **目的**: 伝言の依頼。  \n\n- **GT_06**:  \n  - 山下（AJテクノロジーズ）が、**カセさん**（不在）に**改めて連絡する**ことを依頼。  \n  - **目的**: 今後の連絡の調整。  \n\n→ **目的が異なる**（GT_04は伝言依頼、GT_06は連絡調整）。  \n\n---\n\n### **4. 結論**  \n- **日付・通話時間・参加者・内容**すべてに**違い**が確認され、**同じ目的や形式ではない**。  \n- 特に、**所属会社や通話目的、通話時間の長さ**が大きく異なる。",
+    "answer": "GT_04の通話とGT_06の通話の比較は以下の通りです：\n\n**1. 通話の目的**  \n- **GT_04**: 三菱UFJ銀行の横堀が、アセットジャパンの中原凛花様に連絡を届けたい旨を伝える。中原様が当日出勤していないため、伝言を依頼する。  \n- **GT_06**: AJテクノロジーズの山下が、建設のエスタのカセさん（カセ・サン）が戻っていないか確認する。カセさんが外出中であるため、改めて連絡する旨を伝える。\n\n**2. 通話の構造**  \n- **共通点**:  \n  - 両方の通話で、相手が不在であることが確認され、対応策（伝言・再連絡）が合意されている。  \n  - 通話の終わりに「失礼いたします」などの丁寧な挨拶で締めくくられている。  \n\n- **相違点**:  \n  - **GT_04**では、具体的な連絡先（銀行の受付時間など）が提供されているが、**GT_06**ではそのような詳細は含まれていない。  \n  - **GT_04**の受信側（アセットジャパン）は、発信側（三菱UFJ銀行）の依頼を承諾し、伝言を依頼している。一方、**GT_06**では、受信側（建設のエスタ）が発信側（AJテクノロジーズ）に再連絡を依頼している。\n\n**3. 人物の立場**  \n- **GT_04**:  \n  - 発信側: 三菱UFJ銀行の横堀（男性）  \n  - 受信側: アセットジャパンの担当者（女性）  \n  - 不在の人物: 中原凛花様（アセットジャパンのアルバイト）  \n\n- **GT_06**:  \n  - 発信側: AJテクノロジーズの山下（男性）  \n  - 受信側: 建設のエスタの担当者（男性）  \n  - 不在の人物: カセさん（建設のエスタの関係者）  \n\n**4. 結論**  \n両通話は「相手が不在であるため、対応策を協議する」という目的は共通しているが、具体的な内容（伝言の依頼 vs. 再連絡の依頼）や、提供された情報（連絡先の詳細の有無）に違いがある。したがって、**目的や構造は似ているが、具体的な内容や対応策は異なる**。",
     "metadata": {
-      "rewritten_query": "GT_04の通話（2026年5月4日終了、105秒）とGT_06の通話の内容・参加者・通話時間・日付を比較してください",
+      "rewritten_query": "GT_04の通話とGT_06の通話を比較してください",
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
-      "target_pipeline": "SQL",
-      "target_topic_key": "new_topic_compare_123",
+      "target_pipeline": "RAG",
+      "target_topic_key": "new_topic_compare_gt04_gt06",
       "routing_tier": "tier_2",
       "routing_method": "llm_router",
       "embedding_failed": false,
@@ -270,7 +270,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 31815.761000000064
+      "latency_ms": 33982.729800000016
     },
     "passed": true,
     "error": null
@@ -279,7 +279,7 @@
     "category": "NEG",
     "test_id": "NEG_009",
     "query": "LRU Eviction Test",
-    "answer": "['new_topic_123', 'new_topic_124', 'new_topic_08', 'new_topic_03', 'new_topic_09']",
+    "answer": "['new_topic_03', 'new_topic_08', 'new_topic_09', 'new_topic_123', 'new_topic_124']",
     "metadata": {},
     "passed": true,
     "error": null
@@ -288,7 +288,7 @@
     "category": "NEG",
     "test_id": "NEG_010",
     "query": "今日の三菱の株価はどうですか？",
-    "answer": "2023年10月25日現在、三菱グループ（東証一部：8002）の株価は1,250円で終了しており、前日比で+1.5％上昇しています。この動きは業績改善への期待が高まっていることが背景にあるとされています。詳しくは以下のリンクをご参照ください：[三菱株価｜今日の終値と市場動向](https://www.mitsubishi-stock.com/today)。",
+    "answer": "2024年5月25日現在、三菱グループ傘下の企業に関する株価情報は以下の通りです（情報源：コンテキスト）。\n\n1. **三菱重工業（株）**  \n   株価：1,234円（前日比＋1.2％上昇）  \n   業績の堅調さから買われているとの記述があります。\n\n2. **三菱グループ（MTB.JP）**  \n   株価：1,238円（終値、前日比＋0.8％上昇）  \n   Yahoo!ファイナンスが提供する情報です。\n\n3. **三菱UFJフィナンシャルグループ**  \n   株価：1,245円（終値、過去1週間で＋2.5％上昇）  \n   為替.comが提供するチャート情報に基づきます。\n\n※「三菱」と一括りにされることがありますが、上記は三菱グループ傘下の異なる企業（重工業、金融グループなど）の株価です。具体的な企業名を指定してお尋ねになる場合、さらに詳細な情報を提供できます。",
     "metadata": {
       "rewritten_query": "今日の三菱の株価はどうですか？",
       "needs_retrieval": "full",
@@ -302,7 +302,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 32341.450600000142
+      "latency_ms": 65542.47159999977
     },
     "passed": true,
     "error": null
@@ -325,7 +325,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 107.32710000002044
+      "latency_ms": 27.76869999979681
     },
     "passed": true,
     "error": null
@@ -334,13 +334,13 @@
     "category": "NEG",
     "test_id": "NEG_014",
     "query": "彼は何と言いましたか？",
-    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。  \nGT_03およびGT_04の会話ログ中で、「彼」という語が明示的に使用されている記録は見つかりません。また、会話の文脈から「彼」が指す人物（例：第三者の男性など）を特定する情報も含まれていません。  \nGT_03では会話参加者がAとB、GT_04では「Nữ」（女性）と「Nam」（男性）と表記されており、どちらのセッションでも「彼」を指す対象が明確に記載されていません。",
+    "answer": "申し訳ありませんが、提供された資料からは「GT_03の彼」が誰を指しているかを特定する情報が確認できませんでした。会話ログでは「A」と「B」の2人の人物が登場していますが、どちらかの性別や「彼」が指す人物に関する明示的な記述はありません。コンテキストにない情報を推測することはできませんので、ご了承ください。",
     "metadata": {
-      "rewritten_query": "GT_03の「彼」についての発言内容と、GT_04の「彼」についての発言内容をそれぞれ教えてください。どちらのセッションの「彼」を指しているのか、明確にしてください。",
+      "rewritten_query": "GT_03の彼は何と言いましたか？",
       "needs_retrieval": "full",
-      "relation_type": "topic_shift",
+      "relation_type": "same_entity",
       "target_pipeline": "RAG",
-      "target_topic_key": "new_topic_123",
+      "target_topic_key": "GT_03_topic",
       "routing_tier": "tier_2",
       "routing_method": "llm_router",
       "embedding_failed": false,
@@ -348,7 +348,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 30137.15049999996
+      "latency_ms": 34611.55179999969
     },
     "passed": true,
     "error": null
@@ -357,7 +357,7 @@
     "category": "NEG",
     "test_id": "NEG_015",
     "query": "三菱に関する新しいニュースはありますか？",
-    "answer": "以下は、提供された資料に基づく三菱グループに関する最近のニュースです：\n\n1. **三菱重工業（MHI）**  \n   2023年10月25日に発表された決算では、純利益が前年比15％増の1,200億円となり、株価は東京証券取引所で前日比2.5％上昇。航空機や鉄道車両の需要増が主な要因です（[日経新聞](https://www.nikkei.com/mitsubishi)）。\n\n2. **三菱電機**  \n   2023年10月24日に次世代エアコン「MELCO X-1」を発表。省エネ性能を30％向上させ、2023年11月から販売開始。今冬の需要拡大が見込まれます（[Reuters](https://www.reuters.com/tech/energy)）。\n\n3. **三菱商事**  \n   2023年10月23日にドイツのSAP社とAI分野での共同開発契約を締結。2024年までに500億円規模の投資を計画しています（[Bloomberg](https://www.bloomberg.com/tech)）。\n\n以上が、10月23日～25日に確認できた三菱グループ関連の最新情報です。",
+    "answer": "以下は、提供されたコンテキストに基づく三菱グループに関する最新情報です：\n\n1. **2023年3月期第3四半期決算発表（2023年10月20日）**  \n   - 売上高は前年比8.2％増の1.2兆円を記録。エネルギー・インフラ事業の好調が顕著で、アジア市場での新規投資が成長要因となった。\n\n2. **三菱重工業の水素エネルギー開発プロジェクト（2023年10月15日）**  \n   - オーストラリアと連携し、2025年までに年間50万トンのグリーン水素生産を目指すプロジェクトを開始。カーボンニュートラル実現の基盤となる。\n\n3. **三菱商事のESG投資拡大（2023年10月12日）**  \n   - ESG関連投資額が前年比25％増の3,500億円に達し、再生可能エネルギー・サプライチェーンのデジタル化に注力。2025年までに総投資額1兆円を目標に掲げる。\n\n以上が、2023年10月時点での三菱グループに関する主要なニュースです。",
     "metadata": {
       "rewritten_query": "三菱に関する新しいニュースはありますか？",
       "needs_retrieval": "none",
@@ -371,7 +371,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 17928.178300000127
+      "latency_ms": 30770.036300000356
     },
     "passed": true,
     "error": null
@@ -380,13 +380,13 @@
     "category": "NEG",
     "test_id": "NEG_016",
     "query": "データベースに存在しない情報を表示してください",
-    "answer": "提供された資料によると、2023年7月15日に顧客ID「C123456」の検索が失敗した事例が記録されています。この場合、データベース内に該当する顧客情報が存在しないことが確認されています。これは「データベースに存在しない情報を表示する」要請に該当する例です。他の情報源では、未登録データの検出方法や処理手順が説明されていますが、具体的な「存在しない情報」の例としては上記の顧客IDが挙げられます。",
+    "answer": "提供された資料によると、2023年7月15日に顧客ID「C123456」の検索が失敗した事例が記録されています。この場合、データベース内に該当する顧客情報が存在しないことが確認されています（参照URL: https://example.com/db-error）。  \n\nなお、未登録情報の検出方法として「NOT EXISTS」クエリの利用が挙げられていますが（https://example.com/db-design），具体的な非存在情報の例としては上記の顧客IDが該当します。",
     "metadata": {
       "rewritten_query": "データベースに存在しない情報を表示してください",
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "WEB",
-      "target_topic_key": "new_topic_nonexistent_data_789",
+      "target_topic_key": "new_topic_nonexistent_data",
       "routing_tier": "tier_2",
       "routing_method": "llm_router",
       "embedding_failed": false,
@@ -394,7 +394,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 37333.404599999994
+      "latency_ms": 42344.509199999266
     },
     "passed": true,
     "error": null
@@ -417,7 +417,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 103.92769999998563
+      "latency_ms": 2990.1765999993586
     },
     "passed": true,
     "error": null
@@ -440,7 +440,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 7121.261699999877
+      "latency_ms": 7490.83520000022
     },
     "passed": true,
     "error": null
@@ -449,7 +449,7 @@
     "category": "FIX",
     "test_id": "FIX_001",
     "query": "AJ Technologiesの通話を検索してください",
-    "answer": "AJ Technologiesに関する通話情報として、以下の内容がコンテキストに記載されています：  \n**「AJ Technologies has scheduled a product launch call on July 15, 2023, at 10:00 AM EST. The event will showcase their latest AI-powered analytics platform, expected to boost client efficiency by 40%.」**  \n（2023年7月15日午前10時（EST）に、最新のAI搭載分析プラットフォームを紹介する製品発表通話を予定しています。このプラットフォームは顧客の効率を40％向上させることが期待されています。）  \n\nこの通話の詳細については、公式プレスリリース（[リンク](https://www.ajtech.com/press-release-q3-2023)）をご参照ください。他の通話情報（例：カスタマーサポートやAPIに関するもの）はコンテキストに記載されていません。",
+    "answer": "AJ Technologiesに関連する通話情報は以下の通りです：  \n\n1. **新製品発表に関する通話**  \n   - **日時**: 2023年7月15日（土）午前10時（EST）  \n   - **内容**: AIを搭載した分析プラットフォームの発表を目的とした電話会議が予定されています。この製品は、顧客の効率を40％向上させることが期待されています（[詳細はこちら](https://www.ajtech.com/press-release-q3-2023)）。  \n\n2. **カスタマーサポートに関する通話**  \n   - **連絡先**: 技術サポート専用ダイヤル **+1-800-555-1234**（月～金、午前9時～午後6時 PST）  \n   - **その他の手段**: ウェブサイトでのライブチャットも利用可能です（[サポートページ](https://support.ajtech.com/contact)）。  \n\n上記の情報は、提供されたコンテキストに基づくものです。他の通話履歴や詳細については、AJ Technologiesの公式サイトやサポート窓口に直接お問い合わせください。",
     "metadata": {
       "rewritten_query": "AJ Technologiesの通話を検索してください",
       "needs_retrieval": "full",
@@ -463,7 +463,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 35075.298599999995
+      "latency_ms": 40699.84560000012
     },
     "passed": true,
     "error": null
@@ -472,13 +472,13 @@
     "category": "FIX",
     "test_id": "FIX_002",
     "query": "Spaces query",
-    "answer": "こんにちは！何かお手伝いできることがあれば、ぜひ教えてくださいね 😊",
+    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。",
     "metadata": {
       "rewritten_query": "",
       "needs_retrieval": "none",
       "relation_type": "clarification",
-      "target_pipeline": "MODEL",
-      "target_topic_key": "",
+      "target_pipeline": "WEB",
+      "target_topic_key": "new_topic_123",
       "routing_tier": "tier_2",
       "routing_method": "llm_router",
       "embedding_failed": false,
@@ -486,7 +486,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 7493.70070000009
+      "latency_ms": 15438.452000000325
     },
     "passed": true,
     "error": null
@@ -495,7 +495,7 @@
     "category": "FIX",
     "test_id": "FIX_005",
     "query": "GT_04の通話の詳細",
-    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。  \nコンテキストに含まれる情報は、会話のテキストと参加者リスト（横堀、中原凛花、凛花、中原）のみであり、具体的な会話の流れや目的、参加者の役割・立場に関する明確な記述は見つかりません。  \nしたがって、正確な再生成は行えません。\n\n*(注意: この回答は自己検証で完全に一致しなかったため、信頼性が低くなっています。)*",
+    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。  \nコンテキストに含まれる情報は、会話のテキストと参加者リスト（名前・性別・所属など）の一部であり、通話の詳細な流れや目的、結果についての明確な記述は見つかりません。  \n特に、参加者リストに「中原凛花」「凛花」「中原」などの重複・不一致があるため、正確な人物関係や通話の目的を文脈から推定することはできません。  \nまた、会話の内容は「Nữ」「Nam」などの話者ラベルで区切られたテキストであり、特定の人物（例：中原凛花）とは異なる第三者の受付担当者を指す可能性があります。  \n\nご質問の内容について、コンテキストに明確な記述がないため、回答できません。\n\n*(注意: この回答は自己検証で完全に一致しなかったため、信頼性が低くなっています。)*",
     "metadata": {
       "rewritten_query": "GT_04の通話の詳細",
       "needs_retrieval": "full",
@@ -509,7 +509,7 @@
       "self_check_passed": false,
       "self_check_retries": 2,
       "answer_confidence": "low",
-      "latency_ms": 39294.80990000002
+      "latency_ms": 47932.70350000057
     },
     "passed": true,
     "error": null
@@ -518,7 +518,7 @@
     "category": "FIX",
     "test_id": "FIX_006",
     "query": "AJ Technologiesに関する情報",
-    "answer": "AJ Technologiesに関する情報は以下の通りです：  \n\n1. **新製品発表**  \n   - 2023年Q3にAIを搭載した分析プラットフォームの新製品を発表予定です。発表会は**2023年7月15日（金）10:00 AM EST**に開催され、顧客の効率を40%向上させるとしています（[プレスリリース](https://www.ajtech.com/press-release-q3-2023)）。  \n\n2. **カスタマーサポート**  \n   - 技術サポートは専用ホットライン**+1-800-555-1234**（月～金、9:00 AM～6:00 PM PST）やウェブサイトのライブチャットで対応しています（[サポート情報](https://support.ajtech.com/contact)）。  \n\n3. **APIドキュメント**  \n   - 開発者向けにRESTful API（バージョン3.2）を提供しており、IoTデバイスやクラウドサービスとの統合をサポートしています。ドキュメントは**2023年3月1日**にリリースされました（[API情報](https://dev.ajtech.com/api-docs)）。  \n\n以上が提供された資料に基づくAJ Technologiesの情報です。",
+    "answer": "AJ Technologiesに関する情報は以下の通りです：  \n\n1. **新製品発表**  \n   - 2023年Q3にAIを搭載した分析プラットフォームの新製品を発表予定です。  \n   - 発表会は**2023年7月15日（金）午前10時（EST）**に開催され、顧客の効率を40％向上させるとしています（[関連情報](https://www.ajtech.com/press-release-q3-2023)）。  \n\n2. **カスタマーサポート**  \n   - 技術サポートは専用フリーダイヤル**+1-800-555-1234**で対応。  \n   - 受付時間は**月曜～金曜、午前9時～午後6時（PST）**。  \n   - ウェブサイト内でのライブチャットも利用可能です（[関連情報](https://support.ajtech.com/contact)）。  \n\n3. **APIドキュメント**  \n   - RESTful API（バージョン3.2）を提供しており、IoTデバイスやクラウドサービスとの統合が可能です。  \n   - ドキュメントは**2023年3月1日**にリリースされました（[関連情報](https://dev.ajtech.com/api-docs)）。  \n\n以上が提供された資料に基づくAJ Technologiesの情報です。",
     "metadata": {
       "rewritten_query": "AJ Technologiesに関する情報",
       "needs_retrieval": "none",
@@ -532,7 +532,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 12791.37710000009
+      "latency_ms": 11619.30140000004
     },
     "passed": true,
     "error": null
@@ -541,7 +541,7 @@
     "category": "FIX",
     "test_id": "FIX_008",
     "query": "Concurrent advisory locks",
-    "answer": "[8963.704000000007, 16385.440600000038, 23802.130300000044]",
+    "answer": "[127.44220000058704, 352.42789999938395, 265.9558000004836]",
     "metadata": {},
     "passed": true,
     "error": null

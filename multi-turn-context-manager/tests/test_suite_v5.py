@@ -1,5 +1,6 @@
 import os
 import sys
+import uuid
 
 # Limit linear algebra threads to prevent Windows memory errors
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
@@ -108,6 +109,8 @@ class TestSuiteV5:
                 await conn.execute("DELETE FROM chat_history")
                 await conn.execute("DELETE FROM session_context_cache")
                 await conn.execute("DELETE FROM session_entity_index")
+                await conn.execute("DELETE FROM chunks_turn WHERE transcript_id IN (SELECT id FROM transcripts WHERE session_id = 'GT_11')")
+                await conn.execute("DELETE FROM transcripts WHERE session_id = 'GT_11'")
 
     async def record_result(self, category, test_id, query, answer, rewritten_query, routing_meta, passed, error=None):
         self.results.append({
@@ -131,6 +134,23 @@ class TestSuiteV5:
 
         # Seed initial Kanji-based entities in database
         async with self.db_pool.acquire() as conn:
+            # Clean up existing GT_11 to prevent duplicate keys
+            await conn.execute("DELETE FROM chunks_turn WHERE transcript_id IN (SELECT id FROM transcripts WHERE session_id = 'GT_11')")
+            await conn.execute("DELETE FROM transcripts WHERE session_id = 'GT_11'")
+            
+            # Seed main transcripts database with GT_11 for full retrieval integration
+            t_id = uuid.uuid4()
+            await conn.execute("""
+                INSERT INTO transcripts (id, session_id, meeting_date, participants, speaker_count, duration_seconds, raw_text, summary)
+                VALUES ($1, 'GT_11', '2026-06-26', '["佐藤太郎", "島田"]'::jsonb, 2, 120, 
+                        '佐藤太郎: 私はアセットジャパンの佐藤太郎です。営業を担当しております。', 
+                        '佐藤太郎さんはアセットジャパンの営業担当者です。')
+            """, t_id)
+            await conn.execute("""
+                INSERT INTO chunks_turn (id, transcript_id, turn_index, speaker, time_start_sec, time_end_sec, text)
+                VALUES ($1, $2, 0, '佐藤太郎', 0, 30, '私はアセットジャパンの佐藤太郎です。営業を担当しております。')
+            """, uuid.uuid4(), t_id)
+
             c_id = await upsert_cache_slot(
                 conn, sid, "GT_11_topic", "RAG", "heuristics",
                 {"documents": [{"chunk_id": "c11", "text": "佐藤太郎さんはアセットジャパンに所属する営業担当者です。"}]},
@@ -205,11 +225,58 @@ class TestSuiteV5:
         ans4, meta4 = await self.orchestrator.handle(sid, q4)
         rewritten4 = meta4.get("rewritten_query", "")
         
-        passed4 = "島田" in rewritten4 or "島田" in ans4 or "内見" in ans4
+        # Check strictly that "島田" (Kanji) is resolved in rewritten_query or ans to prevent false positives from "内見"
+        passed4 = "島田" in rewritten4 or "島田" in ans4
         await self.record_result(
             "F_Fuzzy_Matching", "F4_STT_TYPO_CONFUSION",
             q4, ans4, rewritten4, meta4, passed4,
             error=None if passed4 else "Typo 'シマタ' was not resolved to '島田'"
+        )
+
+        # ----------------------------------------------------------------------
+        # F5: Phonetic Ambiguity (Resolving between two similar-sounding names)
+        # ----------------------------------------------------------------------
+        # Seed both "島田" (Shimada) and "島津" (Shimazu)
+        async with self.db_pool.acquire() as conn:
+            # Delete first
+            await conn.execute("DELETE FROM session_entity_index WHERE session_id = $1 AND entity_id IN ('GT_12_島田', 'GT_12_島津')", sid)
+            await conn.execute("""
+                INSERT INTO session_entity_index (session_id, cache_slot_id, entity_id, entity_type, display_names, attributes)
+                VALUES ($1, $2, 'GT_12_島田', 'person', ARRAY['島田', 'しまだ'], '{"gender":"female", "company":"アセットジャパン"}')
+            """, sid, c_id)
+            await conn.execute("""
+                INSERT INTO session_entity_index (session_id, cache_slot_id, entity_id, entity_type, display_names, attributes)
+                VALUES ($1, $2, 'GT_12_島津', 'person', ARRAY['島津', 'しまづ'], '{"gender":"male", "company":"アセットジャパン"}')
+            """, sid, c_id)
+            
+        q5 = "シマタさんはどちらの会社の人ですか？" # "シマタ" is closer to "島田" (Shimada) than "島津" (Shimazu) due to voicing
+        ans5, meta5 = await self.orchestrator.handle(sid, q5)
+        rewritten5 = meta5.get("rewritten_query", "")
+        
+        # Verify it mapped "シマタ" to "島田" (Shimada), not "島津" (Shimazu)
+        passed5 = "島田" in rewritten5 or "島田" in ans5
+        failed_by_shimazu = "島津" in rewritten5 or "島津" in ans5
+        passed5 = passed5 and not failed_by_shimazu
+        
+        await self.record_result(
+            "F_Fuzzy_Matching", "F5_PHONETIC_AMBIGUITY",
+            q5, ans5, rewritten5, meta5, passed5,
+            error=None if passed5 else f"Fuzzy matching resolved to '島津' or failed to resolve to '島田'. Rewrite: {rewritten5}"
+        )
+
+        # ----------------------------------------------------------------------
+        # F6: STT Homophones (Naiken/Property Viewing vs Naiken/Inspection)
+        # ----------------------------------------------------------------------
+        q6 = "島田さんは何の内検を希望していましたか？" # "内検" (Naiken) homophone of "内見" (Naiken - viewing)
+        ans6, meta6 = await self.orchestrator.handle(sid, q6)
+        rewritten6 = meta6.get("rewritten_query", "")
+        
+        # The homophone should be corrected or mapped to "内見"
+        passed6 = "内見" in rewritten6 or "内見" in ans6
+        await self.record_result(
+            "F_Fuzzy_Matching", "F6_STT_HOMOPHONES",
+            q6, ans6, rewritten6, meta6, passed6,
+            error=None if passed6 else f"Homophone '内検' was not resolved to '内見'. Rewrite: {rewritten6}"
         )
 
     # ==========================================================================
@@ -325,7 +392,8 @@ class TestSuiteV5:
             await conn.execute("UPDATE session_context_cache SET last_accessed_at = NOW() WHERE id = $1", c_shimada)
             await conn.execute("UPDATE session_context_cache SET last_accessed_at = NOW() - INTERVAL '1 hour' WHERE id = $1", c_yokobori)
 
-        q5 = "彼が気にした理由は何ですか？" # Turn 49: referring to Shimada (GT_03)
+        # Use "同氏" (pronoun in config but NOT in SINGULAR_PRONOUNS) to bypass Tier 1 Heuristics and test Tier 2 History limit
+        q5 = "同氏が気にした理由は何ですか？" # Turn 49: referring to Shimada (GT_03)
         ans5, meta5 = await self.orchestrator.handle(sid_bloat, q5)
         rewritten5 = meta5.get("rewritten_query", "")
         
@@ -346,6 +414,73 @@ class TestSuiteV5:
             "B_History_Bloat", "B2_DEEP_HISTORY_RECENCY_CHECK",
             q5, ans5, rewritten5, meta5, passed5,
             error=err_msg
+        )
+
+        # ----------------------------------------------------------------------
+        # B3 & B4: Context Interruption Switch-back & Compound Pronouns
+        # ----------------------------------------------------------------------
+        sid_switch = "v5_switchback_test"
+        await self.clear_db(sid_switch)
+        
+        # Seed both GT_11 (Sato) and GT_03 (Shimada) caches
+        async with self.db_pool.acquire() as conn:
+            c_sato = await upsert_cache_slot(
+                conn, sid_switch, "GT_11_topic", "RAG", "heuristics",
+                {"documents": [{"chunk_id": "c11", "text": "佐藤太郎さんはアセットジャパンの営業担当者です。"}]},
+                {"entity_id": "GT_11", "entity_type": "meeting_transcript"}
+            )
+            c_shimada = await upsert_cache_slot(
+                conn, sid_switch, "GT_03_topic", "RAG", "heuristics",
+                {"documents": [{"chunk_id": "c3", "text": "島田さんは物件の内見を希望しています。"}]},
+                {"entity_id": "GT_03", "entity_type": "meeting_transcript"}
+            )
+            # Add entity index records
+            await conn.execute("""
+                INSERT INTO session_entity_index (session_id, cache_slot_id, entity_id, entity_type, display_names)
+                VALUES ($1, $2, 'GT_11_佐藤太郎', 'person', ARRAY['佐藤太郎', '佐藤']),
+                       ($1, $3, 'GT_03_島田', 'person', ARRAY['島田', 'しまだ'])
+            """, sid_switch, c_sato, c_shimada)
+            
+        # Turn 1: Query about Sato
+        q_sato = "GT_11 of 佐藤さんについて教えてください。"
+        _, meta_sato = await self.orchestrator.handle(sid_switch, q_sato)
+        
+        # Turn 2: Query about Shimada (interrupting / switching topic)
+        q_shimada = "やっぱりキャンセルして、GT_03 of 島田さんについて教えてください。"
+        _, meta_shimada = await self.orchestrator.handle(sid_switch, q_shimada)
+        
+        # Turn 3: Compound Pronoun Resolution (Pronoun + Proper noun comparison)
+        # Active topic is Shimada. Compare "同氏" (Shimada) and "佐藤太郎さん".
+        q_compound = "同氏と佐藤太郎さんは同じ会社に所属していますか？"
+        ans_compound, meta_compound = await self.orchestrator.handle(sid_switch, q_compound)
+        rewritten_compound = meta_compound.get("rewritten_query", "")
+        
+        resolved_shimada = "島田" in rewritten_compound or "GT_03" in rewritten_compound
+        resolved_sato = "佐藤" in rewritten_compound or "GT_11" in rewritten_compound
+        
+        # Comparison of multiple entities should bypass cache (needs_retrieval=full)
+        passed_b4 = resolved_shimada and resolved_sato and meta_compound.get("needs_retrieval") == "full"
+        
+        await self.record_result(
+            "B_History_Bloat", "B4_COMPOUND_PRONOUN_RESOLUTION",
+            q_compound, ans_compound, rewritten_compound, meta_compound, passed_b4,
+            error=None if passed_b4 else f"Compound resolution failed. Shimada resolved: {resolved_shimada}, Sato resolved: {resolved_sato}, Retrieval: {meta_compound.get('needs_retrieval')}"
+        )
+        
+        # Turn 4: Query switching back to Sato (using switchback keyword)
+        q_switch = "やっぱり忘れて、最初の佐藤さんの話に戻りましょう。"
+        ans_switch, meta_switch = await self.orchestrator.handle(sid_switch, q_switch)
+        rewritten_switch = meta_switch.get("rewritten_query", "")
+        
+        passed_b3 = (
+            meta_switch.get("target_topic_key") == "GT_11_topic" and
+            meta_switch.get("needs_retrieval") == "none"
+        )
+        
+        await self.record_result(
+            "B_History_Bloat", "B3_CONTEXT_INTERRUPTION_SWITCHBACK",
+            q_switch, ans_switch, rewritten_switch, meta_switch, passed_b3,
+            error=None if passed_b3 else f"Switchback failed. Target: {meta_switch.get('target_topic_key')}, Retrieval: {meta_switch.get('needs_retrieval')}"
         )
 
 

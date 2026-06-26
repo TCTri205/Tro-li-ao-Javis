@@ -3,21 +3,21 @@
     "category": "Standard",
     "test_id": "STD_TURN_1",
     "query": "GT_04の三菱UFJ銀行の横堀さんは誰に伝言を残しましたか？",
-    "answer": "申し訳ありません、誤解を招いた表現がありました。正確な情報に基づいて再回答いたします。  \n\n**三菱UFJ銀行の横堀さんは、アセットジャパン所属の中原凛花さんに対して「三菱UFJ銀行から電話をいただきたい」との伝言を依頼しました。**  \n\n具体的には、横堀さんは中原凛花さんが不在だったため、受付担当者（アセットジャパンの受付）に「中原凛花様にご案内したいことがございまして、お電話いたしました」との旨を伝えて、**中原凛花さんから三菱UFJ銀行に電話をかけてほしい**旨の伝言を依頼しています。  \n\nこの点について、コンテキストの記述（横堀さんの発言「お電話いたしました」および受付担当者の応答「かしこまりました。申し伝えます」）から、伝言の依頼内容は「中原凛花さんから三菱UFJ銀行に電話をかける」方向であることが明確です。",
+    "answer": "三菱UFJ銀行の横堀さんは、アセットジャパンでアルバイトとして勤務している中原凛花（なかはら りんか）さんに伝言を残しました。  \n通話では、中原さんが当日は出勤していないため、受付担当者（アセットジャパン所属の女性）に伝言を依頼しています。",
     "metadata": {
       "rewritten_query": "GT_04の三菱UFJ銀行の横堀さんは誰に伝言を残しましたか？",
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
-      "target_pipeline": "SQL",
+      "target_pipeline": "RAG",
       "target_topic_key": "new_topic_04",
       "routing_tier": "tier_1",
       "routing_method": "heuristics",
       "embedding_failed": false,
       "direct_answer_used": false,
       "self_check_passed": true,
-      "self_check_retries": 1,
+      "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 36619.83860000009
+      "latency_ms": 24256.70379999974
     },
     "passed": true,
     "error": null
@@ -26,21 +26,21 @@
     "category": "Standard",
     "test_id": "STD_TURN_2_FOLLOWUP",
     "query": "彼女は当日出勤していましたか？",
-    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。  \nGT_04の会話記録では、中原凛花様が「出勤していない」と述べているのは、電話応対の女性（Nữ）の発言であり、中原凛花さん自身が「出勤していない」と明示的に述べているわけではありません。また、中原凛花さんが当日出勤していたかどうかについての直接的な記述は見られません。",
+    "answer": "提供された資料に基づくと、中原凛花さんは当日出勤していませんでした。  \n通話中、受信側の女性（アセットジャパンの担当者）は「今日はお休みですね。まだ出勤してないので……。」と述べており、中原凛花さんの出勤状況が「お休み」であることを明示しています。  \nしたがって、GT_04の通話時点では中原凛花さんは出勤していませんでした。",
     "metadata": {
       "rewritten_query": "GT_04の中原凛花さんは当日出勤していましたか？",
       "needs_retrieval": "none",
       "relation_type": "same_entity",
-      "target_pipeline": "SQL",
+      "target_pipeline": "RAG",
       "target_topic_key": "new_topic_04",
       "routing_tier": "tier_1",
       "routing_method": "heuristics",
       "embedding_failed": false,
       "direct_answer_used": false,
       "self_check_passed": true,
-      "self_check_retries": 0,
+      "self_check_retries": 1,
       "answer_confidence": "high",
-      "latency_ms": 17396.49899999995
+      "latency_ms": 22887.76659999985
     },
     "passed": true,
     "error": null
@@ -49,12 +49,12 @@
     "category": "Standard",
     "test_id": "STD_TURN_3_SWITCH",
     "query": "バルテスの中岡さんからの電話(GT_02)で、誰宛ての連絡でしたか？",
-    "answer": "GT_02の通話において、バルテスの中岡さんが電話をかけた相手は「アセットジャパンの志保（石田志保）」宛ての連絡でした。  \n\n会話の流れでは、中岡さんが「PMG部の石田様いらっしゃいますでしょうか？」と尋ねられ、相手（アセットジャパン側）が「志保様」と特定しています。その後、中岡さんが「在宅になりますので、こちらからかけ直させていただきます」と述べ、志保様の電話番号を確認しています。  \n\nしたがって、この通話は**アセットジャパン所属の志保（石田志保）**宛ての連絡です。",
+    "answer": "GT_02の通話（バルテスの中岡さんからの電話）は、**PMG部の石田志保様**宛ての連絡でした。  \n通話内容によると、中岡さんは石田志保様が在宅であることを確認し、折り返しの電話を希望するために電話番号（050-1782-1880）を確認しています。",
     "metadata": {
       "rewritten_query": "バルテスの中岡さんからの電話(GT_02)で、誰宛ての連絡でしたか？",
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
-      "target_pipeline": "SQL",
+      "target_pipeline": "RAG",
       "target_topic_key": "new_topic_02",
       "routing_tier": "tier_1",
       "routing_method": "heuristics",
@@ -63,7 +63,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 14874.95469999999
+      "latency_ms": 26952.406800000063
     },
     "passed": true,
     "error": null
@@ -72,7 +72,7 @@
     "category": "Standard",
     "test_id": "STD_TURN_4_SWITCHBACK",
     "query": "では、先ほどの三菱UFJ銀行の担当者の名前は何でしたか？",
-    "answer": "GT_04の会話において、三菱UFJ銀行の担当者の名前は**横堀**です。  \n（コンテキスト内での発信側の自己紹介より確認可能）",
+    "answer": "該当するデータが見つかりませんでした。",
     "metadata": {
       "rewritten_query": "では、GT_04_三菱UFJ銀行三菱UFJ銀行の担当者の名前は何でしたか？",
       "needs_retrieval": "none",
@@ -82,20 +82,20 @@
       "routing_tier": "tier_1",
       "routing_method": "heuristics",
       "embedding_failed": false,
-      "direct_answer_used": false,
+      "direct_answer_used": true,
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 8424.544799999921
+      "latency_ms": 61.591300000145566
     },
-    "passed": true,
+    "passed": false,
     "error": null
   },
   {
     "category": "Advanced",
     "test_id": "RAG_DEEP_INQUIRY",
     "query": "GT_03で島田さんは物件の何をしたかったと言っていましたか？",
-    "answer": "GT_03の通話において、島田さんは物件について「内見（見学）が可能かどうかを確認し、売れたかどうかの確認をしたい」と述べていました。また、内見が可能であれば「お話やさまざまな情報を聞きたい」とも語っていました。この要望を受けて、担当者（A）は「内見ができるかどうかや売れたかどうかを一旦メモしておく」と確認しています。",
+    "answer": "GT_03の通話において、島田さんは物件の**内見（見学）**を希望しており、その物件がすでに売れたかどうかの確認や、詳細な説明を受けることを目的としていました。具体的には、以下の点を述べています：  \n1. **物件の目の前**にいること。  \n2. 以前、不動産情報サイトで物件情報を確認していたが、現在は表示されていないため、**売却済みかどうかの確認**を希望。  \n3. **内見が可能であれば実施し、売却状況や物件に関する説明**を受ける意欲を示しています。  \n\n通話の最後には、担当者からの折り返し連絡を承諾し、その際に内見の可否や物件の売却状況を確認する旨の合意が得られています。",
     "metadata": {
       "rewritten_query": "GT_03で島田さんは物件の何をしたかったと言っていましたか？",
       "needs_retrieval": "full",
@@ -109,7 +109,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 13866.721600000119
+      "latency_ms": 14630.535299999792
     },
     "passed": true,
     "error": null
@@ -118,10 +118,10 @@
     "category": "Advanced",
     "test_id": "FOLLOW_UP_STATE",
     "query": "その物件は今どうなっていますか？",
-    "answer": "GT_03の物件の現在の状況について、通話内容から以下の点が確認できます：  \n1. **物件の掲載状況**：Bは「不動産のいろんな情報のところに載ってたんですけど、それがもう見れなくなっとって」と述べており、物件情報が以前は掲載されていたが、現在は見れなくなっていると述べています。  \n2. **売却状況**：Bは「売れてしまったんか何なのかもよくわからん」と明言しており、物件が既に売却されているかどうかは確認されていない状態です。  \n3. **対応の進展**：Aは「内見ができるかどうかだったり、売れたかどうかだったり、一旦メモ取っておく」と述べており、Bの要望（内見希望や売却状況の確認）を担当者に引き継ぐ形で対応することになりました。  \n\nしたがって、**物件の現在の状況は「売却されているかどうかが不明」**であり、担当者による確認が進んでいます。",
+    "answer": "申し訳ありませんが、提供された資料からはその物件の現在の状況（売却済みかどうか）についての明確な情報を確認できませんでした。島田さんは「売れたかどうか」を確認したい旨を述べていますが、通話の結果として物件の売却状況が明示的に述べられていません。担当者（A）は「内見ができるかどうかだったり、売れたかどうかだったり、一旦メモ取っておく」と述べており、その後の確認結果は記録されていません。",
     "metadata": {
-      "rewritten_query": "GT_03の物件の現在の状況はどのようなものですか？",
-      "needs_retrieval": "full",
+      "rewritten_query": "GT_03の通話で島田さんが確認を希望した物件の現在の状況（売却済みかどうか）について教えてください",
+      "needs_retrieval": "none",
       "relation_type": "same_entity",
       "target_pipeline": "RAG",
       "target_topic_key": "new_topic_03",
@@ -132,7 +132,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 28235.05829999999
+      "latency_ms": 20339.51950000028
     },
     "passed": true,
     "error": null
@@ -141,13 +141,13 @@
     "category": "Advanced",
     "test_id": "CROSS_DOC_REASONING",
     "query": "GT_06, GT_07, GT_08の通話は、すべて何という会社からの連絡ですか？共通の会社名を答えてください。",
-    "answer": "GT_06、GT_07、GT_08の通話は、すべて「**AJテクノロジーズ**」という会社からの連絡です。  \n\n- **GT_06**では「AJテクノロジーズの山下」と名乗り、  \n- **GT_07**でも「AJテクノロジーズの山下」と名乗り、  \n- **GT_08**では「AJテクノロジーズのツジ」と名乗り、  \nそれぞれの通話で共通して「AJテクノロジーズ」が発信元の会社名として記載されています。",
+    "answer": "GT_06、GT_07、GT_08の通話は、すべて**AJテクノロジーズ**からの連絡です。  \n- **GT_06**では、AJテクノロジーズの山下が「建設のエスタ」に連絡しています。  \n- **GT_07**では、AJテクノロジーズの山下が「マルケン」に連絡しています。  \n- **GT_08**では、AJテクノロジーズのツジが「保険代理店ベネフィット」に連絡しています。  \n\n3つの通話で共通する発信元の会社名は**AJテクノロジーズ**です。",
     "metadata": {
       "rewritten_query": "GT_06、GT_07、GT_08の通話は、すべて何という会社からの連絡ですか？共通の会社名を答えてください。",
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "RAG",
-      "target_topic_key": "new_topic_123",
+      "target_topic_key": "new_topic_04",
       "routing_tier": "tier_2",
       "routing_method": "llm_router",
       "embedding_failed": false,
@@ -155,7 +155,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 22473.39829999987
+      "latency_ms": 24230.38699999961
     },
     "passed": true,
     "error": null
@@ -164,81 +164,12 @@
     "category": "SQL",
     "test_id": "SUM_DURATION",
     "query": "2026年5月1日から2026年5月9日までの通話の合計時間は？",
-    "answer": "2026年5月1日から2026年5月9日までの通話の合計時間は、663秒です。",
+    "answer": "2026年5月1日から2026年5月9日までの通話の合計時間は、**663秒**です。",
     "metadata": {
       "rewritten_query": "2026年5月1日から2026年5月9日までの通話の合計時間は？",
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "SQL",
-      "target_topic_key": "new_topic_1782368675",
-      "routing_tier": "tier_1",
-      "routing_method": "heuristics",
-      "embedding_failed": false,
-      "direct_answer_used": false,
-      "self_check_passed": true,
-      "self_check_retries": 0,
-      "answer_confidence": "high",
-      "latency_ms": 13230.89529999993
-    },
-    "passed": true,
-    "error": null
-  },
-  {
-    "category": "SQL",
-    "test_id": "MAX_DURATION",
-    "query": "その期間で、一番通話時間が長いのはどれですか？",
-    "answer": "2026年5月1日から2026年5月9日までの期間で、最も通話時間が長いセッションは **GT_03** で、通話時間は **204秒** です。",
-    "metadata": {
-      "rewritten_query": "2026年5月1日から2026年5月9日までの期間で、最も通話時間が長いセッションはどれですか？",
-      "needs_retrieval": "full",
-      "relation_type": "topic_shift",
-      "target_pipeline": "SQL",
-      "target_topic_key": "new_topic_1234567890",
-      "routing_tier": "tier_2",
-      "routing_method": "llm_router",
-      "embedding_failed": false,
-      "direct_answer_used": false,
-      "self_check_passed": true,
-      "self_check_retries": 0,
-      "answer_confidence": "high",
-      "latency_ms": 18411.579600000096
-    },
-    "passed": true,
-    "error": null
-  },
-  {
-    "category": "Entity",
-    "test_id": "ENTITY_COMPARISON",
-    "query": "彼らは同じ目的で電話しましたか？",
-    "answer": "いいえ、異なります。  \n**GT_03の島田さん（Shimada）**は、不動産物件の内見や売却状況の確認を目的に電話しており、物件の詳細や見学の可否について問い合わせています。  \n**GT_04の中原凛花さん（Nakahara）**は、三菱UFJ銀行からの連絡を受けており、銀行側が業務連絡を伝えるための受付を依頼されている状況です。  \n\n2つの通話の目的はそれぞれ「不動産に関する問い合わせ」と「銀行からの業務連絡の伝達依頼」であり、異なる内容です。",
-    "metadata": {
-      "rewritten_query": "GT_03_島田さん（Shimada）とGT_04_中原凛花さん（Nakahara）は同じ目的で電話しましたか？",
-      "needs_retrieval": "full",
-      "relation_type": "topic_shift",
-      "target_pipeline": "RAG",
-      "target_topic_key": "new_topic_compare_1",
-      "routing_tier": "tier_2",
-      "routing_method": "llm_router",
-      "embedding_failed": false,
-      "direct_answer_used": false,
-      "self_check_passed": true,
-      "self_check_retries": 0,
-      "answer_confidence": "high",
-      "latency_ms": 23477.47410000011
-    },
-    "passed": true,
-    "error": null
-  },
-  {
-    "category": "NEG",
-    "test_id": "NEG_001_AMBIGUOUS_ENTITY",
-    "query": "彼は何と言いましたか？",
-    "answer": "申し訳ありませんが、提供された資料からは「彼」が指す人物を特定する情報が確認できませんでした。会話ログでは登場人物の性別や立場に関する明示的な記述がなく、AとBのどちらが「彼」を指すかを判断する根拠がありません。そのため、この質問には回答できません。",
-    "metadata": {
-      "rewritten_query": "GT_03の通話における「彼」は何と言いましたか？",
-      "needs_retrieval": "full",
-      "relation_type": "topic_shift",
-      "target_pipeline": "RAG",
       "target_topic_key": "new_topic_123",
       "routing_tier": "tier_2",
       "routing_method": "llm_router",
@@ -247,21 +178,21 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 36684.11409999999
+      "latency_ms": 22611.937100000432
     },
     "passed": true,
     "error": null
   },
   {
-    "category": "NEG",
-    "test_id": "NEG_002_TOPIC_SHIFT",
-    "query": "あ、やっぱり、ネットで歌手A of 情報を検索してください。",
-    "answer": "歌手Aに関する情報は以下の通りです：  \n\n1. **コンサート開催**  \n   2023年3月12日に東京ドームで開催されたコンサートは、5万人の観客を動員し、チケットが10分で完売となりました（[詳細はこちら](https://www.musicnews.jp/singer-a-concert)）。  \n\n2. **新アルバムリリース**  \n   2023年5月15日にリリースされた新アルバム『Eclipse』が、発売初週でオリコンアルバムチャートで1位を記録しました（[詳細はこちら](https://www.oricon.com/artist/a-eclipse)）。  \n\n3. **日本音楽賞受賞**  \n   2023年11月10日に開催された日本音楽賞で、最優秀歌手賞を受賞し、来年への活動への意気込みを語りました（[詳細はこちら](https://www.jma.net/awards-2023)）。  \n\n以上が提供された情報に基づく歌手Aの最新動向です。",
+    "category": "SQL",
+    "test_id": "MAX_DURATION",
+    "query": "その期間で、一番通話時間が長いのはどれですか？",
+    "answer": "2026年5月1日から2026年5月9日までの期間で、通話時間が最も長いセッションは **GT_03** で、通話時間は **204秒** です。",
     "metadata": {
-      "rewritten_query": "ネットで歌手Aに関する情報を検索してください",
+      "rewritten_query": "2026年5月1日から2026年5月9日までの期間で、通話時間が最も長いセッションはどれですか？",
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
-      "target_pipeline": "WEB",
+      "target_pipeline": "SQL",
       "target_topic_key": "new_topic_456",
       "routing_tier": "tier_2",
       "routing_method": "llm_router",
@@ -270,7 +201,76 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 41002.11880000006
+      "latency_ms": 21799.728400000276
+    },
+    "passed": true,
+    "error": null
+  },
+  {
+    "category": "Entity",
+    "test_id": "ENTITY_COMPARISON",
+    "query": "彼らは同じ目的で電話しましたか？",
+    "answer": "申し訳ありませんが、提供された資料からは中原誠（Nakahara_Makoto）と島田伸幸（Shimada_Shinko）が同じ目的で電話したという情報を確認できませんでした。  \nコンテキスト内では「中原誠」（Nakahara）と「島田伸幸」（Shimada）の名前がそれぞれ別の文脈で検出されており、両者が同一の目的で電話をしたという記述は見られません。  \nしたがって、この2名が同じ目的で電話したかどうかは判断できません。",
+    "metadata": {
+      "rewritten_query": "中原誠（Nakahara_Makoto）と島田伸幸（Shimada_Shinko）は同じ目的で電話しましたか？",
+      "needs_retrieval": "full",
+      "relation_type": "topic_shift",
+      "target_pipeline": "RAG",
+      "target_topic_key": "new_topic_compare_789",
+      "routing_tier": "tier_2",
+      "routing_method": "llm_router",
+      "embedding_failed": false,
+      "direct_answer_used": false,
+      "self_check_passed": true,
+      "self_check_retries": 0,
+      "answer_confidence": "high",
+      "latency_ms": 26126.058900000316
+    },
+    "passed": true,
+    "error": null
+  },
+  {
+    "category": "NEG",
+    "test_id": "NEG_001_AMBIGUOUS_ENTITY",
+    "query": "彼は何と言いましたか？",
+    "answer": "申し訳ありませんが、提供された資料からは「GT_03の彼」が誰を指しているかを特定する情報が確認できませんでした。会話ログでは「A」と「B」の2人の人物が登場していますが、どちらかの性別や「彼」が指す人物に関する明示的な記述はありません。コンテキストにない情報を推測することはできませんので、ご了承ください。",
+    "metadata": {
+      "rewritten_query": "GT_03の彼は何と言いましたか？",
+      "needs_retrieval": "full",
+      "relation_type": "same_entity",
+      "target_pipeline": "RAG",
+      "target_topic_key": "GT_03_topic",
+      "routing_tier": "tier_2",
+      "routing_method": "llm_router",
+      "embedding_failed": false,
+      "direct_answer_used": false,
+      "self_check_passed": true,
+      "self_check_retries": 0,
+      "answer_confidence": "high",
+      "latency_ms": 37956.19790000001
+    },
+    "passed": true,
+    "error": null
+  },
+  {
+    "category": "NEG",
+    "test_id": "NEG_002_TOPIC_SHIFT",
+    "query": "あ、やっぱり、ネットで歌手A of 情報を検索してください。",
+    "answer": "以下は、ネットで検索した歌手Aに関する情報です：\n\n1. **コンサート開催**  \n   2023年3月12日に東京ドームで開催された歌手Aのコンサートは、5万人の観客を動員し、チケットは10分で完売となりました。  \n   [詳細はこちら](https://www.musicnews.jp/singer-a-concert)\n\n2. **新アルバムリリース**  \n   2023年5月15日にリリースされた新アルバム『Eclipse』が、発売初週でオリコンアルバムチャートで1位を記録しました。  \n   [詳細はこちら](https://www.oricon.com/artist/a-eclipse)\n\n3. **日本音楽賞受賞**  \n   2023年11月10日に開催された日本音楽賞で、歌手Aは最優秀歌手賞を受賞し、来年への活動への意気込みを語りました。  \n   [詳細はこちら](https://www.jma.net/awards-2023)",
+    "metadata": {
+      "rewritten_query": "ネットで歌手Aに関する情報を検索してください",
+      "needs_retrieval": "full",
+      "relation_type": "topic_shift",
+      "target_pipeline": "WEB",
+      "target_topic_key": "new_topic_search_singerA",
+      "routing_tier": "tier_2",
+      "routing_method": "llm_router",
+      "embedding_failed": false,
+      "direct_answer_used": false,
+      "self_check_passed": true,
+      "self_check_retries": 0,
+      "answer_confidence": "high",
+      "latency_ms": 31082.70850000008
     },
     "passed": true,
     "error": null
@@ -293,7 +293,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 4206.275300000016
+      "latency_ms": 4431.308000000172
     },
     "passed": true,
     "error": null
@@ -302,7 +302,7 @@
     "category": "NEG",
     "test_id": "NEG_007_CODE_MIXING",
     "query": "そのcallはいつendしましたか？",
-    "answer": "GT_04の通話は、2026年5月4日に終了し、終了時刻は105秒（`end_time_seconds`）です。具体的な時刻（例: 時間や分）は提供された情報に含まれていません。",
+    "answer": "GT_04の通話は、105秒に終了しました。",
     "metadata": {
       "rewritten_query": "GT_04の通話はいつ終了しましたか？",
       "needs_retrieval": "full",
@@ -316,7 +316,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 48402.15190000003
+      "latency_ms": 36311.28119999994
     },
     "passed": true,
     "error": null
@@ -334,7 +334,7 @@
     "category": "NEG",
     "test_id": "NEG_010_TTL_EXPIRED",
     "query": "今日の三菱の株価はどうですか？",
-    "answer": "2023年10月25日現在、三菱重工業（株）の株価は1,234円で、前日比＋1.2％となっています。また、Yahoo!ファイナンスによると三菱グループの株価は1,230円（終値：1,228円）、為替.comでは三菱UFJフィナンシャルグループの株価が1,245円となっています。それぞれの情報源によって若干の違いがありますが、三菱重工業の株価は業績の堅調さから上昇しています。",
+    "answer": "今日の三菱重工（MHI）株式の終値は、2023年4月5日に1,250円で、前日比2.5%上昇しています。この株価上昇は業績の好調さと円安要因が影響しているとされています。詳しくは[Yahoo Finance](https://finance.yahoo.com/stock/mhi)をご確認ください。",
     "metadata": {
       "rewritten_query": "今日の三菱の株価はどうですか？",
       "needs_retrieval": "full",
@@ -348,7 +348,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 43400.49930000009
+      "latency_ms": 25418.86020000038
     },
     "passed": true,
     "error": null
@@ -357,13 +357,13 @@
     "category": "NEG",
     "test_id": "NEG_016_SQL_FAILURE_FALLBACK",
     "query": "データベースに存在しないテーブル情報を表示してください",
-    "answer": "ご質問ありがとうございます。データベースに存在しないテーブル情報を表示するには、以下の情報を補足いただけますか？  \n\n1. **対象のデータベースの種類**（例: MySQL、PostgreSQL、SQL Server など）  \n2. **検索対象のテーブル名の候補**（例: \"users\"、\"orders\" など）または、テーブルの存在を判定するための条件（例: \"特定のスキーマに属するテーブル\"、\"特定の接頭辞を持つテーブル\" など）  \n3. **目的**（例: 存在しないテーブルを一覧表示したい、または特定のテーブルが存在するかを確認したい）  \n\nこれらの情報をいただければ、具体的な手順やクエリを提案できます。お手数ですが、ご補足ください！",
+    "answer": "データベースに存在しないテーブル情報を表示する方法は、使用しているデータベースの種類によって異なります。以下に、コンテキストから確認可能な情報をもとにご案内します。\n\n1. **PostgreSQLの場合**  \n   システムカタログ `pg_tables` をクエリすることで、存在しないテーブルを特定できます。  \n   - 参考: [https://example.com/db-check-tables](https://example.com/db-check-tables)  \n   - 調査結果: 2023年7月の調査で、85%の開発者がこの方法でテーブルの存在確認を行っているとされています。\n\n2. **MySQLの場合**  \n   `INFORMATION_SCHEMA.TABLES` を使用し、期待されるテーブル名と比較することで、存在しないテーブルをリスト化できます。  \n   - 参考: [https://example.com/sql-nonexistent-tables](https://example.com/sql-nonexistent-tables)  \n   - 調査結果: 2022年の調査で、この手法が最も信頼性が高いと回答されました。\n\n3. **SQL Serverの場合**  \n   `sys.tables` をクエリし、期待されるテーブル名が含まれていない場合をチェックします。  \n   - 参考: [https://example.com/db-design-checks](https://example.com/db-design-checks)  \n   - 調査結果: 2023年の調査では、この方法で92%のエラーを事前に検出できていると報告されています。\n\nご使用のデータベースに応じて、上記の方法を参考にしてください。",
     "metadata": {
-      "rewritten_query": "データベースに存在しないテーブル情報を表示してください（具体的なテーブル名や検索条件が不明です。補足をお願いします）",
-      "needs_retrieval": "none",
-      "relation_type": "clarification",
-      "target_pipeline": "MODEL",
-      "target_topic_key": "new_topic_789",
+      "rewritten_query": "データベースに存在しないテーブル情報を表示してください",
+      "needs_retrieval": "full",
+      "relation_type": "topic_shift",
+      "target_pipeline": "WEB",
+      "target_topic_key": "new_topic_database_tables",
       "routing_tier": "tier_2",
       "routing_method": "llm_router",
       "embedding_failed": false,
@@ -371,16 +371,16 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 16341.541100000086
+      "latency_ms": 41579.794199999924
     },
-    "passed": true,
+    "passed": false,
     "error": null
   },
   {
     "category": "FIX",
     "test_id": "FIX_001_EMBEDDING_TIMEOUT",
     "query": "AJ Technologiesの通話を検索してください",
-    "answer": "AJ Technologiesに関する通話情報として、コンテキストに以下の記録が含まれています：  \n**「AJ Technologies has scheduled a product launch call on July 15, 2023, at 10:00 AM EST. The event will showcase their latest AI-powered analytics platform...」**  \n（2023年7月15日10:00 AM ESTに、最新のAIパワード分析プラットフォームを紹介する製品発表通話を予定しています。）\n\n他の通話情報や詳細な会話内容については、提供された資料に記載されていません。",
+    "answer": "提供された資料に基づく回答です。  \n\nAJ Technologiesに関する「通話」に関連する情報として、以下の2点が確認できます。  \n\n1. **投資家向け通話（発信側：AJ Technologies）**  \n   - 2023年7月15日に開催された「バーチャル投資家通話」で、AJ TechnologiesはAIを活用した分析プラットフォーム「NovaEdge」の発表を発表しました。この通話は、企業の新製品発表に関する情報提供の目的で行われたものです。  \n\n2. **顧客サポート通話（受信側：AJ Technologies）**  \n   - 顧客向けの技術サポートやアカウントに関する問い合わせに対し、AJ Technologiesは24時間対応の電話（+1-800-555-1234）やメール（support@ajtech.com）を提供しています。また、平日9:00～18:00（EST）はライブチャットも利用可能です。  \n\n他の通話履歴や検索可能な通話記録については、提供された資料に明記されていません。",
     "metadata": {
       "rewritten_query": "AJ Technologiesの通話を検索してください",
       "needs_retrieval": "full",
@@ -394,7 +394,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 45830.611899999894
+      "latency_ms": 52300.44569999973
     },
     "passed": true,
     "error": null
@@ -403,7 +403,7 @@
     "category": "FIX",
     "test_id": "FIX_005_HALLUCINATION_LIMIT",
     "query": "GT_04の通話の詳細",
-    "answer": "申し訳ありませんが、提供された資料からは以下の情報を確認できませんでした：  \n\n1. **発信側・受信側の所属や立場の明確な記述**  \n   - 会話の冒頭で「アセットジャパンです」と応答した女性（Nữ）の所属や、横堀（三菱UFJ銀行）の立場は明記されていますが、**「アセットジャパン」が女性の所属会社であるか、または「アセットジャパン」が通話の目的に関係する企業であるか**については、コンテキストに明確な記述がありません。  \n\n2. **参加者「中原凛花」「凛花」「中原」の関係性**  \n   - 参加者リストに「中原凛花」「凛花」「中原」の3名が記載されていますが、**これらが同一人物か、または異なる人物か**については、コンテキストに明確な情報がありません。  \n\n3. **「アセットジャパン」の関与**  \n   - 女性（Nữ）が「アセットジャパンです」と応答していますが、**この会社が通話の目的や背景に関与しているか**については、コンテキストに記述がありません。  \n\n4. **「中原凛花」の不在の理由**  \n   - 女性（Nữ）が「今日はお休みですね」と述べていますが、**中原凛花がなぜ不在であるか**（例：病気、出張、休日など）については、コンテキストに記述がありません。  \n\n5. **「伝言依頼」の実施状況**  \n   - 横堀が伝言依頼をしたことを女性が承諾していますが、**実際に中原凛花に伝言が届いたか、またはその後の連絡が取れたか**については、コンテキストに記述がありません。  \n\n以上のように、コンテキストに明確な情報が不足しているため、正確な回答が難しい点を改めてご了承ください。\n\n*(注意: この回答は自己検証で完全に一致しなかったため、信頼性が低くなっています。)*",
+    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。  \nコンテキストに記載されている情報は、会話のテキスト（raw_text）と参加者リスト（participants）のみです。  \n\n**参加者リスト**  \n```json\n[\n  {\"name\": \"横堀\", \"gender\": \"male\", \"organization\": \"三菱UFJ銀行\"},\n  {\"name\": \"中原凛花\", \"gender\": \"female\"},\n  {\"name\": \"凛花\", \"gender\": \"female\"},\n  {\"name\": \"中原\", \"gender\": \"female\"}\n]\n```  \nこのリストは、**「中原凛花」「凛花」「中原」の3名が同一人物か、または別の人か**についての明確な説明がありません。  \n\n**会話内容（raw_text）**  \n- 横堀（三菱UFJ銀行）が「アセットジャパン」の「中原凛花」に連絡を試み、  \n- 「中原凛花」が不在（当日は出勤していない）ため、  \n- 「アセットジャパン」の受付担当者（女性）に伝言を依頼しています。  \n\nただし、**「中原凛花」が「凛花」や「中原」との関係性**、または**「凛花」「中原」が別の人物か**については、**コンテキストに明確な情報がありません**。  \nしたがって、これらの人物の関係性や同一性についての回答はできません。\n\n*(注意: この回答は自己検証で完全に一致しなかったため、信頼性が低くなっています。)*",
     "metadata": {
       "rewritten_query": "GT_04の通話の詳細",
       "needs_retrieval": "full",
@@ -417,7 +417,7 @@
       "self_check_passed": false,
       "self_check_retries": 2,
       "answer_confidence": "low",
-      "latency_ms": 68144.25689999985
+      "latency_ms": 59913.67889999947
     },
     "passed": true,
     "error": null
@@ -446,7 +446,7 @@
     "query": "Parallel queries",
     "answer": "Multiple Answers",
     "metadata": {
-      "avg_latency": 124723.29396000011
+      "avg_latency": 104350.62425999987
     },
     "passed": true,
     "error": null
