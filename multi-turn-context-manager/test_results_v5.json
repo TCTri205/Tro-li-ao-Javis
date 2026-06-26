@@ -1,0 +1,132 @@
+[
+  {
+    "category": "F_Fuzzy_Matching",
+    "test_id": "F1_KATAKANA_NAME",
+    "query": "サトウさんはアセットジャパンの社員ですか？",
+    "answer": "はい、佐藤太郎さんはアセットジャパンに所属する営業担当者です。提供された資料に基づく回答です。",
+    "rewritten_query": "サトウさんはアセットジャパンの社員ですか？",
+    "routing_meta": {
+      "rewritten_query": "サトウさんはアセットジャパンの社員ですか？",
+      "needs_retrieval": "none",
+      "relation_type": "same_entity",
+      "target_pipeline": "RAG",
+      "target_topic_key": "GT_11_topic",
+      "routing_tier": "tier_1",
+      "routing_method": "heuristics",
+      "embedding_failed": false,
+      "direct_answer_used": false,
+      "self_check_passed": true,
+      "self_check_retries": 0,
+      "answer_confidence": "high",
+      "latency_ms": 6910.2335999996285
+    },
+    "passed": true,
+    "error": null
+  },
+  {
+    "category": "F_Fuzzy_Matching",
+    "test_id": "F2_ROMAJI_NAME",
+    "query": "Sato Taroさんの会社の情報について教えてください。",
+    "answer": "申し訳ありませんが、提供された資料からはアセットジャパンに関する情報（例：業種・所在地・事業内容など）を確認できませんでした。コンテキストに記載されているのは「佐藤太郎さんがアセットジャパンに所属する営業担当者である」という情報のみです。",
+    "rewritten_query": "佐藤太郎さんの所属会社であるアセットジャパンの情報について教えてください。",
+    "routing_meta": {
+      "rewritten_query": "佐藤太郎さんの所属会社であるアセットジャパンの情報について教えてください。",
+      "needs_retrieval": "none",
+      "relation_type": "same_entity",
+      "target_pipeline": "RAG",
+      "target_topic_key": "GT_11_topic",
+      "routing_tier": "tier_2",
+      "routing_method": "llm_router",
+      "embedding_failed": false,
+      "direct_answer_used": false,
+      "self_check_passed": true,
+      "self_check_retries": 0,
+      "answer_confidence": "high",
+      "latency_ms": 11318.790799999988
+    },
+    "passed": true,
+    "error": null
+  },
+  {
+    "category": "F_Fuzzy_Matching",
+    "test_id": "F3_COMPANY_ABBREVIATION",
+    "query": "AJの佐藤太郎さんはどのような立場ですか？",
+    "answer": "佐藤太郎さんはアセットジャパンに所属し、営業担当者としての立場です。",
+    "rewritten_query": "AJの佐藤太郎さんはどのような立場ですか？",
+    "routing_meta": {
+      "rewritten_query": "AJの佐藤太郎さんはどのような立場ですか？",
+      "needs_retrieval": "none",
+      "relation_type": "same_entity",
+      "target_pipeline": "RAG",
+      "target_topic_key": "GT_11_topic",
+      "routing_tier": "tier_1",
+      "routing_method": "heuristics",
+      "embedding_failed": false,
+      "direct_answer_used": false,
+      "self_check_passed": true,
+      "self_check_retries": 0,
+      "answer_confidence": "high",
+      "latency_ms": 3798.8765000000058
+    },
+    "passed": true,
+    "error": null
+  },
+  {
+    "category": "F_Fuzzy_Matching",
+    "test_id": "F4_STT_TYPO_CONFUSION",
+    "query": "シマタさんは何の内見を希望していましたか？",
+    "answer": "島田さんは、物件の内見（視察）を希望していました。具体的には、物件のポストに貼ってある「アセットジャパン」の掲示を見て、その物件がまだ販売中かどうか確認し、内見が可能であれば実施したいと考えていました。また、内見の際に物件に関する説明やさまざまな話を聞きたいという意図も明記しています。",
+    "rewritten_query": "GT_03_島田さんは何の内見を希望していましたか？",
+    "routing_meta": {
+      "rewritten_query": "GT_03_島田さんは何の内見を希望していましたか？",
+      "needs_retrieval": "full",
+      "relation_type": "topic_shift",
+      "target_pipeline": "RAG",
+      "target_topic_key": "new_topic_123",
+      "routing_tier": "tier_2",
+      "routing_method": "llm_router",
+      "embedding_failed": false,
+      "direct_answer_used": false,
+      "self_check_passed": true,
+      "self_check_retries": 0,
+      "answer_confidence": "high",
+      "latency_ms": 22569.74639999953
+    },
+    "passed": true,
+    "error": null
+  },
+  {
+    "category": "B_History_Bloat",
+    "test_id": "B1_LRU_CACHING_LIMIT",
+    "query": "Seed 6 slots sequentially",
+    "answer": "Cache size: 5, Oldest Exists: False",
+    "rewritten_query": "N/A",
+    "routing_meta": {},
+    "passed": true,
+    "error": null
+  },
+  {
+    "category": "B_History_Bloat",
+    "test_id": "B2_DEEP_HISTORY_RECENCY_CHECK",
+    "query": "彼が気にした理由は何ですか？",
+    "answer": "申し訳ありませんが、提供された資料からは島田さんが物件の内見を希望している理由についての情報は確認できませんでした。コンテキストに具体的な理由（例：購入希望、賃貸希望、物件の状態確認など）が記載されていないため、推測や補足は行えません。",
+    "rewritten_query": "GT_03の島田さんが気にした理由は何ですか？",
+    "routing_meta": {
+      "rewritten_query": "GT_03の島田さんが気にした理由は何ですか？",
+      "needs_retrieval": "none",
+      "relation_type": "same_entity",
+      "target_pipeline": "RAG",
+      "target_topic_key": "GT_03_topic",
+      "routing_tier": "tier_1",
+      "routing_method": "heuristics",
+      "embedding_failed": false,
+      "direct_answer_used": false,
+      "self_check_passed": true,
+      "self_check_retries": 0,
+      "answer_confidence": "high",
+      "latency_ms": 5494.468599999891
+    },
+    "passed": true,
+    "error": null
+  }
+]

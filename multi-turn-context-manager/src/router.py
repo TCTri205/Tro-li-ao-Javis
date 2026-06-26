@@ -880,13 +880,16 @@ class Router:
         logger.info(f"Starting Tier 2 routing. Reason: {routing_reason}")
         db = conn if conn is not None else self.db_pool
         
-        # 1. Fetch Chat History (last 16 messages)
+        # 1. Fetch Chat History (last 16 messages - ordered chronologically)
         history_rows = await db.fetch("""
-            SELECT role, content, rewritten_content
-            FROM chat_history
-            WHERE session_id = $1
+            SELECT role, content, rewritten_content FROM (
+                SELECT id, role, content, rewritten_content
+                FROM chat_history
+                WHERE session_id = $1
+                ORDER BY id DESC
+                LIMIT 16
+            ) sub
             ORDER BY id ASC
-            LIMIT 16
         """, session_id)
         
         history_str = ""
