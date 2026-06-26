@@ -102,6 +102,7 @@ async def main():
                 mention_count      NUMERIC DEFAULT 1.0,
                 last_interacted_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 created_at         TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                attributes         JSONB DEFAULT '{}'::jsonb,
                 UNIQUE (session_id, entity_id)
             );
         """)

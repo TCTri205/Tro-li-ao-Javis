@@ -1,7 +1,14 @@
 import json
 import logging
 from datetime import datetime, timezone
-from config import MAX_CACHE_SLOTS
+from config import (
+    MAX_CACHE_SLOTS,
+    EMBEDDING_MODEL_VERSION,
+    EMA_ALPHA,
+    EMA_MAX_UPDATES,
+    EMA_DISTANCE_THRESHOLD,
+    EMA_SIMID_SAFEGUARD
+)
 
 logger = logging.getLogger(__name__)
 
@@ -71,9 +78,9 @@ async def insert_cache_slot(conn, session_id: str, topic_key: str, last_pipeline
         
     cache_id = await conn.fetchval("""
         INSERT INTO session_context_cache (session_id, topic_key, last_pipeline, last_routing_method, query_embedding, embedding_model_version)
-        VALUES ($1, $2, $3, $4, $5, 'multilingual-e5-small')
+        VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING id
-    """, session_id, topic_key, last_pipeline, last_routing_method, emb_str)
+    """, session_id, topic_key, last_pipeline, last_routing_method, emb_str, EMBEDDING_MODEL_VERSION)
     
     await conn.execute("""
         INSERT INTO session_context_payload (cache_id, cached_payload, summary_context)
@@ -243,7 +250,7 @@ async def update_cache_slot_ema(conn, session_id: str, topic_key: str, query_emb
     # 2. Check update count
     update_count = summary_context.get("ema_update_count", 0)
     
-    if update_count >= 5:
+    if update_count >= EMA_MAX_UPDATES:
         # Vector is locked, do not update the vector but we can update summary_context
         logger.info(f"EMA Update: Vector for slot '{topic_key}' is locked (count={update_count}).")
         return
@@ -258,14 +265,13 @@ async def update_cache_slot_ema(conn, session_id: str, topic_key: str, query_emb
         else:
             cos_dist = 0.0
             
-        if cos_dist > 0.5:
+        if cos_dist > EMA_DISTANCE_THRESHOLD:
             # Bypass EMA update to force Tier 2 routing in subsequent turns if needed
-            logger.info(f"EMA Update: Distance ({cos_dist:.4f}) > 0.5, bypassing EMA update.")
+            logger.info(f"EMA Update: Distance ({cos_dist:.4f}) > {EMA_DISTANCE_THRESHOLD}, bypassing EMA update.")
             return
             
         # Compute EMA
-        alpha = 0.8
-        V_new = alpha * V_current + (1.0 - alpha) * V_query
+        V_new = EMA_ALPHA * V_current + (1.0 - EMA_ALPHA) * V_query
         # Normalize V_new
         norm_new = np.linalg.norm(V_new)
         if norm_new > 0:
@@ -282,8 +288,8 @@ async def update_cache_slot_ema(conn, session_id: str, topic_key: str, query_emb
         else:
             orig_similarity = 1.0
             
-        if orig_similarity < 0.60:
-            logger.info(f"EMA Update: Similarity with original vector ({orig_similarity:.4f}) < 0.60. Resetting to original vector.")
+        if orig_similarity < EMA_SIMID_SAFEGUARD:
+            logger.info(f"EMA Update: Similarity with original vector ({orig_similarity:.4f}) < {EMA_SIMID_SAFEGUARD}. Resetting to original vector.")
             V_new = V_orig
             update_count = 0
         else:

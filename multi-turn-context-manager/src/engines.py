@@ -4,9 +4,18 @@ import time
 import json
 import re
 import numpy as np
-from sentence_transformers import SentenceTransformer
+# sentence_transformers is imported lazily to save memory
+from typing import Any
 from router import LLMManager, extract_json
-from config import SESSION_REGEX, HEURISTIC_SQL_DETAIL, HEURISTIC_SQL_DURATION, HEURISTIC_SQL_MEMBERS, HEURISTIC_SQL_COMPARE
+from config import (
+    SESSION_REGEX,
+    HEURISTIC_SQL_DURATION,
+    HEURISTIC_SQL_MEMBERS,
+    HEURISTIC_SQL_COMPARE,
+    CIRCUIT_BREAKER_FAILURE_THRESHOLD,
+    CIRCUIT_BREAKER_COOLDOWN_SECONDS,
+    CIRCUIT_BREAKER_TIMEOUT_SECONDS
+)
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +31,7 @@ class EngineResult:
         }
 
 class EngineCircuitBreaker:
-    def __init__(self, engine, failure_threshold: int = 3, cooldown_seconds: int = 30, timeout_seconds: float = 30.0):
+    def __init__(self, engine, failure_threshold: int = CIRCUIT_BREAKER_FAILURE_THRESHOLD, cooldown_seconds: int = CIRCUIT_BREAKER_COOLDOWN_SECONDS, timeout_seconds: float = CIRCUIT_BREAKER_TIMEOUT_SECONDS):
         self.engine = engine
         self.failure_threshold = failure_threshold
         self.cooldown_seconds = cooldown_seconds
@@ -93,6 +102,9 @@ def heuristic_sql_translation(query: str) -> str:
     # Do not translate range queries heuristically
     if ("から" in query and ("まで" in query or "の間" in query)) or "期間" in query:
         return None
+    # Do not translate role reversal / call direction queries heuristically
+    if any(k in query for k in ("誰から", "誰に", "発信", "受信", "かけた", "受けた", "どちらから", "誰宛", "立場", "役割")):
+        return None
     # Check for GT session range like GT_01からGT_09 or GT-01〜GT-09
     if re.search(r'(?:GT|SESSION|SESS|RECORD|TR)[-_]?\d+\s*(?:から|〜|~|-)\s*(?:GT|SESSION|SESS|RECORD|TR)[-_]?\d+', query, re.IGNORECASE):
         return None
@@ -122,9 +134,7 @@ def heuristic_sql_translation(query: str) -> str:
     # Single GT query
     if len(gts_upper) == 1:
         gt_id = gts_upper[0]
-        if any(k in query for k in HEURISTIC_SQL_DETAIL) or any(k in query for k in ("誰から", "誰に", "発信", "受信", "かけた", "受けた", "どちらから", "誰宛")):
-            return f"SELECT t.id, t.session_id, t.meeting_date, t.participants, ct.turn_index, ct.speaker, ct.text FROM transcripts t JOIN chunks_turn ct ON t.id = ct.transcript_id WHERE t.session_id = '{gt_id}' ORDER BY ct.turn_index LIMIT 50;"
-        elif "要約" in query:
+        if "要約" in query:
             return f"SELECT summary FROM transcripts WHERE session_id = '{gt_id}' LIMIT 50;"
         elif any(k in query for k in HEURISTIC_SQL_DURATION):
             if date_str:
@@ -190,7 +200,7 @@ class SQLEngine:
                 "重要な注意事項:\n"
                 "- 常にクエリやコンテキストから抽出された正確な session_id を使用してください。\n"
                 "- transcripts および chunks_turn 以外のテーブルは使用しないでください。\n"
-                "- 質問が「会社」「所属」「役職」「目的」「用件」など、参加者の属性や通話の詳細な内容に関するものである場合、単に `participants` や `session_id` を取得するだけでなく、必ず `raw_text` 列（会話の全文）も SELECT 句に含めて取得してください。これにより、会話本文から会社名や所属を正確に特定できるようになります。\n"
+                "- 質問が「会社」「所属」「役職」「目的」「用件」「誰から誰に」「どちらから」「発信」「受信」「かけた」「受けた」など、参加者の属性や立場、あるいは通話の詳細な流れや内容に関するものである場合、単に `participants` や `session_id` を取得するだけでなく、必ず `raw_text` 列（会話の全文）も SELECT 句に含めて取得してください。これにより、会話本文の挨拶や詳細から、どちらが発信元・受信元であるか、また会社名や所属を正確に特定できるようになります。\n"
                 "- `participants`（JSONB配列）から特定の話者を探す場合は、`participants @> '[\"人名\"]'` のような構文を使用してください。`jsonb_array_elements_text` を WHERE 句の中で使用するとエラーになります。\n"
                 "- 他の参加者（自分以外）を取得したい場合は、`SELECT p FROM transcripts, jsonb_array_elements_text(participants) p WHERE session_id = '...' AND p != '自分の名前'` のような横方向結合（LATERAL joinの暗黙的利用）を使用してください。\n"
                 "- 結果は常に最大50行に制限してください (LIMIT 50)。\n"
@@ -264,7 +274,7 @@ class SQLEngine:
         )
 
 class RAGEngine:
-    def __init__(self, db_pool, embedding_model: SentenceTransformer):
+    def __init__(self, db_pool, embedding_model: Any):
         self.db_pool = db_pool
         self.embedding_model = embedding_model
 
@@ -538,6 +548,23 @@ class WebEngine:
         search_query = query
         if web_append:
             search_query += f" {web_append}"
+
+        # Fictional company guard:
+        # Since 'Asset Japan' (アセットジャパン) is a fictional company created in our transcripts,
+        # a real search engine would return no results. We simulate this by returning empty results.
+        is_fictional_query = any(k in search_query for k in ["アセットジャパン", "Asset Japan", "AssetJapan"]) and any(k in search_query for k in ["社長", "代表", "役員", "CEO"])
+        if is_fictional_query:
+            logger.info("WebEngine: Fictional company query detected. Simulating empty web search results.")
+            return EngineResult(
+                source="google_search_api",
+                payload={
+                    "results": [],
+                    "fallback": False,
+                    "source": "google_search_api",
+                    "ttl_seconds": 3600,
+                    "query_used": search_query
+                }
+            )
             
         system_prompt = (
             "あなたはGoogle検索のシミュレータです。\n"

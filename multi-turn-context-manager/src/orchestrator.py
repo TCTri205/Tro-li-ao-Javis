@@ -204,111 +204,161 @@ class IntelligentOrchestrator:
             summary_context = {}
             
             # Step 4: Execution & Retrieval
+            # Step 4: Execution & Retrieval
             if needs_retrieval == "none" and use_cache:
                 # Cache Hit: Read from Cold Table
-                cache_slot = await get_cache_slot(conn, session_id, target_topic_key)
-                if cache_slot:
-                    # Check cache TTL freshness
-                    ttl = CACHE_TTL_SQL if cache_slot["last_pipeline"] == "SQL" else CACHE_TTL_WEB
-                    is_fresh = check_cache_ttl(cache_slot["refreshed_at"], ttl)
-                    if not is_fresh:
-                        logger.info(f"Cache slot '{target_topic_key}' expired. Downgrading to full retrieval.")
-                        needs_retrieval = "full"
-                        use_cache = False
-                    else:
-                        # Granularity Check & Empty Payload Check
-                        payload = cache_slot["payload"] or {}
-                        is_payload_empty = not payload or (
-                            not payload.get("rows") and
-                            not payload.get("documents") and
-                            not payload.get("results") and
-                            not payload.get("info")
-                        )
-                        if is_payload_empty:
-                            logger.info(f"Cache slot '{target_topic_key}' hit but payload is empty. Downgrading to full retrieval.")
+                try:
+                    cache_slot = await get_cache_slot(conn, session_id, target_topic_key)
+                    if cache_slot:
+                        # Check cache TTL freshness
+                        ttl = CACHE_TTL_SQL if cache_slot["last_pipeline"] == "SQL" else CACHE_TTL_WEB
+                        is_fresh = check_cache_ttl(cache_slot["refreshed_at"], ttl)
+                        if not is_fresh:
+                            logger.info(f"Cache slot '{target_topic_key}' expired. Downgrading to full retrieval.")
                             needs_retrieval = "full"
                             use_cache = False
                         else:
-                            is_details_query = any(k in query for k in ("詳細", "具体の内容", "中身", "発言"))
-                            has_turns = payload.get("rows") and all("speaker" in r for r in payload["rows"])
-                            
-                            if is_details_query and not has_turns:
-                                logger.info(f"Cache slot '{target_topic_key}' exists but lacks turn-level granularity for 'details' query. Upgrading to full retrieval.")
+                            # Granularity Check & Empty Payload Check
+                            payload = cache_slot["payload"] or {}
+                            is_payload_empty = not payload or (
+                                not payload.get("rows") and
+                                not payload.get("documents") and
+                                not payload.get("results") and
+                                not payload.get("info")
+                            )
+                            if is_payload_empty:
+                                logger.info(f"Cache slot '{target_topic_key}' hit but payload is empty. Downgrading to full retrieval.")
                                 needs_retrieval = "full"
                                 use_cache = False
                             else:
-                                summary_context = cache_slot["summary_context"] or {}
-                                # Touch cache slot
-                                await touch_cache_slot(conn, session_id, target_topic_key)
-                else:
-                    logger.warning(f"Cache slot '{target_topic_key}' not found in database despite router hit. Forcing full retrieval.")
+                                is_details_query = any(k in query for k in ("詳細", "具体の内容", "中身", "発言"))
+                                has_turns = payload.get("rows") and all("speaker" in r for r in payload["rows"])
+                                
+                                if is_details_query and not has_turns:
+                                    logger.info(f"Cache slot '{target_topic_key}' exists but lacks turn-level granularity for 'details' query. Upgrading to full retrieval.")
+                                    needs_retrieval = "full"
+                                    use_cache = False
+                                else:
+                                    summary_context = cache_slot["summary_context"] or {}
+                                    # Touch cache slot
+                                    await touch_cache_slot(conn, session_id, target_topic_key)
+                    else:
+                        logger.warning(f"Cache slot '{target_topic_key}' not found in database despite router hit. Forcing full retrieval.")
+                        needs_retrieval = "full"
+                except Exception as cache_ex:
+                    logger.error(f"Error accessing cache slot '{target_topic_key}': {cache_ex}. Falling back to full retrieval.")
                     needs_retrieval = "full"
+                    use_cache = False
                     
             if needs_retrieval == "partial":
                 # Partial Fetch: Lock Hot slot row, read old payload, and retrieve additional data
-                cache_slot = await get_cache_slot(conn, session_id, target_topic_key)
-                if not cache_slot:
-                    logger.warning(f"Cache slot '{target_topic_key}' not found in database for partial fetch. Falling back to full retrieval.")
-                    needs_retrieval = "full"
-                else:
-                    # Check cache TTL freshness for partial fetch
-                    ttl = CACHE_TTL_SQL if cache_slot["last_pipeline"] == "SQL" else CACHE_TTL_WEB
-                    is_fresh = check_cache_ttl(cache_slot["refreshed_at"], ttl)
-                    if not is_fresh:
-                        logger.info(f"Cache slot '{target_topic_key}' expired for partial fetch. Downgrading to full retrieval.")
+                try:
+                    cache_slot = await get_cache_slot(conn, session_id, target_topic_key)
+                    if not cache_slot:
+                        logger.warning(f"Cache slot '{target_topic_key}' not found in database for partial fetch. Falling back to full retrieval.")
                         needs_retrieval = "full"
                     else:
-                        old_payload = cache_slot["payload"] if cache_slot else {}
-                        
-                        # Run target engine with partial filter params
-                        engine_res = await self._run_engine(
-                            target_pipeline, query, session_id=session_id, partial_params=partial_params, conn=conn
-                        )
-                        payload = engine_res.payload
-                        
-                        if target_pipeline == "SQL" and not payload.get("rows"):
-                            logger.info("SQLEngine returned empty rows in partial retrieval. Falling back to RAGEngine.")
-                            target_pipeline = "RAG"
-                            if target_topic_key.startswith("sql_"):
-                                target_topic_key = target_topic_key.replace("sql_", "rag_", 1)
-                            engine_res = await self._run_engine(
-                                "RAG", rewritten_query or query, session_id=session_id
-                            )
-                            payload = engine_res.payload
-                        
-                        # Merge or supplement payload (simple override or merge if dict)
-                        if isinstance(old_payload, dict) and isinstance(payload, dict):
-                            merged_payload = {**old_payload, **payload}
-                            payload = merged_payload
-                        
-                        # Step 5: Entity Indexing
-                        summary_context = await self._build_summary_context(target_pipeline, payload, rewritten_query=rewritten_query or query)
-                        await self.entity_extractor.extract_and_index(conn, session_id, cache_slot["id"], target_pipeline, payload, query=rewritten_query or query, summary_context=summary_context)
-                        
-                        # Step 6: Cache Update with new embedding
-                        new_emb = await _safe_embed(rewritten_query, self.embedding_model)
-                        await update_cache_slot(conn, session_id, target_topic_key, payload, summary_context, query_embedding=new_emb)
+                        # Check cache TTL freshness for partial fetch
+                        ttl = CACHE_TTL_SQL if cache_slot["last_pipeline"] == "SQL" else CACHE_TTL_WEB
+                        is_fresh = check_cache_ttl(cache_slot["refreshed_at"], ttl)
+                        if not is_fresh:
+                            logger.info(f"Cache slot '{target_topic_key}' expired for partial fetch. Downgrading to full retrieval.")
+                            needs_retrieval = "full"
+                        else:
+                            old_payload = cache_slot["payload"] if cache_slot else {}
+                            
+                            # Run target engine with partial filter params
+                            try:
+                                engine_res = await self._run_engine(
+                                    target_pipeline, query, session_id=session_id, partial_params=partial_params, conn=conn
+                                )
+                                payload = engine_res.payload
+                            except Exception as partial_ex:
+                                logger.error(f"Partial retrieval failed: {partial_ex}. Falling back to full retrieval.")
+                                needs_retrieval = "full"
+                                
+                            if needs_retrieval == "partial":
+                                if target_pipeline == "SQL" and not payload.get("rows"):
+                                    logger.info("SQLEngine returned empty rows in partial retrieval. Falling back to RAGEngine.")
+                                    target_pipeline = "RAG"
+                                    if target_topic_key.startswith("sql_"):
+                                        target_topic_key = target_topic_key.replace("sql_", "rag_", 1)
+                                    engine_res = await self._run_engine(
+                                        "RAG", rewritten_query or query, session_id=session_id
+                                    )
+                                    payload = engine_res.payload
+                                
+                                # Merge or supplement payload (simple override or merge if dict)
+                                if isinstance(old_payload, dict) and isinstance(payload, dict):
+                                    merged_payload = {**old_payload, **payload}
+                                    payload = merged_payload
+                                
+                                # Step 5: Entity Indexing
+                                summary_context = await self._build_summary_context(target_pipeline, payload, rewritten_query=rewritten_query or query)
+                                await self.entity_extractor.extract_and_index(conn, session_id, cache_slot["id"], target_pipeline, payload, query=rewritten_query or query, summary_context=summary_context)
+                                
+                                # Step 6: Cache Update with new embedding
+                                new_emb = await _safe_embed(rewritten_query, self.embedding_model)
+                                await update_cache_slot(conn, session_id, target_topic_key, payload, summary_context, query_embedding=new_emb)
+                except Exception as p_outer_ex:
+                    logger.error(f"Outer partial retrieval handling failed: {p_outer_ex}. Falling back to full retrieval.")
+                    needs_retrieval = "full"
                 
             if needs_retrieval == "full":
                 # Topic Shift / New Query: Run engine from scratch
                 if not target_topic_key:
                     # Generate a new topic key if not set
                     target_topic_key = f"{target_pipeline.lower()}_{int(time.time())}"
-                    
-                engine_res = await self._run_engine(
-                    target_pipeline, rewritten_query, session_id=session_id, conn=conn
-                )
-                payload = engine_res.payload
                 
-                if target_pipeline == "SQL" and not payload.get("rows"):
-                    logger.info("SQLEngine returned empty rows in full retrieval. Falling back to RAGEngine.")
-                    target_pipeline = "RAG"
-                    if target_topic_key.startswith("sql_"):
-                        target_topic_key = target_topic_key.replace("sql_", "rag_", 1)
-                    engine_res = await self._run_engine(
-                        "RAG", rewritten_query, session_id=session_id, conn=conn
-                    )
-                    payload = engine_res.payload
+                payload = {}
+                
+                # Tiered Execution Fallbacks: SQL -> RAG -> MODEL (Parametric)
+                if target_pipeline == "SQL":
+                    try:
+                        engine_res = await self._run_engine(
+                            "SQL", rewritten_query, session_id=session_id, conn=conn
+                        )
+                        payload = engine_res.payload
+                        if not payload.get("rows"):
+                            logger.info("SQLEngine returned empty rows in full retrieval. Falling back to RAGEngine.")
+                            target_pipeline = "RAG"
+                            if target_topic_key.startswith("sql_"):
+                                target_topic_key = target_topic_key.replace("sql_", "rag_", 1)
+                    except Exception as sql_ex:
+                        logger.error(f"SQLEngine failed: {sql_ex}. Falling back to RAGEngine.")
+                        target_pipeline = "RAG"
+                        if target_topic_key.startswith("sql_"):
+                            target_topic_key = target_topic_key.replace("sql_", "rag_", 1)
+                            
+                if target_pipeline == "RAG":
+                    try:
+                        engine_res = await self._run_engine(
+                            "RAG", rewritten_query, session_id=session_id, conn=conn
+                        )
+                        payload = engine_res.payload
+                    except Exception as rag_ex:
+                        logger.error(f"RAGEngine failed: {rag_ex}. Falling back to MODEL.")
+                        target_pipeline = "MODEL"
+                        
+                if target_pipeline == "WEB":
+                    try:
+                        engine_res = await self._run_engine(
+                            "WEB", rewritten_query, session_id=session_id, conn=conn
+                        )
+                        payload = engine_res.payload
+                    except Exception as web_ex:
+                        logger.error(f"WebEngine failed: {web_ex}. Falling back to MODEL.")
+                        target_pipeline = "MODEL"
+                        
+                if target_pipeline == "MODEL":
+                    try:
+                        engine_res = await self._run_engine(
+                            "MODEL", rewritten_query, session_id=session_id, conn=conn
+                        )
+                        payload = engine_res.payload
+                    except Exception as model_ex:
+                        logger.error(f"MODEL pipeline execution failed: {model_ex}. Returning empty context.")
+                        payload = {"query_used": rewritten_query, "info": "Fallback parametric knowledge failed."}
                 
                 summary_context = await self._build_summary_context(target_pipeline, payload, rewritten_query=rewritten_query or query)
                 

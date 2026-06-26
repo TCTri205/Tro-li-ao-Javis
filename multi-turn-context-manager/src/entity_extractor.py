@@ -4,9 +4,26 @@ import logging
 from datetime import datetime
 
 from router import LLMManager, extract_json
-from config import SESSION_PATTERN, SESSION_REGEX
+from config import (
+    SESSION_REGEX,
+    HONORIFIC_SUFFIX_PATTERN,
+    FEMALE_SUFFIXES,
+    MALE_SUFFIXES,
+    ALLOWED_ENTITY_TYPES,
+    ENTITY_TYPE_MAPPING,
+    COMMON_PRONOUNS_BLOCKLIST
+)
 
 logger = logging.getLogger(__name__)
+
+def classify_gender(name: str) -> str:
+    """Helper to classify gender based on suffix rules."""
+    base_name = re.sub(HONORIFIC_SUFFIX_PATTERN, '', name)
+    if base_name.endswith(FEMALE_SUFFIXES):
+        return "female"
+    elif base_name.endswith(MALE_SUFFIXES):
+        return "male"
+    return None
 
 class EntityExtractor:
     def __init__(self, db_pool, llm_manager: LLMManager):
@@ -22,7 +39,7 @@ class EntityExtractor:
             return
             
         logger.info(f"Extracting entities for pipeline {pipeline}, session_id {session_id}, slot {cache_slot_id}")
-        entities_to_upsert = [] # List of tuples: (entity_id, entity_type, display_names)
+        entities_to_upsert = [] # List of tuples: (entity_id, entity_type, display_names, attributes)
 
         # 1. SQL Pipeline Extraction
         if pipeline == "SQL":
@@ -104,20 +121,31 @@ class EntityExtractor:
                                 if isinstance(p, dict):
                                     p_clean = str(p.get("name", "")).strip()
                                     p_org = str(p.get("organization", "")).strip() or str(p.get("company", "")).strip()
+                                    p_gender = str(p.get("gender", "")).strip()
                                 else:
                                     p_clean = str(p).strip()
                                     p_org = ""
+                                    p_gender = ""
                                 if p_clean:
                                     p_id = f"{canonical_session}_{p_clean}"
-                                    p_base = re.sub(r'(さん|様|さま|君|くん|ちゃん|氏|殿)$', '', p_clean)
+                                    p_base = re.sub(HONORIFIC_SUFFIX_PATTERN, '', p_clean)
                                     p_names = [p_clean, p_base, f"{p_base}さん", f"{p_base}様"]
-                                    entities_to_upsert.append((p_id, "person", p_names))
+                                    
+                                    # Gender resolution
+                                    resolved_gender = p_gender if p_gender in ("female", "male") else classify_gender(p_clean)
+                                    p_attrs = {}
+                                    if resolved_gender:
+                                        p_attrs["gender"] = resolved_gender
+                                    if p_org:
+                                        p_attrs["company"] = p_org
+                                        
+                                    entities_to_upsert.append((p_id, "person", p_names, p_attrs))
                                 if p_org:
                                     org_id = f"{canonical_session}_{p_org}"
                                     org_names = [p_org, f"{p_org}の通話", f"{p_org}の会話"]
-                                    entities_to_upsert.append((org_id, "document", org_names))
+                                    entities_to_upsert.append((org_id, "document", org_names, {"company": p_org}))
                                     
-                entities_to_upsert.append((canonical_session, "meeting_transcript", display_names))
+                entities_to_upsert.append((canonical_session, "meeting_transcript", display_names, {}))
 
         # 2. RAG Pipeline Extraction
         elif pipeline == "RAG":
@@ -209,20 +237,31 @@ class EntityExtractor:
                                         if isinstance(p, dict):
                                             p_clean = str(p.get("name", "")).strip()
                                             p_org = str(p.get("organization", "")).strip() or str(p.get("company", "")).strip()
+                                            p_gender = str(p.get("gender", "")).strip()
                                         else:
                                             p_clean = str(p).strip()
                                             p_org = ""
+                                            p_gender = ""
                                         if p_clean:
                                             p_id = f"{entity_id}_{p_clean}"
-                                            p_base = re.sub(r'(さん|様|さま|君|くん|ちゃん|氏|殿)$', '', p_clean)
+                                            p_base = re.sub(HONORIFIC_SUFFIX_PATTERN, '', p_clean)
                                             p_names = [p_clean, p_base, f"{p_base}さん", f"{p_base}様"]
-                                            entities_to_upsert.append((p_id, "person", p_names))
+                                            
+                                            # Gender resolution
+                                            resolved_gender = p_gender if p_gender in ("female", "male") else classify_gender(p_clean)
+                                            p_attrs = {}
+                                            if resolved_gender:
+                                                p_attrs["gender"] = resolved_gender
+                                            if p_org:
+                                                p_attrs["company"] = p_org
+                                                
+                                            entities_to_upsert.append((p_id, "person", p_names, p_attrs))
                                         if p_org:
                                             org_id = f"{entity_id}_{p_org}"
                                             org_names = [p_org, f"{p_org}の通話", f"{p_org}の会話"]
-                                            entities_to_upsert.append((org_id, "document", org_names))
+                                            entities_to_upsert.append((org_id, "document", org_names, {"company": p_org}))
                                             
-                    entities_to_upsert.append((entity_id, "document" if not SESSION_REGEX.match(entity_id) else "meeting_transcript", display_names))
+                    entities_to_upsert.append((entity_id, "meeting_transcript" if SESSION_REGEX.match(entity_id) else "document", display_names, {}))
 
         # 3. WEB / MODEL Pipeline Extraction
         elif pipeline in ["WEB", "MODEL"]:
@@ -248,14 +287,14 @@ class EntityExtractor:
                 "    {\n"
                 "      \"entity_id\": \"エンティティ名（例: 'AJ_Technologies' または 'Toyota'、英数字とアンダースコアを使用）\",\n"
                 "      \"entity_type\": \"person\" | \"document\" | \"sql_result\",\n"
-                "      \"display_names\": [\"正式名称\", \"それに対応する日本語の固有の別称（例: 'トヨタ', 'AJ社' など）\"]\n"
+                "      \"display_names\": [\"正式名称\", \"それに対応する日本語の固有の別称（例: 'トヨタ', 'AJ社' など）\"],\n"
+                "      \"attributes\": {\"gender\": \"female\" | \"male\", \"company\": \"会社・組織名（該当する場合のみ）\"}\n"
                 "    }\n"
                 "  ]\n"
                 "}\n"
-                "JSON以外の説明やMarkdownの装飾は一切含めないでください。"
+                "JSON以外の説明やMarkdownの装饰は一切含めないでください。"
             )
 
-            
             messages = [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": text_context}
@@ -270,47 +309,60 @@ class EntityExtractor:
                     e_id = ent.get("entity_id")
                     e_type = ent.get("entity_type")
                     d_names = ent.get("display_names", [])
+                    attrs = ent.get("attributes", {})
+                    if not isinstance(attrs, dict):
+                        attrs = {}
                     if e_id and e_type and d_names:
-                        entities_to_upsert.append((e_id, e_type, d_names))
+                        entities_to_upsert.append((e_id, e_type, d_names, attrs))
             except Exception as e:
                 logger.error(f"Failed to extract entities via LLM for WEB/MODEL: {e}")
 
-        # 4. Perform DB UPSERT
-        ALLOWED_TYPES = {'meeting_transcript', 'person', 'document', 'sql_result'}
-        
-        # Deduplicate entities by (entity_id, entity_type) and merge display_names
+        # Deduplicate entities by (entity_id, entity_type) and merge display_names and attributes
         unique_entities = {}
-        for e_id, e_type, d_names in entities_to_upsert:
+        for e_id, e_type, d_names, attrs in entities_to_upsert:
             # Sanitize entity type
             e_type_clean = e_type.strip()
-            if e_type_clean not in ALLOWED_TYPES:
-                if e_type_clean.lower() in ('company', 'organization', 'object', 'thing', 'location'):
-                    e_type_clean = 'document'
-                elif e_type_clean.lower() in ('user', 'human', 'employee'):
-                    e_type_clean = 'person'
+            if e_type_clean not in ALLOWED_ENTITY_TYPES:
+                if e_type_clean.lower() in ENTITY_TYPE_MAPPING:
+                    e_type_clean = ENTITY_TYPE_MAPPING[e_type_clean.lower()]
                 else:
                     e_type_clean = 'document'
             
             key = (e_id, e_type_clean)
             if key not in unique_entities:
-                unique_entities[key] = set()
+                unique_entities[key] = {"display_names": set(), "attributes": {}}
+                
+            # Filter out common pronouns / generic descriptors
             for n in d_names:
-                if n.strip():
-                    unique_entities[key].add(n.strip())
+                n_clean = n.strip()
+                if n_clean and n_clean not in COMMON_PRONOUNS_BLOCKLIST:
+                    unique_entities[key]["display_names"].add(n_clean)
+            
+            # Merge attributes
+            if attrs:
+                unique_entities[key]["attributes"].update(attrs)
 
-        for (e_id, e_type_clean), clean_names_set in unique_entities.items():
+        for (e_id, e_type_clean), data_dict in unique_entities.items():
+            clean_names = list(data_dict["display_names"])
+            attributes = data_dict["attributes"]
+            # Classify gender for person if not already present
+            if e_type_clean == "person" and "gender" not in attributes:
+                g = classify_gender(e_id.split("_")[-1])
+                if g:
+                    attributes["gender"] = g
+                    
             try:
-                clean_names = list(clean_names_set)
                 await conn.execute("""
-                    INSERT INTO session_entity_index (session_id, cache_slot_id, entity_id, entity_type, display_names)
-                    VALUES ($1, $2, $3, $4, $5)
+                    INSERT INTO session_entity_index (session_id, cache_slot_id, entity_id, entity_type, display_names, attributes)
+                    VALUES ($1, $2, $3, $4, $5, $6)
                     ON CONFLICT (session_id, entity_id) 
                     DO UPDATE SET 
                         display_names = ARRAY(
                             SELECT DISTINCT x 
                             FROM unnest(session_entity_index.display_names || EXCLUDED.display_names) AS x
-                        )
-                """, session_id, cache_slot_id, e_id, e_type_clean, clean_names)
+                        ),
+                        attributes = session_entity_index.attributes || EXCLUDED.attributes
+                """, session_id, cache_slot_id, e_id, e_type_clean, clean_names, json.dumps(attributes))
                 logger.info(f"UPSERT entity {e_id} ({e_type_clean}) for session {session_id} successful.")
             except Exception as e:
                 logger.error(f"Error during UPSERT entity {e_id}: {e}")

@@ -1,10 +1,18 @@
+import os
+import sys
+
+# Limit OpenBLAS and other linear algebra library threads to prevent Windows MemoryErrors
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+
 import asyncio
 import time
 import json
 import logging
-import os
 import re
-import sys
 from datetime import datetime, timedelta, timezone
 import asyncpg
 from dotenv import load_dotenv

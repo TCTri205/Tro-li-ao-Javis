@@ -6,37 +6,39 @@ import logging
 import time
 import numpy as np
 from datetime import datetime, timezone
-from sentence_transformers import SentenceTransformer
+# sentence_transformers is imported lazily to save memory during testing
+from typing import Any
 from groq import AsyncGroq
 from openai import AsyncOpenAI
 import httpx
 from session_lock import get_lock_id
-from config import SESSION_PATTERN, SESSION_REGEX, SQL_KEYWORDS, RAG_KEYWORDS, WEB_KEYWORDS
+from config import (
+    SESSION_PATTERN,
+    SESSION_REGEX,
+    SQL_KEYWORDS,
+    RAG_KEYWORDS,
+    WEB_KEYWORDS,
+    PRONOUNS,
+    SINGULAR_PRONOUNS,
+    PLURAL_PRONOUN_PATTERN,
+    PRONOUN_WORDS,
+    SWITCH_KEYWORDS_PATTERN,
+    ENTITY_DECAY_FACTOR,
+    ENTITY_INCREMENT,
+    SEMANTIC_CONFIDENCE_THRESHOLD,
+    SEMANTIC_SHIFT_THRESHOLD,
+    SEMANTIC_AMBIGUITY_GAP,
+    HONORIFIC_SUFFIX_PATTERN,
+    FEMALE_SUFFIXES,
+    MALE_SUFFIXES,
+    CACHE_TTL_SQL,
+    CACHE_TTL_WEB
+)
 
 logger = logging.getLogger(__name__)
 
-# Heuristic keywords for switching in Japanese (e.g. "やっぱり", "別の話", "スキップ")
-SWITCH_KEYWORDS_PATTERN = re.compile(r'(やっぱり|別の話|キャンセル|スキップ|忘れて)', re.IGNORECASE)
 
-# Japanese pronouns / indicator words to look for in query
-PRONOUNS = [
-    "それ", "あれ", "これ", "そちら", "あちら", "こちら", 
-    "彼", "彼女", "彼ら", "彼女ら", "その人", "あの人", "この人",
-    "さっき", "先ほど", "さきほど", "先程", "前回の", "さっきの", "先ほどの",
-    "このファイル", "そのファイル", "あのファイル",
-    "このドキュメント", "そのドキュメント", "あのドキュメント",
-    "この通話", "その通話", "あの通話", "先ほどの通話", "さっきの通話",
-    "この会話", "その会話", "あの会話", "先ほどの会話", "さっきの会話",
-    "この打ち合わせ", "その打ち合わせ", "あの打ち合わせ", "先ほどの打ち合わせ", "さっきの打ち合わせ",
-    "この連絡", "その連絡", "あの連絡", "先ほどの連絡", "さっきの連絡",
-    "その件", "あの件", "この件", "その話", "あの話", "この話",
-    "そのcall", "このcall", "あのcall", "さっきのcall", "先ほどのcall",
-    "その", "この", "あの", "その物件", "この物件", "あの物件",
-    "同物件", "同通話", "同氏", "同社", "お二人", "二人", "双方", "両者"
-]
-
-
-async def _safe_embed(query: str, model: SentenceTransformer) -> list:
+async def _safe_embed(query: str, model: Any) -> list:
     """
     Safely compute the embedding of the query with a 3.0s timeout and a zero-vector check.
     """
@@ -249,14 +251,14 @@ async def update_entity_interaction_counts(db, session_id: str, active_entity_id
             eid = r['entity_id']
             curr_count = float(r['mention_count'] if r['mention_count'] is not None else 1.0)
             if eid == active_entity_id:
-                new_count = curr_count + 1.0
+                new_count = curr_count + ENTITY_INCREMENT
                 await db.execute("""
                     UPDATE session_entity_index
                     SET mention_count = $1, last_interacted_at = NOW()
                     WHERE session_id = $2 AND entity_id = $3
                 """, new_count, session_id, eid)
             else:
-                new_count = curr_count * 0.5
+                new_count = curr_count * ENTITY_DECAY_FACTOR
                 await db.execute("""
                     UPDATE session_entity_index
                     SET mention_count = $1
@@ -362,7 +364,8 @@ class JavisQwenManager(LLMManager):
         raise RuntimeError("Javis Qwen API failed after retries.")
 
 def get_llm_manager() -> LLMManager:
-    mode = os.getenv("LLM_MODE", "groq").lower()
+    raw_mode = os.getenv("LLM_MODE", "groq")
+    mode = raw_mode.split("#")[0].strip().lower()
     if mode == "javis-qwen":
         logger.info("Initializing LLMManager in 'javis-qwen' mode.")
         return JavisQwenManager()
@@ -371,7 +374,7 @@ def get_llm_manager() -> LLMManager:
         return GroqClientManager()
 
 class Router:
-    def __init__(self, db_pool, llm_manager: LLMManager, embedding_model: SentenceTransformer):
+    def __init__(self, db_pool, llm_manager: LLMManager, embedding_model: Any):
         self.db_pool = db_pool
         self.llm_manager = llm_manager
         self.embedding_model = embedding_model
@@ -399,7 +402,7 @@ class Router:
         # 2. Lightweight Entity Index Lookup
         entities = await db.fetch("""
             SELECT e.cache_slot_id, e.entity_id, e.entity_type, e.display_names, c.topic_key, c.last_pipeline, p.summary_context,
-                   c.last_accessed_at, c.refreshed_at, e.mention_count, e.last_interacted_at
+                   c.last_accessed_at, c.refreshed_at, e.mention_count, e.last_interacted_at, e.attributes
             FROM session_entity_index e
             JOIN session_context_cache c ON e.cache_slot_id = c.id
             LEFT JOIN session_context_payload p ON c.id = p.cache_id
@@ -407,7 +410,6 @@ class Router:
         """, session_id)
         
         from cache_manager import check_cache_ttl
-        from config import CACHE_TTL_SQL, CACHE_TTL_WEB
 
         matched_entities = {} # entity_id -> entity_record
         for ent in entities:
@@ -429,7 +431,7 @@ class Router:
         is_ellipsis = query.strip().endswith(("は？", "は", "も？", "も"))
         
         # Plural pronoun check: Delegate straight to Tier 2
-        plural_pattern = re.compile(r'(彼ら|彼女ら|ら\b|方々|お二人|二人|双方|両者)')
+        plural_pattern = re.compile(PLURAL_PRONOUN_PATTERN)
         if plural_pattern.search(query):
             logger.info("Tier 1: Plural pronoun detected. Delegating straight to Tier 2.")
             return await self._route_tier_2(session_id, query, routing_reason="plural_pronoun", embedding_failed=embedding_failed)
@@ -514,8 +516,7 @@ class Router:
         has_explicit_gt = len(query_gts) > 0
         
         # Heuristic optimization: Singular pronoun resolution to most recent active session
-        singular_pronouns = ["彼", "彼女", "それ", "その人", "先ほどの担当者", "先ほどの", "その件", "その話"]
-        has_singular_pronoun = any(re.search(re.escape(p), query.lower()) for p in singular_pronouns)
+        has_singular_pronoun = any(re.search(re.escape(p), query.lower()) for p in SINGULAR_PRONOUNS)
         if has_singular_pronoun and not has_explicit_gt and len(matched_entities) == 0:
             recent_slots = sorted(
                 entities,
@@ -526,12 +527,11 @@ class Router:
                 target_slot_id = recent_slots[0]['cache_slot_id']
                 
                 # Contextual Heuristic Guard: if the query matches a non-pronoun display name of a different slot, bypass to Tier 2.
-                pronoun_words = {"あの人", "その人", "この人", "彼", "彼女", "それ", "あれ", "これ", "担当者", "お二人", "二人", "双方", "両者", "通話", "会話"}
                 other_slots_entities = [e for e in entities if e['cache_slot_id'] != target_slot_id]
                 has_other_entity_match = False
                 for oe in other_slots_entities:
                     if match_pronoun(query, oe['display_names']):
-                        non_pronouns = [dn for dn in oe['display_names'] if dn not in pronoun_words]
+                        non_pronouns = [dn for dn in oe['display_names'] if dn not in PRONOUN_WORDS]
                         if any(np in query for np in non_pronouns):
                             has_other_entity_match = True
                             break
@@ -546,13 +546,12 @@ class Router:
                 
                 # Extract person names in this slot to make a natural resolution
                 person_names = []
-                pronoun_words = {"あの人", "その人", "この人", "彼", "彼女", "それ", "あれ", "これ", "担当者", "お二人", "二人", "双方", "両者", "通話", "会話"}
                 for ent in slot_entities:
                     if ent['entity_type'] == 'person' and ent['display_names']:
                         # Find a display name that is not a generic pronoun descriptor
                         chosen = None
                         for dname in ent['display_names']:
-                            if dname not in pronoun_words:
+                            if dname not in PRONOUN_WORDS:
                                 chosen = dname
                                 break
                         if not chosen:
@@ -563,97 +562,76 @@ class Router:
                 is_he = "彼" in query and "彼女" not in query
                 is_she = "彼女" in query
                 
-                # Dynamically classify gender of person names from the database using suffixes only
+                # Dynamically classify gender of person names from the database using e.attributes & suffix rules
                 female_names = set()
                 male_names = set()
                 try:
-                    # Run DB query on db to get all known participants
-                    rows = await db.fetch("SELECT DISTINCT participants FROM transcripts WHERE participants IS NOT NULL")
-                    all_participants = set()
-                    for r in rows:
-                        p_val = r['participants']
-                        if p_val:
-                            if isinstance(p_val, str):
+                    for ent in entities:
+                        if ent['entity_type'] == 'person':
+                            attrs = ent['attributes']
+                            if isinstance(attrs, str):
                                 try:
-                                    p_list = json.loads(p_val)
+                                    attrs = json.loads(attrs)
                                 except Exception:
-                                    p_list = []
+                                    attrs = {}
+                            elif not isinstance(attrs, dict):
+                                attrs = {}
+                                
+                            gender = attrs.get("gender")
+                            if gender == "female":
+                                for name in ent['display_names']:
+                                    female_names.add(name)
+                                    clean_name = re.sub(HONORIFIC_SUFFIX_PATTERN, '', name)
+                                    if clean_name:
+                                        female_names.add(clean_name)
+                            elif gender == "male":
+                                for name in ent['display_names']:
+                                    male_names.add(name)
+                                    clean_name = re.sub(HONORIFIC_SUFFIX_PATTERN, '', name)
+                                    if clean_name:
+                                        male_names.add(clean_name)
                             else:
-                                p_list = p_val
-                            if isinstance(p_list, list):
-                                for p in p_list:
-                                    if not p:
+                                # Fallback to suffix classification
+                                for name in ent['display_names']:
+                                    clean_name = re.sub(HONORIFIC_SUFFIX_PATTERN, '', name)
+                                    if not clean_name:
                                         continue
-                                    if isinstance(p, dict):
-                                        p_name = p.get("name", "")
-                                        p_gender = p.get("gender", "")
-                                        if p_name:
-                                            p_clean = str(p_name).strip()
-                                            if p_gender == "female":
-                                                female_names.add(p_clean)
-                                                p_base = re.sub(r'(さん|様|さま|君|くん|ちゃん|氏|殿)$', '', p_clean)
-                                                female_names.add(p_base)
-                                            elif p_gender == "male":
-                                                male_names.add(p_clean)
-                                                p_base = re.sub(r'(さん|様|さま|君|くん|ちゃん|氏|殿)$', '', p_clean)
-                                                male_names.add(p_base)
-                                            else:
-                                                all_participants.add(p_clean)
-                                    else:
-                                        all_participants.add(str(p).strip())
-                    
-                    female_suffixes = (
-                        "子", "美", "香", "花", "華", "奈", "菜", "乃", "莉", "里", 
-                        "理", "梨", "咲", "織", "恵", "絵", "江", "穂", "沙", "紗", 
-                        "羽", "和", "音", "凛", "杏", "楓", "葵"
-                    )
-                    male_suffixes = (
-                        "郎", "朗", "夫", "男", "雄", "介", "助", "佑", "佐", "人", 
-                        "斗", "翔", "登", "太", "也", "哉", "弥", "樹", "輝", "木", 
-                        "司", "嗣", "馬", "吾", "悟", "将", "正", "雅", "洋", "博", 
-                        "宏", "浩"
-                    )
-                    
-                    for name in all_participants:
-                        clean_name = re.sub(r'(さん|様|さま|君|くん|ちゃん|氏|殿)$', '', name)
-                        if not clean_name:
-                            continue
-                        if clean_name.endswith(female_suffixes):
-                            female_names.add(clean_name)
-                            female_names.add(name)
-                        elif clean_name.endswith(male_suffixes):
-                            male_names.add(clean_name)
-                            male_names.add(name)
-                            
+                                    if clean_name.endswith(FEMALE_SUFFIXES):
+                                        female_names.add(name)
+                                        female_names.add(clean_name)
+                                    elif clean_name.endswith(MALE_SUFFIXES):
+                                        male_names.add(name)
+                                        male_names.add(clean_name)
+
                     # Propagate to substrings/related family/given names
-                    for name in all_participants:
-                        clean_name = re.sub(r'(さん|様|さま|君|くん|ちゃん|氏|殿)$', '', name)
-                        if not clean_name:
+                    all_person_names = []
+                    for ent in entities:
+                        if ent['entity_type'] == 'person':
+                            for name in ent['display_names']:
+                                clean_name = re.sub(HONORIFIC_SUFFIX_PATTERN, '', name)
+                                if clean_name and clean_name not in all_person_names:
+                                    all_person_names.append(clean_name)
+                                    
+                    for name in all_person_names:
+                        if name in female_names or name in male_names:
                             continue
-                        if clean_name in female_names or name in female_names:
-                            continue
-                        if clean_name in male_names or name in male_names:
-                            continue
-                            
                         is_female_sub = False
                         is_male_sub = False
                         for f_name in list(female_names):
-                            if clean_name in f_name or f_name in clean_name:
+                            if name in f_name or f_name in name:
                                 is_female_sub = True
                                 break
                         for m_name in list(male_names):
-                            if clean_name in m_name or m_name in clean_name:
+                            if name in m_name or m_name in name:
                                 is_male_sub = True
                                 break
                                 
                         if is_female_sub and not is_male_sub:
-                            female_names.add(clean_name)
                             female_names.add(name)
                         elif is_male_sub and not is_female_sub:
-                            male_names.add(clean_name)
                             male_names.add(name)
                 except Exception as db_ex:
-                    logger.error(f"Error dynamically classifying names: {db_ex}")
+                    logger.error(f"Error dynamically classifying names from entity attributes: {db_ex}")
                 
                 if s_id:
                     if person_names:
@@ -669,13 +647,15 @@ class Router:
                             chosen_name = person_names[0]
                             
                         # Clean up existing suffixes to avoid double suffixes like '中原様さん'
-                        chosen_clean = re.sub(r'(さん|様|さま|君|くん|ちゃん|氏|殿)$', '', chosen_name)
+                        chosen_clean = re.sub(HONORIFIC_SUFFIX_PATTERN, '', chosen_name)
+                        replacement = f"{s_id}ve{chosen_clean}さん"  # Wait! It's replacement = f"{s_id}の{chosen_clean}さん", NOT ve! Let's be extremely careful about Japanese.
+                        # Yes, replacement = f"{s_id}の{chosen_clean}さん"
                         replacement = f"{s_id}の{chosen_clean}さん"
                     else:
                         replacement = s_id
                         
                     rewritten = query
-                    for p in sorted(singular_pronouns, key=len, reverse=True):
+                    for p in sorted(SINGULAR_PRONOUNS, key=len, reverse=True):
                         if p in query:
                             rewritten = rewritten.replace(p, replacement)
                     logger.info(f"Tier 1: Heuristically resolved singular pronoun to {replacement}.")
@@ -1187,7 +1167,7 @@ class Router:
 
             if closest_slot:
                 logger.info(f"Fallback routing: closest slot is '{closest_slot['topic_key']}' with d1={d1:.4f}, d2={d2}, gap={gap:.4f}")
-                if d1 < 0.35 and (d2 is None or gap < 0.65):
+                if d1 < SEMANTIC_CONFIDENCE_THRESHOLD and (d2 is None or gap < SEMANTIC_AMBIGUITY_GAP):
                     result = {
                         "is_follow_up": True,
                         "relation_type": "same_entity",
@@ -1200,7 +1180,7 @@ class Router:
                         "partial_fetch_params": None,
                         "routing_method": "embeddings"
                     }
-                elif d1 > 0.55:
+                elif d1 > SEMANTIC_SHIFT_THRESHOLD:
                     guessed_pipeline = heuristic_pipeline_guess(query)
                     result = {
                         "is_follow_up": False,
@@ -1265,8 +1245,8 @@ class Router:
                     refreshed_at = datetime.fromisoformat(refreshed_at_str.replace("Z", "+00:00"))
                     now = datetime.now(timezone.utc)
                     age_seconds = (now - refreshed_at).total_seconds()
-                    if age_seconds > 3600:
-                        logger.info(f"WEB cache slot '{result['target_topic_key']}' expired (age {age_seconds:.1f}s > 3600s). Forcing full retrieval.")
+                    if age_seconds > CACHE_TTL_WEB:
+                        logger.info(f"WEB cache slot '{result['target_topic_key']}' expired (age {age_seconds:.1f}s > {CACHE_TTL_WEB}s). Forcing full retrieval.")
                         result["use_cache"] = False
                         result["needs_retrieval"] = "full"
                         result["context_reuse_type"] = "none"
