@@ -18,7 +18,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 7893.850500000553
+      "latency_ms": 6229.306100000031
     },
     "passed": true,
     "error": null
@@ -42,7 +42,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 13656.17259999999
+      "latency_ms": 14691.40360000165
     },
     "passed": true,
     "error": null
@@ -51,7 +51,7 @@
     "category": "F_Fuzzy_Matching",
     "test_id": "F3_COMPANY_ABBREVIATION",
     "query": "AJの佐藤太郎さんはどのような立場ですか？",
-    "answer": "佐藤太郎さんはアセットジャパンに所属する営業担当者です。提供された資料からは、彼の立場が「営業担当者」であると明記されています。",
+    "answer": "佐藤太郎さんはアセットジャパンに所属する営業担当者です。",
     "rewritten_query": "AJの佐藤太郎さんはどのような立場ですか？",
     "routing_meta": {
       "rewritten_query": "AJの佐藤太郎さんはどのような立場ですか？",
@@ -66,7 +66,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 7417.790599999535
+      "latency_ms": 5235.770700001012
     },
     "passed": true,
     "error": null
@@ -75,10 +75,10 @@
     "category": "F_Fuzzy_Matching",
     "test_id": "F4_STT_TYPO_CONFUSION",
     "query": "シマタさんは何の内見を希望していましたか？",
-    "answer": "島田さんは、物件の内見（現地視察）を希望していました。具体的には、物件の売却状況を確認し、内見が可能であれば実際に見学して、担当者と詳細な話をしたいという意図を示していました。通話の最後には、内見の可否や物件の売却状況をメモしておくようAに依頼しています。",
-    "rewritten_query": "島田さんは何の内見を希望していましたか？",
+    "answer": "島田さんは、物件の内見（視察）を希望していました。具体的には、物件の売却状況を確認し、内見が可能であれば実際に見て話をしたいという意向を示していました。通話中、島田さんは「内見できるならさせてもらって、お話とかどういう、なんかいろんなお話も聞きたいな」と述べており、物件の現状や詳細について知りたいと考えていました。",
+    "rewritten_query": "GT_03_島田さんは何の内見を希望していましたか？",
     "routing_meta": {
-      "rewritten_query": "島田さんは何の内見を希望していましたか？",
+      "rewritten_query": "GT_03_島田さんは何の内見を希望していましたか？",
       "needs_retrieval": "full",
       "relation_type": "topic_shift",
       "target_pipeline": "RAG",
@@ -90,7 +90,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 26175.921600000038
+      "latency_ms": 19500.7370000003
     },
     "passed": true,
     "error": null
@@ -99,14 +99,14 @@
     "category": "F_Fuzzy_Matching",
     "test_id": "F5_PHONETIC_AMBIGUITY",
     "query": "シマタさんはどちらの会社の人ですか？",
-    "answer": "申し訳ありませんが、提供された資料からは島田さんの所属会社についての情報を確認できませんでした。",
-    "rewritten_query": "島田さんはどちらの会社の人ですか？",
+    "answer": "申し訳ありませんが、提供された資料からは島田さんの所属会社についての情報を確認できませんでした。GT_03の会話ログでは「アセットジャパン」という企業名が物件のポストに記載されていることや、GT_11の会話で「アセットジャパン」の営業担当者である佐藤太郎さんが登場していますが、島田さんの所属企業については明示されていません。",
+    "rewritten_query": "GT_03_島田さんはどちらの会社の人ですか？",
     "routing_meta": {
-      "rewritten_query": "島田さんはどちらの会社の人ですか？",
+      "rewritten_query": "GT_03_島田さんはどちらの会社の人ですか？",
       "needs_retrieval": "none",
       "relation_type": "same_entity",
       "target_pipeline": "RAG",
-      "target_topic_key": "GT_11_topic",
+      "target_topic_key": "new_topic_123",
       "routing_tier": "tier_2",
       "routing_method": "llm_router",
       "embedding_failed": false,
@@ -114,7 +114,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 23950.505099999646
+      "latency_ms": 20745.126899999377
     },
     "passed": true,
     "error": null
@@ -123,7 +123,7 @@
     "category": "F_Fuzzy_Matching",
     "test_id": "F6_STT_HOMOPHONES",
     "query": "島田さんは何の内検を希望していましたか？",
-    "answer": "島田さんは、物件の内見（内見できるかどうか）を希望していました。具体的には、物件がすでに売れたかどうかの確認と、売れていない場合の内見を希望しており、それに伴って「お話とかどういう、なんかいろんなお話も聞きたい」と述べています。この内見は、物件の現状確認と購入に関する詳細な説明を受けるためのものと考えられます。",
+    "answer": "島田さんは、物件の内見（内検）を通じて「売れてしまったんか何なのかもよくわからんから…」「お話とかどういう、なんかいろんなお話も聞きたい」と明示的に述べており、売却状況の確認と物件に関する詳細な説明を希望している点は、コンテキストに明確に記録されています。具体的には、物件が既に売却されているかの確認と、担当者から物件の詳細や条件についての説明を受けることを目的としていました。",
     "rewritten_query": "島田さんは何の内検を希望していましたか？",
     "routing_meta": {
       "rewritten_query": "島田さんは何の内検を希望していましたか？",
@@ -136,9 +136,9 @@
       "embedding_failed": false,
       "direct_answer_used": false,
       "self_check_passed": true,
-      "self_check_retries": 0,
+      "self_check_retries": 1,
       "answer_confidence": "high",
-      "latency_ms": 14235.808299999917
+      "latency_ms": 19058.418900000106
     },
     "passed": true,
     "error": null
@@ -157,11 +157,11 @@
     "category": "B_History_Bloat",
     "test_id": "B2_DEEP_HISTORY_RECENCY_CHECK",
     "query": "同氏が気にした理由は何ですか？",
-    "answer": "GT_03の通話において、島田さんが気にした理由は以下の通りです。  \n島田さんは、物件の目の前に貼ってある「アセットジャパン」の電話番号を記載したチラシを見て、その物件がまだ販売中であるか確認したいと考えていました。また、内見（見学）が可能かどうか、および物件がすでに売却されているかどうかについての情報を得たいという意図を明確に述べています。このため、担当者に連絡を取り、状況を確認したいという目的で電話をかけたと考えられます。  \n\n（※コンテキストから直接的に推定される情報に基づく回答です。）",
-    "rewritten_query": "GT_03_島田さんが気にした理由は何ですか？",
+    "answer": "申し訳ありませんが、提供された資料からは島田さんが気にした理由についての情報は確認できませんでした。コンテキストに「物件の内見を希望している」という情報のみが記載されており、その背景や理由については記述されていません。",
+    "rewritten_query": "GT_03_島田が気にした理由は何ですか？",
     "routing_meta": {
-      "rewritten_query": "GT_03_島田さんが気にした理由は何ですか？",
-      "needs_retrieval": "full",
+      "rewritten_query": "GT_03_島田が気にした理由は何ですか？",
+      "needs_retrieval": "none",
       "relation_type": "same_entity",
       "target_pipeline": "RAG",
       "target_topic_key": "GT_03_topic",
@@ -172,7 +172,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 31268.955900000037
+      "latency_ms": 15087.71970000089
     },
     "passed": true,
     "error": null
@@ -181,7 +181,7 @@
     "category": "B_History_Bloat",
     "test_id": "B4_COMPOUND_PRONOUN_RESOLUTION",
     "query": "同氏と佐藤太郎さんは同じ会社に所属していますか？",
-    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。  \nコンテキストには「佐藤太郎」という名前の人物が1人しか記載されておらず、GT_11に関連する「佐藤太郎」の情報は「アセットジャパン所属の営業担当者」と明記されています。  \n「GT_11_佐藤太郎さん」という人物の存在や、別の「佐藤太郎さん」が登場しているという情報はコンテキストに含まれていません。  \nそのため、同じ会社所属か否かについて判断する十分な情報が提供されていません。",
+    "answer": "申し訳ありませんが、提供された資料からはその情報を確認できませんでした。  \nコンテキストに記載されている「佐藤太郎」は、アセットジャパン所属の営業担当者として1回だけ登場しています。他の「佐藤太郎」に関する情報や、所属会社の比較についての記述は見つかりません。",
     "rewritten_query": "GT_11_佐藤太郎さんと佐藤太郎さんは同じ会社に所属していますか？",
     "routing_meta": {
       "rewritten_query": "GT_11_佐藤太郎さんと佐藤太郎さんは同じ会社に所属していますか？",
@@ -196,7 +196,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 22926.314000000275
+      "latency_ms": 35199.15240000046
     },
     "passed": false,
     "error": "Compound resolution failed. Shimada resolved: False, Sato resolved: True, Retrieval: full"
@@ -205,10 +205,10 @@
     "category": "B_History_Bloat",
     "test_id": "B3_CONTEXT_INTERRUPTION_SWITCHBACK",
     "query": "やっぱり忘れて、最初の佐藤さんの話に戻りましょう。",
-    "answer": "GT_11の佐藤太郎さんは、アセットジャパン所属の営業担当者です。通話ログでは「私はアセットジャパンの佐藤太郎です。営業を担当しております」と自己紹介しており、その職務内容として営業を担当していることが明記されています。他の個人情報（性別・年齢・今後の行動など）や所属企業の詳細については、提供された資料に記載されていません。",
-    "rewritten_query": "GT_11_佐藤太郎について教えてください",
+    "answer": "GT_11における佐藤太郎さんの情報は以下の通りです：  \n- **所属企業**: アセットジャパン  \n- **役職/立場**: 営業担当者  \n\n通話ログでは、佐藤太郎さんが自身の所属と担当業務を「私はアセットジャパンの佐藤太郎です。営業を担当しております。」と明示しています。他の詳細な情報（例: 部門、プロジェクト、連絡先など）は提供された資料に記載されていません。",
+    "rewritten_query": "GT_11_佐藤太郎さんについて教えてください",
     "routing_meta": {
-      "rewritten_query": "GT_11_佐藤太郎について教えてください",
+      "rewritten_query": "GT_11_佐藤太郎さんについて教えてください",
       "needs_retrieval": "none",
       "relation_type": "same_entity",
       "target_pipeline": "RAG",
@@ -220,7 +220,7 @@
       "self_check_passed": true,
       "self_check_retries": 0,
       "answer_confidence": "high",
-      "latency_ms": 16334.401799999796
+      "latency_ms": 12230.149099999835
     },
     "passed": true,
     "error": null
